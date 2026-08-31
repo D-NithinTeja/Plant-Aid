@@ -1,0 +1,6 @@
+# Training data, artifacts and review dumps are reproducible / too large for git
+data/
+artifacts/
+__pycache__/
+*.pt
+*.ts
