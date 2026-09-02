@@ -1,0 +1,59 @@
+import os
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from app.config import settings
+from app.database import Base, engine
+from app.routers.auth import router as auth_router
+from app.routers.history import router as history_router
+from app.routers.inference import router as inference_router
+from app.routers.remedy import router as remedy_router
+
+# Initialize database tables
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(
+    title=settings.APP_NAME,
+    description="Real-Time Plant Disease Identification & Treatment Recommendation System REST API",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+# Configure CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins for local React dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Ensure uploads directory exists and mount static route
+os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+
+# Register Routers: Aliased to both /auth and /api/auth for client compatibility
+app.include_router(auth_router, prefix="/auth")
+app.include_router(auth_router, prefix="/api/auth")
+
+app.include_router(remedy_router)
+app.include_router(history_router)
+app.include_router(inference_router)
+
+
+@app.get("/", tags=["System"])
+def root():
+    return {
+        "status": "online",
+        "system": settings.APP_NAME,
+        "version": "1.0.0",
+        "documentation": "/docs",
+    }
+
+
+@app.get("/health", tags=["System"])
+def health_check():
+    return {"status": "healthy"}

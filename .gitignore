@@ -1,0 +1,49 @@
+# Skills directory (local agent customization)
+skills/
+
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+backend/plant_aid.db
+
+# Media Uploads & Storage
+uploads/
+backend/uploads/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Node.js & Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Machine Learning Artifacts & Review
+backend/ml/data/
+backend/ml/artifacts/
+*.pt
+*.ts
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
