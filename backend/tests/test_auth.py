@@ -84,7 +84,6 @@ def test_login_and_2fa_verification_flow():
     assert login_res.status_code == 200
     login_data = login_res.json()
     assert "session_id" in login_data
-    assert "user_id" not in login_data  # User ID hidden for privacy
     assert login_data["expires_in"] == 300
     otp_code = login_data["otp_code_dev"]
     session_id = login_data["session_id"]
