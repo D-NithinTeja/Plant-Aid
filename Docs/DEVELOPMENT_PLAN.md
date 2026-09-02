@@ -181,41 +181,38 @@ Phase 7: DevOps, Containerization & Root Documentation
 ## Phase 3: Database & Groundnut Remedy Alignment (Module 0.4)
 
 ### Task 3.1: Data Schema Verification & Normalization
-
-- [ ] **Goal:** Ensure `diseases` and `remedies` tables align with `ml_config.CLASS_DISPLAY`.
-- [ ] **Files to touch:**
+- [x] **Goal:** Ensure `diseases` and `remedies` tables align with `ml_config.CLASS_DISPLAY`.
+- [x] **Files to touch:**
   - `backend/app/models.py`
-- [ ] **Details:**
+- [x] **Details:**
   - `disease_id` supported as integer (1 through 6) or slug (`early_leaf_spot`, etc.).
   - Fields: `plant_species`, `disease_name`, `scientific_name`, `severity_level`.
   - Remedy categories: `Organic / Biological`, `Chemical / Fungicide`, `Preventive Cultural Practice`.
 
 ### Task 3.2: Groundnut Disease & Remedy Data Seeder
-
-- [ ] **Goal:** Seed the 6 official Groundnut classes audited in `plan.md` into Store D2.
-- [ ] **Files to touch:**
+- [x] **Goal:** Seed the 6 official Groundnut classes audited in `plan.md` into Store D2.
+- [x] **Files to touch:**
   - `backend/seed.py`
-- [ ] **Seeded Classes:**
+- [x] **Seeded Classes:**
   1. `early_leaf_spot` — Groundnut Early Leaf Spot (_Cercospora arachidicola_)
   2. `early_rust` — Groundnut Early Rust (_Puccinia arachidis_)
   3. `healthy_leaf` — Healthy Leaf (_Arachis hypogaea_)
   4. `late_leaf_spot` — Groundnut Late Leaf Spot (_Phaeoisariopsis personata_)
   5. `nutrition_deficiency` — Nutrition Deficiency (Nitrogen/Iron/Zinc chlorosis)
   6. `rust` — Groundnut Rust (_Puccinia arachidis_)
-- [ ] **Details:** Curate 3 detailed remedies (Organic, Chemical, Cultural) with application instructions and safety warnings for each class.
-- [ ] **Command:** `uv run python seed.py`
-- [ ] **Acceptance Criteria:** Database populated with 6 groundnut classes and 18 remedy records.
+- [x] **Details:** Curate 3 detailed remedies (Organic, Chemical, Cultural) with application instructions and safety warnings for each class.
+- [x] **Command:** `uv run python seed.py`
+- [x] **Acceptance Criteria:** Database populated with 6 groundnut classes and 18 remedy records.
 
 ### Task 3.3: Remedy Lookup Endpoints
-
-- [ ] **Goal:** Implement endpoints defined in `Implementation.md` §5 & §8.
-- [ ] **Files to touch:**
+- [x] **Goal:** Implement endpoints defined in `Implementation.md` §5 & §8.
+- [x] **Files to touch:**
   - `backend/app/routers/remedy.py`
   - `backend/app/schemas.py`
-- [ ] **Endpoints:**
+- [x] **Endpoints:**
   - `GET /remedies/{disease_id}`: Returns grouped remedy tabs (Organic, Chemical, Cultural).
   - `GET /remedies`: List/search remedies with optional category or query filters.
-- [ ] **Acceptance Criteria:** `GET /remedies/1` or `GET /remedies/early_leaf_spot` returns full treatment tabs.
+- [x] **Acceptance Criteria:** `GET /remedies/1` or `GET /remedies/early_leaf_spot` returns full treatment tabs.
 
 ### Task 3.4: Alembic Migrations Setup
 
