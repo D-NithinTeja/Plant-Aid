@@ -215,27 +215,25 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [x] **Acceptance Criteria:** `GET /remedies/1` or `GET /remedies/early_leaf_spot` returns full treatment tabs.
 
 ### Task 3.4: Alembic Migrations Setup
-
-- [ ] **Goal:** Configure Alembic for relational migrations (PostgreSQL / SQLite).
-- [ ] **Files to touch:**
+- [x] **Goal:** Configure Alembic for relational migrations (PostgreSQL / SQLite).
+- [x] **Files to touch:**
   - `backend/alembic.ini` [NEW]
   - `backend/alembic/env.py` [NEW]
-- [ ] **Command:**
+- [x] **Command:**
   ```bash
   cd backend
   uv run alembic init alembic
   uv run alembic revision --autogenerate -m "initial_schema"
   uv run alembic upgrade head
   ```
-- [ ] **Acceptance Criteria:** Alembic manages schema creation cleanly.
+- [x] **Acceptance Criteria:** Alembic manages schema creation cleanly.
 
 ### Task 3.5: Module 0.4 Verification Tests
-
-- [ ] **Goal:** Test remedy lookup by ID and slug.
-- [ ] **Files to touch:**
-  - `backend/tests/test_remedies.py` [NEW]
-- [ ] **Command:** `uv run pytest tests/test_remedies.py`
-- [ ] **Acceptance Criteria:** All remedy tests pass.
+- [x] **Goal:** Test remedy lookup by ID and slug.
+- [x] **Files to touch:**
+  - `backend/tests/test_remedies.py`
+- [x] **Command:** `uv run pytest tests/test_remedies.py`
+- [x] **Acceptance Criteria:** All remedy tests pass.
 
 ---
 
