@@ -64,6 +64,7 @@ class RemedySchema(BaseModel):
 
 class DiseaseSchema(BaseModel):
     id: str
+    numeric_id: Optional[int] = None
     plant_species: str
     disease_name: str
     scientific_name: Optional[str] = None
@@ -71,6 +72,21 @@ class DiseaseSchema(BaseModel):
     remedies: List[RemedySchema] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+class GroupedRemediesSchema(BaseModel):
+    organic_biological: List[RemedySchema] = []
+    chemical_fungicide: List[RemedySchema] = []
+    preventive_cultural: List[RemedySchema] = []
+
+class DiseaseRemedyDetailResponse(BaseModel):
+    disease_id: str
+    numeric_id: Optional[int] = None
+    disease_name: str
+    plant_species: str
+    scientific_name: Optional[str] = None
+    severity_level: str
+    remedies: List[RemedySchema] = []
+    grouped_remedies: GroupedRemediesSchema
 
 
 # --- Bounding Box & Inference Schemas ---

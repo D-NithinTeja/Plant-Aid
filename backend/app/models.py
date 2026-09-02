@@ -40,6 +40,7 @@ class Disease(Base):
     __tablename__ = "diseases"
 
     id = Column(String(50), primary_key=True, index=True)  # e.g. early_leaf_spot or TOMATO_LATE_BLIGHT
+    numeric_id = Column(Integer, unique=True, nullable=True, index=True)  # 1-based index matching labels.json
     plant_species = Column(String(100), nullable=False, index=True)
     disease_name = Column(String(150), nullable=False)
     scientific_name = Column(String(150), nullable=True)
