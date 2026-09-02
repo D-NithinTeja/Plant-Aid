@@ -46,12 +46,11 @@ Phase 7: DevOps, Containerization & Root Documentation
 ## Phase 1: Environment Setup with `uv` & Dependencies
 
 ### Task 1.1: Initialize `uv` Virtual Environment & Dependencies
-
-- [ ] **Goal:** Create a clean, reproducible Python environment managed entirely via `uv`.
-- [ ] **Files to touch:**
+- [x] **Goal:** Create a clean, reproducible Python environment managed entirely via `uv`.
+- [x] **Files to touch:**
   - `backend/requirements.txt`
   - `backend/pyproject.toml`
-- [ ] **Steps:**
+- [x] **Steps:**
   1. Initialize venv:
      ```bash
      cd backend
@@ -82,15 +81,14 @@ Phase 7: DevOps, Containerization & Root Documentation
      ```bash
      uv pip install -r requirements.txt
      ```
-- [ ] **Acceptance Criteria:** `uv run python -c "import fastapi, torch, cv2, slowapi; print('Environment OK')"` exits with code 0.
+- [x] **Acceptance Criteria:** `uv run python -c "import fastapi, torch, cv2, slowapi; print('Environment OK')"` exits with code 0.
 
 ### Task 1.2: Environment Configuration & Defaults
-
-- [ ] **Goal:** Create `.env.example` and update `app/config.py` to support all configurable services.
-- [ ] **Files to touch:**
+- [x] **Goal:** Create `.env.example` and update `app/config.py` to support all configurable services.
+- [x] **Files to touch:**
   - `backend/.env.example`
   - `backend/app/config.py`
-- [ ] **Config Fields:**
+- [x] **Config Fields:**
   - `DATABASE_URL` (default: `sqlite:///./plant_aid.db`, production: postgres)
   - `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `OTP_EXPIRE_MINUTES`
   - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET_NAME`
@@ -99,67 +97,62 @@ Phase 7: DevOps, Containerization & Root Documentation
   - `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`
   - `RATE_LIMIT_PER_MINUTE` (default: `60`)
   - `CONFIDENCE_THRESHOLD` (default: `0.55`)
-- [ ] **Acceptance Criteria:** `uv run python -c "from app.config import settings; print(settings.APP_NAME)"` succeeds.
+- [x] **Acceptance Criteria:** `uv run python -c "from app.config import settings; print(settings.APP_NAME)"` succeeds.
 
 ---
 
 ## Phase 2: Backend Core & Security Refactoring (Module 0.1)
 
 ### Task 2.1: Bcrypt Password Hashing Migration
-
-- [ ] **Goal:** Replace custom SHA-256 with industry-standard bcrypt hashing per `Implementation.md` §2.2.
-- [ ] **Files to touch:**
+- [x] **Goal:** Replace custom SHA-256 with industry-standard bcrypt hashing per `Implementation.md` §2.2.
+- [x] **Files to touch:**
   - `backend/app/security.py`
-- [ ] **Details:**
+- [x] **Details:**
   - Use `passlib.context.CryptContext(schemes=["bcrypt"], deprecated="auto")`.
   - Implement `hash_password(password: str) -> str` and `verify_password(plain: str, hashed: str) -> bool`.
-- [ ] **Acceptance Criteria:** Passwords verified with constant-time bcrypt checks.
+- [x] **Acceptance Criteria:** Passwords verified with constant-time bcrypt checks.
 
 ### Task 2.2: User Registration & 409 Conflict Handling
-
-- [ ] **Goal:** Enforce unique email/phone constraints with proper HTTP status codes.
-- [ ] **Files to touch:**
+- [x] **Goal:** Enforce unique email/phone constraints with proper HTTP status codes.
+- [x] **Files to touch:**
   - `backend/app/routers/auth.py`
   - `backend/app/schemas.py`
-- [ ] **Details:**
+- [x] **Details:**
   - Check existing `email_address` OR `phone_number`.
   - Return HTTP `409 Conflict` (per `Implementation.md` §2.2) when duplicates are found.
   - Return HTTP `201 Created` with created `user_id`.
-- [ ] **Acceptance Criteria:** Duplicate registration triggers `409 Conflict`.
+- [x] **Acceptance Criteria:** Duplicate registration triggers `409 Conflict`.
 
 ### Task 2.3: 2FA Challenge & Session Token Refactoring
-
-- [ ] **Goal:** Align `/auth/login` to return an opaque, signed `session_id` rather than exposing the raw `user_id`.
-- [ ] **Files to touch:**
+- [x] **Goal:** Align `/auth/login` to return an opaque, signed `session_id` rather than exposing the raw `user_id`.
+- [x] **Files to touch:**
   - `backend/app/routers/auth.py`
   - `backend/app/models.py`
   - `backend/app/schemas.py`
-- [ ] **Details:**
+- [x] **Details:**
   - Login accepts `email` OR `phone` + `password`.
   - Return generic `401 Unauthorized` on mismatch (prevent user-enumeration).
   - Generate a secure `session_id` (UUIDv4) stored on the user row along with `active_2fa_otp`, `otp_expiry_time` (5 min TTL), and `failed_otp_attempts` (default 0).
   - Return `{"session_id": session_id, "expires_in": 300}`.
-- [ ] **Acceptance Criteria:** `POST /auth/login` yields `{session_id}` without exposing `user_id`.
+- [x] **Acceptance Criteria:** `POST /auth/login` yields `{session_id}` without exposing `user_id`.
 
 ### Task 2.4: Pluggable OTP Dispatch Service
-
-- [ ] **Goal:** Implement `backend/app/services/otp_service.py` supporting console dev logging, Twilio SMS, and SendGrid Email.
-- [ ] **Files to touch:**
+- [x] **Goal:** Implement `backend/app/services/otp_service.py` supporting console dev logging, Twilio SMS, and SendGrid Email.
+- [x] **Files to touch:**
   - `backend/app/services/otp_service.py` [NEW]
-- [ ] **Details:**
+- [x] **Details:**
   - Interface: `send_otp(destination: str, otp_code: str, channel: str = "auto") -> bool`.
   - If `OTP_PROVIDER == "console"` (dev mode): print OTP formatted in server logs.
   - If `OTP_PROVIDER == "twilio"`: dispatch SMS via Twilio REST API.
   - If `OTP_PROVIDER == "sendgrid"`: dispatch email HTML template via SendGrid.
-- [ ] **Acceptance Criteria:** OTP dispatches according to configured provider.
+- [x] **Acceptance Criteria:** OTP dispatches according to configured provider.
 
 ### Task 2.5: OTP Verification with Brute-Force Rate Capping
-
-- [ ] **Goal:** Implement secure verification in `POST /auth/verify-2fa`.
-- [ ] **Files to touch:**
+- [x] **Goal:** Implement secure verification in `POST /auth/verify-2fa`.
+- [x] **Files to touch:**
   - `backend/app/routers/auth.py`
   - `backend/app/schemas.py`
-- [ ] **Details:**
+- [x] **Details:**
   - Input schema: `{"session_id": str, "otp_code": str}`.
   - Lookup user by `session_id`.
   - If `failed_otp_attempts >= 5`: invalidate challenge, return `429 Too Many Requests` or `401 Unauthorized` with lock notice.
@@ -167,23 +160,21 @@ Phase 7: DevOps, Containerization & Root Documentation
   - Check expiry time.
   - Invalidate OTP on success and reset attempt counter.
   - Issue JWT access token (HS256, 60-min expiry per spec).
-- [ ] **Acceptance Criteria:** 5 failed attempts locks session; valid OTP issues JWT.
+- [x] **Acceptance Criteria:** 5 failed attempts locks session; valid OTP issues JWT.
 
 ### Task 2.6: Route URL Aliasing
-
-- [ ] **Goal:** Support both `/auth/*` and `/api/auth/*` for client flexibility.
-- [ ] **Files to touch:**
+- [x] **Goal:** Support both `/auth/*` and `/api/auth/*` for client flexibility.
+- [x] **Files to touch:**
   - `backend/app/main.py`
   - `backend/app/routers/auth.py`
-- [ ] **Acceptance Criteria:** `POST /auth/login` and `POST /api/auth/login` resolve to the same handler.
+- [x] **Acceptance Criteria:** `POST /auth/login` and `POST /api/auth/login` resolve to the same handler.
 
 ### Task 2.7: Module 0.1 Unit & Integration Tests
-
-- [ ] **Goal:** Test registration, login, 2FA challenge, verification, attempt limits, and `/auth/me`.
-- [ ] **Files to touch:**
+- [x] **Goal:** Test registration, login, 2FA challenge, verification, attempt limits, and `/auth/me`.
+- [x] **Files to touch:**
   - `backend/tests/test_auth.py` [NEW]
-- [ ] **Command:** `uv run pytest tests/test_auth.py`
-- [ ] **Acceptance Criteria:** 100% tests pass.
+- [x] **Command:** `uv run pytest tests/test_auth.py`
+- [x] **Acceptance Criteria:** 100% tests pass.
 
 ---
 
