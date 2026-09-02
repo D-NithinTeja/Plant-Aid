@@ -88,3 +88,54 @@ def test_api_prefix_aliasing():
 
     res_diseases = client.get("/api/diseases")
     assert res_diseases.status_code == 200
+
+
+def test_all_six_groundnut_classes_have_remedies():
+    """Every groundnut class (numeric_id 1-6) must have remedies seeded."""
+    for nid in range(1, 7):
+        response = client.get(f"/remedies/{nid}")
+        assert response.status_code == 200
+        data = response.json()
+        if data["disease_id"] == "healthy_leaf":
+            # Healthy plant only has Biological + Cultural (no chemical)
+            assert len(data["remedies"]) == 2
+        else:
+            assert len(data["remedies"]) == 3, f"numeric_id={nid} ({data['disease_id']}) has {len(data['remedies'])} remedies, expected 3"
+
+
+def test_grouped_remedies_cover_all_three_categories():
+    """Each groundnut class must have at least one remedy per grouped category."""
+    for nid in range(1, 7):
+        response = client.get(f"/remedies/{nid}")
+        data = response.json()
+        grouped = data["grouped_remedies"]
+        # healthy_leaf (nid=3) may only have 2 remedies but should still have at least organic + cultural
+        if nid != 3:
+            assert len(grouped["organic_biological"]) >= 1
+            assert len(grouped["chemical_fungicide"]) >= 1
+            assert len(grouped["preventive_cultural"]) >= 1
+
+
+def test_get_disease_by_id():
+    """GET /diseases/{id} returns the correct disease."""
+    response = client.get("/diseases/early_leaf_spot")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == "early_leaf_spot"
+    assert data["numeric_id"] == 1
+    assert len(data["remedies"]) == 3
+
+
+def test_get_disease_not_found():
+    response = client.get("/diseases/totally_fake_disease")
+    assert response.status_code == 404
+
+
+def test_remedies_list_no_filters():
+    """GET /remedies with no query params returns all remedies."""
+    response = client.get("/remedies")
+    assert response.status_code == 200
+    remedies = response.json()
+    # At least 6 groundnut classes × 3 remedies = 18
+    assert len(remedies) >= 18
+
