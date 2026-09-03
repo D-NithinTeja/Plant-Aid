@@ -107,9 +107,10 @@ class BackendTestSuite(unittest.TestCase):
         headers = getattr(BackendTestSuite, "headers", {})
         res = self.client.get("/api/history", headers=headers)
         self.assertEqual(res.status_code, 200)
-        history = res.json()
-        self.assertGreater(len(history), 0)
-        log_item = history[0]
+        history_data = res.json()
+        items = history_data["items"] if isinstance(history_data, dict) and "items" in history_data else history_data
+        self.assertGreater(len(items), 0)
+        log_item = items[0]
         self.assertIn("s3_storage_uri", log_item)
         self.assertIn("confidence_score", log_item)
 

@@ -134,10 +134,17 @@ class InferenceResponse(BaseModel):
 # --- History Log Schemas ---
 class HistoryLogCreate(BaseModel):
     disease_id: str
-    disease_name: str
-    confidence_score: float
+    disease_name: str | None = None
+    confidence_score: float = Field(..., ge=0.0, le=1.0)
     s3_storage_uri: str
     bounding_box: BoundingBoxSchema | None = None
+
+
+class HistoryLogCreateResponse(BaseModel):
+    log_id: int
+    status: str = "confirmed"
+    timestamp: datetime.datetime
+    message: str = "Diagnosis history record successfully logged."
 
 
 class HistoryLogResponse(BaseModel):
@@ -152,3 +159,11 @@ class HistoryLogResponse(BaseModel):
     diagnosis_timestamp: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PaginatedHistoryResponse(BaseModel):
+    items: list[HistoryLogResponse]
+    total: int
+    page: int
+    limit: int
+    total_pages: int

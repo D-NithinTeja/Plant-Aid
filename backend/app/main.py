@@ -38,12 +38,13 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 # Register Canonical Routers (displayed in Swagger UI under /api)
 app.include_router(auth_router, prefix="/api/auth")
 app.include_router(remedy_router, prefix="/api")
-app.include_router(history_router)
+app.include_router(history_router, prefix="/api/history")
 app.include_router(inference_router)
 
 # Backwards-compatibility aliases (hidden from Swagger UI)
 app.include_router(auth_router, prefix="/auth", include_in_schema=False)
 app.include_router(remedy_router, include_in_schema=False)
+app.include_router(history_router, prefix="/history", include_in_schema=False)
 
 
 @app.get("/", tags=["System"])
