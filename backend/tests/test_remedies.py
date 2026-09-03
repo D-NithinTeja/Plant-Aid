@@ -1,22 +1,24 @@
 import pytest
-from fastapi.testclient import TestClient
-from app.main import app
 from app.database import Base, engine
+from app.main import app
+from fastapi.testclient import TestClient
 from seed import seed_database
 
 client = TestClient(app)
+
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_seed_data():
     Base.metadata.create_all(bind=engine)
     seed_database()
 
+
 def test_list_all_diseases():
     response = client.get("/diseases")
     assert response.status_code == 200
     diseases = response.json()
     assert len(diseases) >= 6
-    
+
     # Verify Groundnut classes exist with numeric IDs 1 to 6
     groundnut_ids = [d["id"] for d in diseases if d.get("numeric_id") in range(1, 7)]
     assert "early_leaf_spot" in groundnut_ids
@@ -25,6 +27,7 @@ def test_list_all_diseases():
     assert "late_leaf_spot" in groundnut_ids
     assert "nutrition_deficiency" in groundnut_ids
     assert "rust" in groundnut_ids
+
 
 def test_get_remedies_by_numeric_id():
     # ID 1 = Early Leaf Spot
@@ -36,13 +39,17 @@ def test_get_remedies_by_numeric_id():
     assert data["disease_name"] == "Groundnut Early Leaf Spot"
     assert "Cercospora" in data["scientific_name"]
     assert data["severity_level"] == "HIGH"
-    
+
     # Check grouped remedies
     grouped = data["grouped_remedies"]
     assert len(grouped["organic_biological"]) > 0
     assert len(grouped["chemical_fungicide"]) > 0
     assert len(grouped["preventive_cultural"]) > 0
-    assert any("Mancozeb" in r["title"] or "Mancozeb" in r["description"] for r in grouped["chemical_fungicide"])
+    assert any(
+        "Mancozeb" in r["title"] or "Mancozeb" in r["description"]
+        for r in grouped["chemical_fungicide"]
+    )
+
 
 def test_get_remedies_by_slug_id():
     # Slug 'late_leaf_spot'
@@ -54,12 +61,14 @@ def test_get_remedies_by_slug_id():
     assert data["severity_level"] == "SEVERE"
     assert len(data["remedies"]) == 3
 
+
 def test_get_remedies_by_name():
     response = client.get("/remedies/Groundnut%20Rust")
     assert response.status_code == 200
     data = response.json()
     assert data["numeric_id"] == 6
     assert data["disease_id"] == "rust"
+
 
 def test_remedies_search_and_filter():
     # Search by keyword
@@ -73,12 +82,17 @@ def test_remedies_search_and_filter():
     assert res_cat.status_code == 200
     remedies_cat = res_cat.json()
     assert len(remedies_cat) > 0
-    assert all("organic" in r["category"].lower() or "biological" in r["category"].lower() for r in remedies_cat)
+    assert all(
+        "organic" in r["category"].lower() or "biological" in r["category"].lower()
+        for r in remedies_cat
+    )
+
 
 def test_remedy_not_found_404():
     response = client.get("/remedies/nonexistent_plant_disease_xyz")
     assert response.status_code == 404
     assert "not found" in response.json()["detail"]
+
 
 def test_api_prefix_aliasing():
     # Test /api/remedies and /api/diseases
@@ -100,7 +114,9 @@ def test_all_six_groundnut_classes_have_remedies():
             # Healthy plant only has Biological + Cultural (no chemical)
             assert len(data["remedies"]) == 2
         else:
-            assert len(data["remedies"]) == 3, f"numeric_id={nid} ({data['disease_id']}) has {len(data['remedies'])} remedies, expected 3"
+            assert len(data["remedies"]) == 3, (
+                f"numeric_id={nid} ({data['disease_id']}) has {len(data['remedies'])} remedies, expected 3"
+            )
 
 
 def test_grouped_remedies_cover_all_three_categories():
@@ -138,4 +154,3 @@ def test_remedies_list_no_filters():
     remedies = response.json()
     # At least 6 groundnut classes × 3 remedies = 18
     assert len(remedies) >= 18
-

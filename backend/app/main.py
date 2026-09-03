@@ -35,14 +35,15 @@ app.add_middleware(
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
-# Register Routers: Aliased to both /auth and /api/auth for client compatibility
-app.include_router(auth_router, prefix="/auth")
+# Register Canonical Routers (displayed in Swagger UI under /api)
 app.include_router(auth_router, prefix="/api/auth")
-
-app.include_router(remedy_router)
 app.include_router(remedy_router, prefix="/api")
 app.include_router(history_router)
 app.include_router(inference_router)
+
+# Backwards-compatibility aliases (hidden from Swagger UI)
+app.include_router(auth_router, prefix="/auth", include_in_schema=False)
+app.include_router(remedy_router, include_in_schema=False)
 
 
 @app.get("/", tags=["System"])

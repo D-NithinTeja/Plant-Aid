@@ -1,8 +1,9 @@
 import datetime
 import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from sqlalchemy import or_
+from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
@@ -38,7 +39,10 @@ def register_user(user_in: UserRegister, db: Session = Depends(get_db)):
     query = db.query(User).filter(User.email_address == user_in.email_address)
     if user_in.phone_number:
         query = db.query(User).filter(
-            or_(User.email_address == user_in.email_address, User.phone_number == user_in.phone_number)
+            or_(
+                User.email_address == user_in.email_address,
+                User.phone_number == user_in.phone_number,
+            )
         )
     existing_user = query.first()
 
@@ -96,7 +100,11 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
     db.commit()
 
     # Dispatch OTP via configured provider (Console / Twilio / SendGrid)
-    target_destination = user.phone_number if (identifier == user.phone_number and user.phone_number) else user.email_address
+    target_destination = (
+        user.phone_number
+        if (identifier == user.phone_number and user.phone_number)
+        else user.email_address
+    )
     otp_service.send_otp(destination=target_destination, otp_code=otp_code)
 
     return TwoFactorChallengeResponse(
@@ -156,7 +164,9 @@ def verify_2fa(req: TwoFactorVerifyRequest, db: Session = Depends(get_db)):
 
     if not constant_time_compare(user.active_2fa_otp, req.otp_code.strip()):
         user.failed_otp_attempts += 1
-        remaining_attempts = max(0, settings.MAX_OTP_ATTEMPTS - user.failed_otp_attempts)
+        remaining_attempts = max(
+            0, settings.MAX_OTP_ATTEMPTS - user.failed_otp_attempts
+        )
         db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

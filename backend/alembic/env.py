@@ -1,19 +1,20 @@
 """Alembic env.py — wired to Plant-Aid's SQLAlchemy Base and config.settings.DATABASE_URL."""
-import sys
+
 import os
+import sys
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
 # ---------------------------------------------------------------------------
 # Ensure the backend package is importable (handles running from backend/ dir)
 # ---------------------------------------------------------------------------
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app.config import settings  # noqa: E402
-from app.database import Base  # noqa: E402
-import app.models  # noqa: E402, F401  — force model registration
+import app.models  # noqa: F401  — force model registration
+from app.config import settings
+from app.database import Base
 
 # ---------------------------------------------------------------------------
 # Alembic Config object — provides access to .ini values

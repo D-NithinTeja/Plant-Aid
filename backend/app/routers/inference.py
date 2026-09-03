@@ -81,10 +81,14 @@ async def predict_plant_disease(
     # 1. Run inference (stubbed PyTorch model execution)
     prediction = inference_stub.run_inference(image_bytes)
 
-    # 2. Upload raw frame to S3 / media storage
+    # 2. Upload raw frame to S3 / media storage with hierarchical key
     user_id = current_user.id if current_user else 0
+    frame_id = str(uuid.uuid4())
     s3_uri = storage_service.upload_image(
-        image_bytes=image_bytes, mime_type=mime_type, user_id=user_id
+        image_bytes=image_bytes,
+        mime_type=mime_type,
+        user_id=user_id,
+        frame_id=frame_id,
     )
 
     # 3. Query remedies from Database
@@ -95,7 +99,7 @@ async def predict_plant_disease(
     if disease_obj and disease_obj.remedies:
         remedies_list = [RemedySchema.model_validate(r) for r in disease_obj.remedies]
 
-    # 4. Write History Log Record to PostgreSQL/Database (if user authenticated or default guest)
+    # 4. Write History Log Record to Database with S3 Compensation Rollback (Task 4.2)
     now = get_now_utc()
     if current_user:
         history_entry = DiseaseHistoryLog(
@@ -108,7 +112,16 @@ async def predict_plant_disease(
             diagnosis_timestamp=now,
         )
         db.add(history_entry)
-        db.commit()
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            # Prevent orphaned media if database transaction fails
+            storage_service.delete_object(s3_uri)
+            raise HTTPException(
+                status_code=500,
+                detail="Database persistence failed. Media upload was rolled back."
+            )
 
     bbox = (
         BoundingBoxSchema(**prediction["bounding_box"])
@@ -124,7 +137,7 @@ async def predict_plant_disease(
         confidence=prediction["confidence_score"],
         confidence_score=prediction["confidence_score"],
         bounding_box=bbox,
-        frame_id=str(uuid.uuid4()),
+        frame_id=frame_id,
         s3_storage_uri=s3_uri,
         remedies=remedies_list,
         diagnosis_timestamp=now,
