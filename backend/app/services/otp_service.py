@@ -1,9 +1,12 @@
 import logging
+
 import httpx
+
 from app.config import settings
 
 logger = logging.getLogger("plant_aid.otp_service")
 logging.basicConfig(level=logging.INFO)
+
 
 class OTPService:
     def __init__(self):
@@ -38,19 +41,29 @@ class OTPService:
         return True
 
     def _send_twilio_sms(self, phone: str, otp_code: str) -> bool:
-        if not (settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN and settings.TWILIO_PHONE_NUMBER):
-            logger.warning("Twilio credentials incomplete, falling back to console dispatch.")
+        if not (
+            settings.TWILIO_ACCOUNT_SID
+            and settings.TWILIO_AUTH_TOKEN
+            and settings.TWILIO_PHONE_NUMBER
+        ):
+            logger.warning(
+                "Twilio credentials incomplete, falling back to console dispatch."
+            )
             return self._send_console(phone, otp_code, "sms")
 
         url = f"https://api.twilio.com/2010-04-01/Accounts/{settings.TWILIO_ACCOUNT_SID}/Messages.json"
         data = {
             "From": settings.TWILIO_PHONE_NUMBER,
             "To": phone,
-            "Body": f"Your Plant-Aid 2FA verification code is: {otp_code}. Valid for {settings.OTP_EXPIRE_MINUTES} minutes."
+            "Body": f"Your Plant-Aid 2FA verification code is: {otp_code}. Valid for {settings.OTP_EXPIRE_MINUTES} minutes.",
         }
         try:
             with httpx.Client() as client:
-                res = client.post(url, data=data, auth=(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN))
+                res = client.post(
+                    url,
+                    data=data,
+                    auth=(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN),
+                )
                 res.raise_for_status()
                 return True
         except Exception as e:
@@ -59,22 +72,29 @@ class OTPService:
 
     def _send_sendgrid_email(self, email: str, otp_code: str) -> bool:
         if not settings.SENDGRID_API_KEY:
-            logger.warning("SendGrid API key missing, falling back to console dispatch.")
+            logger.warning(
+                "SendGrid API key missing, falling back to console dispatch."
+            )
             return self._send_console(email, otp_code, "email")
 
         url = "https://api.sendgrid.com/v3/mail/send"
         headers = {
             "Authorization": f"Bearer {settings.SENDGRID_API_KEY}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         payload = {
             "personalizations": [{"to": [{"email": email}]}],
-            "from": {"email": settings.SENDGRID_FROM_EMAIL, "name": "Plant-Aid Security"},
+            "from": {
+                "email": settings.SENDGRID_FROM_EMAIL,
+                "name": "Plant-Aid Security",
+            },
             "subject": "Your Plant-Aid 2FA Code",
-            "content": [{
-                "type": "text/html",
-                "value": f"<p>Your Plant-Aid 2FA verification code is: <strong>{otp_code}</strong>.</p><p>This code expires in {settings.OTP_EXPIRE_MINUTES} minutes.</p>"
-            }]
+            "content": [
+                {
+                    "type": "text/html",
+                    "value": f"<p>Your Plant-Aid 2FA verification code is: <strong>{otp_code}</strong>.</p><p>This code expires in {settings.OTP_EXPIRE_MINUTES} minutes.</p>",
+                }
+            ],
         }
         try:
             with httpx.Client() as client:
@@ -84,5 +104,6 @@ class OTPService:
         except Exception as e:
             logger.error(f"Failed to send SendGrid email: {e}")
             return self._send_console(email, otp_code, "email")
+
 
 otp_service = OTPService()

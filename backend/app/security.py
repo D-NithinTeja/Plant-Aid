@@ -6,7 +6,7 @@ from typing import Optional
 import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -48,7 +48,7 @@ def constant_time_compare(val_a: str, val_b: str) -> bool:
 
 
 def create_access_token(
-    data: dict, expires_delta: Optional[datetime.timedelta] = None
+    data: dict, expires_delta: datetime.timedelta | None = None
 ) -> str:
     """Generates a signed JWT access token."""
     to_encode = data.copy()
@@ -65,7 +65,7 @@ def create_access_token(
     return encoded_jwt
 
 
-def decode_access_token(token: str) -> Optional[dict]:
+def decode_access_token(token: str) -> dict | None:
     """Decodes and validates JWT access token."""
     try:
         payload = jwt.decode(
@@ -77,8 +77,8 @@ def decode_access_token(token: str) -> Optional[dict]:
 
 
 def get_current_user(
-    auth: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
-    db: Session = Depends(get_db)
+    auth: HTTPAuthorizationCredentials | None = Depends(security_scheme),
+    db: Session = Depends(get_db),
 ) -> User:
     """FastAPI Dependency for authenticating requests via HTTP Bearer JWT token."""
     credentials_exception = HTTPException(

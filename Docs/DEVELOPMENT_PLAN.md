@@ -2,10 +2,10 @@
 
 **Companion Documents:**
 
-- [`Docs/Implementation.md`](file:///c:/Users/Nithin%20Teja/repo/Plant-Aid/Docs/Implementation.md)
-- [`Docs/plan.md`](file:///c:/Users/Nithin%20Teja/repo/Plant-Aid/Docs/plan.md)
-- [`Docs/Software_Requirement_Document.md`](file:///c:/Users/Nithin%20Teja/repo/Plant-Aid/Docs/Software_Requirement_Document.md)
-- [`Docs/Design_Document_And_Structure_Chart.md`](file:///c:/Users/Nithin%20Teja/repo/Plant-Aid/Docs/Design_Document_And_Structure_Chart.md)
+- [`Docs/Implementation.md`](Plant-Aid/Docs/Implementation.md)
+- [`Docs/plan.md`](Plant-Aid/Docs/plan.md)
+- [`Docs/Software_Requirement_Document.md`](Plant-Aid/Docs/Software_Requirement_Document.md)
+- [`Docs/Design_Document_And_Structure_Chart.md`](Plant-Aid/Docs/Design_Document_And_Structure_Chart.md)
 
 ---
 
@@ -46,6 +46,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 ## Phase 1: Environment Setup with `uv` & Dependencies
 
 ### Task 1.1: Initialize `uv` Virtual Environment & Dependencies
+
 - [x] **Goal:** Create a clean, reproducible Python environment managed entirely via `uv`.
 - [x] **Files to touch:**
   - `backend/requirements.txt`
@@ -84,6 +85,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [x] **Acceptance Criteria:** `uv run python -c "import fastapi, torch, cv2, slowapi; print('Environment OK')"` exits with code 0.
 
 ### Task 1.2: Environment Configuration & Defaults
+
 - [x] **Goal:** Create `.env.example` and update `app/config.py` to support all configurable services.
 - [x] **Files to touch:**
   - `backend/.env.example`
@@ -104,6 +106,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 ## Phase 2: Backend Core & Security Refactoring (Module 0.1)
 
 ### Task 2.1: Bcrypt Password Hashing Migration
+
 - [x] **Goal:** Replace custom SHA-256 with industry-standard bcrypt hashing per `Implementation.md` §2.2.
 - [x] **Files to touch:**
   - `backend/app/security.py`
@@ -113,6 +116,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [x] **Acceptance Criteria:** Passwords verified with constant-time bcrypt checks.
 
 ### Task 2.2: User Registration & 409 Conflict Handling
+
 - [x] **Goal:** Enforce unique email/phone constraints with proper HTTP status codes.
 - [x] **Files to touch:**
   - `backend/app/routers/auth.py`
@@ -124,6 +128,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [x] **Acceptance Criteria:** Duplicate registration triggers `409 Conflict`.
 
 ### Task 2.3: 2FA Challenge & Session Token Refactoring
+
 - [x] **Goal:** Align `/auth/login` to return an opaque, signed `session_id` rather than exposing the raw `user_id`.
 - [x] **Files to touch:**
   - `backend/app/routers/auth.py`
@@ -137,6 +142,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [x] **Acceptance Criteria:** `POST /auth/login` yields `{session_id}` without exposing `user_id`.
 
 ### Task 2.4: Pluggable OTP Dispatch Service
+
 - [x] **Goal:** Implement `backend/app/services/otp_service.py` supporting console dev logging, Twilio SMS, and SendGrid Email.
 - [x] **Files to touch:**
   - `backend/app/services/otp_service.py` [NEW]
@@ -148,6 +154,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [x] **Acceptance Criteria:** OTP dispatches according to configured provider.
 
 ### Task 2.5: OTP Verification with Brute-Force Rate Capping
+
 - [x] **Goal:** Implement secure verification in `POST /auth/verify-2fa`.
 - [x] **Files to touch:**
   - `backend/app/routers/auth.py`
@@ -163,6 +170,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [x] **Acceptance Criteria:** 5 failed attempts locks session; valid OTP issues JWT.
 
 ### Task 2.6: Route URL Aliasing
+
 - [x] **Goal:** Support both `/auth/*` and `/api/auth/*` for client flexibility.
 - [x] **Files to touch:**
   - `backend/app/main.py`
@@ -170,6 +178,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [x] **Acceptance Criteria:** `POST /auth/login` and `POST /api/auth/login` resolve to the same handler.
 
 ### Task 2.7: Module 0.1 Unit & Integration Tests
+
 - [x] **Goal:** Test registration, login, 2FA challenge, verification, attempt limits, and `/auth/me`.
 - [x] **Files to touch:**
   - `backend/tests/test_auth.py` [NEW]
@@ -181,6 +190,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 ## Phase 3: Database & Groundnut Remedy Alignment (Module 0.4)
 
 ### Task 3.1: Data Schema Verification & Normalization
+
 - [x] **Goal:** Ensure `diseases` and `remedies` tables align with `ml_config.CLASS_DISPLAY`.
 - [x] **Files to touch:**
   - `backend/app/models.py`
@@ -190,6 +200,7 @@ Phase 7: DevOps, Containerization & Root Documentation
   - Remedy categories: `Organic / Biological`, `Chemical / Fungicide`, `Preventive Cultural Practice`.
 
 ### Task 3.2: Groundnut Disease & Remedy Data Seeder
+
 - [x] **Goal:** Seed the 6 official Groundnut classes audited in `plan.md` into Store D2.
 - [x] **Files to touch:**
   - `backend/seed.py`
@@ -205,6 +216,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [x] **Acceptance Criteria:** Database populated with 6 groundnut classes and 18 remedy records.
 
 ### Task 3.3: Remedy Lookup Endpoints
+
 - [x] **Goal:** Implement endpoints defined in `Implementation.md` §5 & §8.
 - [x] **Files to touch:**
   - `backend/app/routers/remedy.py`
@@ -215,6 +227,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [x] **Acceptance Criteria:** `GET /remedies/1` or `GET /remedies/early_leaf_spot` returns full treatment tabs.
 
 ### Task 3.4: Alembic Migrations Setup
+
 - [x] **Goal:** Configure Alembic for relational migrations (PostgreSQL / SQLite).
 - [x] **Files to touch:**
   - `backend/alembic.ini` [NEW]
@@ -229,6 +242,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [x] **Acceptance Criteria:** Alembic manages schema creation cleanly.
 
 ### Task 3.5: Module 0.4 Verification Tests
+
 - [x] **Goal:** Test remedy lookup by ID and slug.
 - [x] **Files to touch:**
   - `backend/tests/test_remedies.py`
@@ -240,25 +254,26 @@ Phase 7: DevOps, Containerization & Root Documentation
 ## Phase 4: S3 Media Storage & History Management (Module 0.5)
 
 ### Task 4.1: S3 Presigned URL & Service Refactoring
-
-- [ ] **Goal:** Generate time-limited presigned GET URLs (15-min TTL) for thumbnails per `Implementation.md` §6.2.
-- [ ] **Files to touch:**
+- [x] **Goal:** Generate time-limited presigned GET URLs (15-min TTL) for thumbnails per `Implementation.md` §6.2.
+- [x] **Files to touch:**
   - `backend/app/services/storage.py`
-- [ ] **Details:**
+  - `backend/app/config.py`
+- [x] **Details:**
   - Add `generate_presigned_url(s3_uri: str, expiration_seconds: int = 900) -> str`.
   - If using local storage fallback: return static local URL `/uploads/{filename}`.
   - S3 key format: `frames/{user_id}/{yyyy}/{mm}/{dd}/{frame_id}.jpg`.
-- [ ] **Acceptance Criteria:** History endpoints return accessible presigned image URLs.
+- [x] **Acceptance Criteria:** History endpoints return accessible presigned image URLs.
 
 ### Task 4.2: S3 Compensation & Rollback
-
-- [ ] **Goal:** Prevent orphaned S3 objects if database transaction fails.
-- [ ] **Files to touch:**
+- [x] **Goal:** Prevent orphaned S3 objects if database transaction fails.
+- [x] **Files to touch:**
   - `backend/app/services/storage.py`
-- [ ] **Details:**
+  - `backend/app/routers/inference.py`
+  - `backend/app/routers/history.py`
+- [x] **Details:**
   - Add `delete_object(s3_uri: str) -> None`.
   - Wrap diagnosis logging in try/except; delete S3 file if DB commit fails.
-- [ ] **Acceptance Criteria:** Failed DB writes remove the uploaded S3 object.
+- [x] **Acceptance Criteria:** Failed DB writes remove the uploaded S3 object.
 
 ### Task 4.3: Explicit Diagnosis Logging Endpoint
 
