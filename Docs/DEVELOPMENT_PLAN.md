@@ -254,6 +254,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 ## Phase 4: S3 Media Storage & History Management (Module 0.5)
 
 ### Task 4.1: S3 Presigned URL & Service Refactoring
+
 - [x] **Goal:** Generate time-limited presigned GET URLs (15-min TTL) for thumbnails per `Implementation.md` §6.2.
 - [x] **Files to touch:**
   - `backend/app/services/storage.py`
@@ -265,6 +266,7 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [x] **Acceptance Criteria:** History endpoints return accessible presigned image URLs.
 
 ### Task 4.2: S3 Compensation & Rollback
+
 - [x] **Goal:** Prevent orphaned S3 objects if database transaction fails.
 - [x] **Files to touch:**
   - `backend/app/services/storage.py`
@@ -276,34 +278,31 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [x] **Acceptance Criteria:** Failed DB writes remove the uploaded S3 object.
 
 ### Task 4.3: Explicit Diagnosis Logging Endpoint
-
-- [ ] **Goal:** Implement `POST /history` per `Implementation.md` §6.2 (log diagnosis on user button click, not on every live polled frame).
-- [ ] **Files to touch:**
+- [x] **Goal:** Implement `POST /history` per `Implementation.md` §6.2 (log diagnosis on user button click, not on every live polled frame).
+- [x] **Files to touch:**
   - `backend/app/routers/history.py`
   - `backend/app/schemas.py`
-- [ ] **Details:**
+- [x] **Details:**
   - Payload: `{ disease_id, confidence_score, s3_storage_uri, bounding_box }`.
   - Writes to D3 `diagnosis_history` table.
   - Returns `{"log_id": int, "status": "confirmed", "timestamp": str}`.
-- [ ] **Acceptance Criteria:** Only explicit user logging calls create historical records.
+- [x] **Acceptance Criteria:** Only explicit user logging calls create historical records.
 
 ### Task 4.4: Paginated History Dashboard
-
-- [ ] **Goal:** Implement `GET /history` with pagination, ordering, and filters.
-- [ ] **Files to touch:**
+- [x] **Goal:** Implement `GET /history` with pagination, ordering, and filters.
+- [x] **Files to touch:**
   - `backend/app/routers/history.py`
-- [ ] **Details:**
+- [x] **Details:**
   - Query params: `page` (default 1), `limit` (default 20), `disease_id` (optional), `date_from` (optional), `date_to` (optional).
   - Enriches records with human-readable disease name and presigned image thumbnail URL.
-- [ ] **Acceptance Criteria:** `GET /history?page=1&limit=10` returns paginated, enriched records.
+- [x] **Acceptance Criteria:** `GET /history?page=1&limit=10` returns paginated, enriched records.
 
 ### Task 4.5: Module 0.5 Verification Tests
-
-- [ ] **Goal:** Automated tests for history logging, presigned URL creation, pagination, and deletion.
-- [ ] **Files to touch:**
+- [x] **Goal:** Automated tests for history logging, presigned URL creation, pagination, and deletion.
+- [x] **Files to touch:**
   - `backend/tests/test_history.py` [NEW]
-- [ ] **Command:** `uv run pytest tests/test_history.py`
-- [ ] **Acceptance Criteria:** All history tests pass.
+- [x] **Command:** `uv run pytest tests/test_history.py`
+- [x] **Acceptance Criteria:** All history tests pass.
 
 ---
 

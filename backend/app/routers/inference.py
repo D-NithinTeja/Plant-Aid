@@ -120,7 +120,7 @@ async def predict_plant_disease(
             storage_service.delete_object(s3_uri)
             raise HTTPException(
                 status_code=500,
-                detail="Database persistence failed. Media upload was rolled back."
+                detail="Database persistence failed. Media upload was rolled back.",
             )
 
     bbox = (
