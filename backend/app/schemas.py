@@ -124,6 +124,7 @@ class InferenceResponse(BaseModel):
     plant_species: str | None = None
     scientific_name: str | None = None
     bounding_box: BoundingBoxSchema | None = None
+    cam_heatmap_b64: str | None = None
     frame_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     is_healthy_or_uncertain: bool = False
     s3_storage_uri: str | None = None

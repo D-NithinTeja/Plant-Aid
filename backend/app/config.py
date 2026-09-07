@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     SENDGRID_FROM_EMAIL: str = "no-reply@plant-aid.org"
 
     # ML Engine Settings
-    ML_DEVICE: str = "cpu"  # Explicit CPU mode
+    ML_DEVICE: str = "auto"  # "auto" (cuda if available else cpu) | "cuda" | "cpu"
     ML_CONFIDENCE_THRESHOLD: float = 0.55  # Tau = 0.55 per Implementation.md §4.2
     ML_MODEL_PATH: str = os.path.join(
         os.path.dirname(os.path.dirname(__file__)), "ml", "convnext_tiny_groundnut.ts"

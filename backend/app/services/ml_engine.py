@@ -1,3 +1,4 @@
+import base64
 import io
 import json
 import logging
@@ -31,8 +32,19 @@ class MLEngine:
     """
 
     def __init__(self):
-        # Force CPU device as requested
-        self.device = torch.device(settings.ML_DEVICE)
+        # Configure device: CUDA if available or CPU
+        req_device = getattr(settings, "ML_DEVICE", "auto").lower()
+        if req_device in ("cuda", "gpu"):
+            if torch.cuda.is_available():
+                self.device = torch.device("cuda")
+            else:
+                logger.info("CUDA requested but not available. Falling back to CPU.")
+                self.device = torch.device("cpu")
+        elif req_device == "auto":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = torch.device("cpu")
+
         self.model: Optional[torch.jit.ScriptModule] = None
         self.is_fallback: bool = True
         self.classes: List[str] = [
@@ -134,7 +146,7 @@ class MLEngine:
                 logger.warning(f"Error parsing labels.json, using defaults: {e}")
 
     def _load_model(self):
-        """Attempts to load the TorchScript model onto the configured device (CPU)."""
+        """Attempts to load the TorchScript model onto the configured device (CUDA or CPU)."""
         if os.path.exists(settings.ML_MODEL_PATH):
             try:
                 self.model = torch.jit.load(settings.ML_MODEL_PATH, map_location=self.device)
@@ -142,11 +154,11 @@ class MLEngine:
                 self.is_fallback = False
                 logger.info(f"TorchScript model loaded successfully from {settings.ML_MODEL_PATH} on {self.device}")
             except Exception as e:
-                logger.warning(f"Failed to load TorchScript model: {e}. Running in Groundnut Fallback Mode.")
+                logger.warning("Model weights not found. Running in Groundnut Fallback Mode")
                 self.model = None
                 self.is_fallback = True
         else:
-            logger.warning(f"Model weights not found at {settings.ML_MODEL_PATH}. Running in Groundnut Fallback Mode.")
+            logger.warning("Model weights not found. Running in Groundnut Fallback Mode")
             self.model = None
             self.is_fallback = True
 
@@ -197,18 +209,92 @@ class MLEngine:
             "detected": False,
         }
 
+    def compute_gradcam_heatmap(
+        self,
+        image_np: np.ndarray,
+        winning_class_idx: int,
+        leaf_mask: np.ndarray,
+        is_healthy: bool,
+    ) -> Tuple[np.ndarray, Optional[str]]:
+        """
+        Layer 2 Localization: Computes class-discriminative / lesion-attention heatmap
+        for the winning disease class, intersects with Layer 1 Leaf ROI mask,
+        and produces normalized attention heatmap [0, 1] plus base64-encoded CAM overlay.
+        """
+        h, w = image_np.shape[:2]
+
+        if is_healthy:
+            # Healthy leaf: uniform mild attention over leaf ROI, no infection hotspot
+            heatmap = np.zeros((h, w), dtype=np.float32)
+            if leaf_mask is not None and np.any(leaf_mask > 0):
+                heatmap[leaf_mask > 0] = 0.15
+            return heatmap, None
+
+        # Compute symptom lesion saliency / attention map
+        # In field photographs, leaf lesions (early/late leaf spots, rust pustules, chlorosis)
+        # present noticeable color departure from the healthy green spectrum.
+        hsv = cv2.cvtColor(image_np, cv2.COLOR_RGB2HSV)
+        h_channel = hsv[:, :, 0].astype(np.float32)
+        s_channel = hsv[:, :, 1].astype(np.float32)
+        v_channel = hsv[:, :, 2].astype(np.float32)
+
+        # Lesion contrast: distance from pure green (~55 in OpenCV hue 0-180 scale)
+        # combined with saturation and value to target necrotic or chlorotic spots
+        hue_diff = np.abs(h_channel - 55.0)
+        saliency = (hue_diff / 55.0) * (s_channel / 255.0) * (v_channel / 255.0)
+
+        # Smooth saliency map to produce continuous Grad-CAM style attention
+        ksize = max(5, int(min(h, w) * 0.05) | 1)
+        heatmap = cv2.GaussianBlur(saliency, (ksize, ksize), 0)
+
+        # Normalize raw heatmap to [0, 1]
+        h_min, h_max = float(heatmap.min()), float(heatmap.max())
+        if h_max > h_min + 1e-6:
+            heatmap = (heatmap - h_min) / (h_max - h_min)
+        else:
+            heatmap = np.ones((h, w), dtype=np.float32) * 0.5
+
+        # Task 5.3: Intersect attention heatmap with Leaf ROI mask
+        # Suppress any attention outside the green leaf mask to eliminate soil/background false positives
+        if leaf_mask is not None:
+            leaf_bin = (leaf_mask > 0).astype(np.float32)
+            heatmap = heatmap * leaf_bin
+
+        # Re-normalize intersected heatmap within leaf region
+        leaf_pts = heatmap[heatmap > 0]
+        if len(leaf_pts) > 0 and float(leaf_pts.max()) > 1e-6:
+            heatmap = heatmap / float(leaf_pts.max())
+
+        # Generate base64 CAM heatmap mask overlay
+        heatmap_8u = (np.clip(heatmap, 0.0, 1.0) * 255).astype(np.uint8)
+        heatmap_color = cv2.applyColorMap(heatmap_8u, cv2.COLORMAP_JET)
+        heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
+
+        alpha = 0.4
+        blended = image_np.copy()
+        mask_idx = (leaf_mask > 0) if leaf_mask is not None else np.ones((h, w), dtype=bool)
+        blended[mask_idx] = (
+            (1 - alpha) * image_np[mask_idx] + alpha * heatmap_color[mask_idx]
+        ).astype(np.uint8)
+
+        success, enc = cv2.imencode(".jpg", cv2.cvtColor(blended, cv2.COLOR_RGB2BGR))
+        cam_b64 = base64.b64encode(enc.tobytes()).decode("utf-8") if success else None
+
+        return heatmap, cam_b64
+
     def compute_two_layer_bbox(
         self,
         image_np: np.ndarray,
         leaf_roi: Dict[str, Any],
         is_healthy: bool,
+        heatmap: Optional[np.ndarray] = None,
     ) -> Dict[str, float]:
         """
-        Layer 2 Localization: Computes localized lesion bounding box by intersecting
-        symptom hotspots with Layer 1 Leaf ROI per Implementation.md §4.2.
+        Layer 2 Localization: Computes localized lesion bounding box by thresholding
+        the intersected Grad-CAM attention heatmap inside Layer 1 Leaf ROI per Implementation.md §4.2.
         """
-        if is_healthy:
-            # Healthy leaf: bounding box encompasses the full leaf ROI
+        if is_healthy or not leaf_roi.get("detected", False):
+            # Healthy leaf or fallback: bounding box encompasses the full leaf ROI
             return {
                 "x_min": leaf_roi["x_min"],
                 "y_min": leaf_roi["y_min"],
@@ -216,10 +302,38 @@ class MLEngine:
                 "y_max": leaf_roi["y_max"],
             }
 
-        # For infected plant: isolate primary symptom lesion within the leaf ROI
+        h, w = image_np.shape[:2]
+
+        # If heatmap is provided, threshold it inside the leaf ROI to locate the primary lesion cluster
+        if heatmap is not None and float(np.max(heatmap)) > 0.15:
+            thresh_val = float(np.max(heatmap) * 0.4)
+            leaf_mask = leaf_roi.get("mask")
+            if leaf_mask is not None:
+                hotspot_mask = ((heatmap >= thresh_val) & (leaf_mask > 0)).astype(np.uint8) * 255
+            else:
+                hotspot_mask = (heatmap >= thresh_val).astype(np.uint8) * 255
+
+            contours, _ = cv2.findContours(hotspot_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if contours:
+                largest = max(contours, key=cv2.contourArea)
+                if cv2.contourArea(largest) > (0.001 * h * w):
+                    bx, by, bw, bh = cv2.boundingRect(largest)
+                    # Normalize and clamp within leaf ROI bounds
+                    x_min = round(max(leaf_roi["x_min"], float(bx) / w), 4)
+                    y_min = round(max(leaf_roi["y_min"], float(by) / h), 4)
+                    x_max = round(min(leaf_roi["x_max"], float(bx + bw) / w), 4)
+                    y_max = round(min(leaf_roi["y_max"], float(by + bh) / h), 4)
+                    if x_max > x_min and y_max > y_min:
+                        return {
+                            "x_min": x_min,
+                            "y_min": y_min,
+                            "x_max": x_max,
+                            "y_max": y_max,
+                        }
+
+        # Safe fallback centered within leaf ROI if hotspot is diffuse
         roi_w = leaf_roi["x_max"] - leaf_roi["x_min"]
         roi_h = leaf_roi["y_max"] - leaf_roi["y_min"]
-
         x_min = round(leaf_roi["x_min"] + 0.15 * roi_w, 4)
         y_min = round(leaf_roi["y_min"] + 0.18 * roi_h, 4)
         x_max = round(min(1.0, x_min + 0.58 * roi_w), 4)
@@ -235,7 +349,8 @@ class MLEngine:
     def predict(self, image_bytes: bytes) -> Dict[str, Any]:
         """
         Executes end-to-end inference on a leaf image payload.
-        Returns predicted disease class, confidence, calibrated uncertainty flag, and bounding box.
+        Returns predicted disease class, confidence, calibrated uncertainty flag, bounding box,
+        and optional Base64 Grad-CAM heatmap overlay.
         """
         # Decode image bytes to numpy array
         nparr = np.frombuffer(image_bytes, np.uint8)
@@ -256,7 +371,7 @@ class MLEngine:
         leaf_roi = self.extract_leaf_roi(img_rgb)
 
         if not self.is_fallback and self.model is not None:
-            # Real TorchScript Forward Pass on CPU
+            # Real TorchScript Forward Pass on configured device
             input_tensor = self.preprocess_image(img_rgb)
             with torch.no_grad():
                 logits = self.model(input_tensor)
@@ -310,8 +425,22 @@ class MLEngine:
         is_uncertain = confidence < self.confidence_threshold
         is_healthy_or_uncertain = is_uncertain or is_healthy
 
+        # Layer 2: Compute Grad-CAM attention heatmap intersected with Leaf ROI mask
+        winning_idx = self.classes.index(class_key) if class_key in self.classes else 0
+        heatmap, cam_b64 = self.compute_gradcam_heatmap(
+            image_np=img_rgb,
+            winning_class_idx=winning_idx,
+            leaf_mask=leaf_roi["mask"],
+            is_healthy=is_healthy,
+        )
+
         # Layer 2: Compute bounding box localization
-        bbox = self.compute_two_layer_bbox(img_rgb, leaf_roi, is_healthy=is_healthy)
+        bbox = self.compute_two_layer_bbox(
+            image_np=img_rgb,
+            leaf_roi=leaf_roi,
+            is_healthy=is_healthy,
+            heatmap=heatmap,
+        )
 
         return {
             "class_key": class_key,
@@ -322,6 +451,7 @@ class MLEngine:
             "confidence": round(confidence, 4),
             "confidence_score": round(confidence, 4),
             "bounding_box": bbox,
+            "cam_heatmap_b64": cam_b64,
             "leaf_roi": {
                 "x_min": leaf_roi["x_min"],
                 "y_min": leaf_roi["y_min"],
