@@ -1,12 +1,13 @@
 import datetime
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
+from app.limiter import limiter
 from app.models import User
 from app.schemas import (
     TokenResponse,
@@ -67,7 +68,10 @@ def register_user(user_in: UserRegister, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TwoFactorChallengeResponse)
-def login(credentials: UserLogin, db: Session = Depends(get_db)):
+@limiter.limit(settings.RATE_LIMIT_LOGIN)
+def login(
+    request: Request, credentials: UserLogin, db: Session = Depends(get_db)
+):
     """Validates login credentials and initiates 2FA challenge returning an opaque session_id."""
     identifier = credentials.get_identifier()
     if not identifier:
