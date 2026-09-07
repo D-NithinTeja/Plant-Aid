@@ -3,7 +3,7 @@ import { User, Mail, Phone, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import Logo from '../common/Logo';
 import { authService } from '../../services/auth';
 
-export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegisterSuccess }) {
+export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onChallenge2FA, onRegisterSuccess }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -26,7 +26,14 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin, onRegi
         phone_number: phone || undefined,
         password: password,
       });
-      onRegisterSuccess();
+
+      // User flow requires OTP verification right after signing up
+      const loginData = await authService.login(email, password);
+      if (loginData.requires_2fa) {
+        onChallenge2FA(loginData.session_id, email);
+      } else {
+        onRegisterSuccess();
+      }
     } catch (err) {
       const msg = err.response?.data?.detail || 'Registration failed. Please check your details.';
       setError(msg);

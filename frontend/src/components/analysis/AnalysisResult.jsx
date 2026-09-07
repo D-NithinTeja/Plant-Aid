@@ -40,6 +40,15 @@ export default function AnalysisResult({
         'Common during high relative humidity and warm foliage temperatures',
       ];
 
+  let bbox = diagnosis.bounding_box;
+  if (!bbox && diagnosis.bounding_box_json) {
+    try {
+      bbox = typeof diagnosis.bounding_box_json === 'string' ? JSON.parse(diagnosis.bounding_box_json) : diagnosis.bounding_box_json;
+    } catch {
+      bbox = null;
+    }
+  }
+
   const handleSaveToHistory = async () => {
     if (saved || saving) return;
     setSaving(true);
@@ -49,7 +58,7 @@ export default function AnalysisResult({
         diagnosis.disease_name,
         diagnosis.confidence || diagnosis.confidence_score || 0.9,
         diagnosis.s3_storage_uri,
-        diagnosis.bounding_box
+        bbox
       );
       setSaved(true);
     } catch {
@@ -99,14 +108,14 @@ export default function AnalysisResult({
           )}
 
           {/* Scaled Bounding Box Outline */}
-          {diagnosis.bounding_box && (
+          {bbox && (
             <div
               className="absolute border-2 border-emerald-400 bg-emerald-400/20 rounded-lg pointer-events-none"
               style={{
-                left: `${(diagnosis.bounding_box.x_min || 0.2) * 100}%`,
-                top: `${(diagnosis.bounding_box.y_min || 0.2) * 100}%`,
-                width: `${((diagnosis.bounding_box.x_max || 0.8) - (diagnosis.bounding_box.x_min || 0.2)) * 100}%`,
-                height: `${((diagnosis.bounding_box.y_max || 0.8) - (diagnosis.bounding_box.y_min || 0.2)) * 100}%`,
+                left: `${(bbox.x_min || 0.2) * 100}%`,
+                top: `${(bbox.y_min || 0.2) * 100}%`,
+                width: `${((bbox.x_max || 0.8) - (bbox.x_min || 0.2)) * 100}%`,
+                height: `${((bbox.y_max || 0.8) - (bbox.y_min || 0.2)) * 100}%`,
               }}
             />
           )}
@@ -132,19 +141,29 @@ export default function AnalysisResult({
         </div>
       </div>
 
-      {/* Confidence Section */}
+      {/* Confidence Section with Score Evaluation */}
       <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm space-y-2">
         <div className="flex justify-between items-center text-xs md:text-sm font-semibold">
-          <span className="text-slate-700 font-bold">Confidence</span>
+          <span className="text-slate-700 font-bold">Confidence Score</span>
           <span className="text-slate-900 font-extrabold">{confidencePercent}%</span>
         </div>
 
         {/* Smooth Emerald Green Progress Bar */}
         <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5">
           <div
-            className="bg-brand-700 h-full rounded-full transition-all duration-700 ease-out shadow-sm"
+            className={`h-full rounded-full transition-all duration-700 ease-out shadow-sm ${
+              confidencePercent >= 85 ? 'bg-brand-700' : confidencePercent >= 55 ? 'bg-amber-500' : 'bg-rose-500'
+            }`}
             style={{ width: `${confidencePercent}%` }}
           />
+        </div>
+
+        {/* Score Assessment */}
+        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+          <span>Diagnostic Status</span>
+          <span className={`font-semibold ${confidencePercent >= 85 ? 'text-brand-800' : confidencePercent >= 55 ? 'text-amber-700' : 'text-rose-600'}`}>
+            {confidencePercent >= 85 ? 'High Confidence (Verified symptoms)' : confidencePercent >= 55 ? 'Moderate Confidence' : 'Low Confidence (Uncertain - Re-scan)'}
+          </span>
         </div>
       </div>
 

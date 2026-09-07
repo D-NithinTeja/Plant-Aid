@@ -219,10 +219,8 @@ export default function App() {
         isOpen={isRegisterOpen}
         onClose={() => setIsRegisterOpen(false)}
         onSwitchToLogin={handleOpenLogin}
-        onRegisterSuccess={() => {
-          setIsRegisterOpen(false);
-          setIsLoginOpen(true);
-        }}
+        onChallenge2FA={handleChallenge2FA}
+        onRegisterSuccess={handleAuthSuccess}
       />
 
       <OTPEntryModal

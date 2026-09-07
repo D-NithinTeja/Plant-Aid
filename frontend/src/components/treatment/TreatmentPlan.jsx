@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, 
   ChevronDown, 
@@ -12,6 +12,7 @@ import {
   Sprout
 } from 'lucide-react';
 import Badge from '../common/Badge';
+import { remedyService } from '../../services/remedies';
 
 export default function TreatmentPlan({ diagnosis, onBack }) {
   const [openSections, setOpenSections] = useState({
@@ -21,6 +22,22 @@ export default function TreatmentPlan({ diagnosis, onBack }) {
     environmental: false,
     avoid: false,
   });
+  const [liveRemedies, setLiveRemedies] = useState(diagnosis?.remedies || []);
+
+  useEffect(() => {
+    if (diagnosis?.remedies && diagnosis.remedies.length > 0) {
+      setLiveRemedies(diagnosis.remedies);
+      return;
+    }
+    const diseaseId = diagnosis?.disease_id || diagnosis?.class_key || 'early_leaf_spot';
+    remedyService.getRemedies(diseaseId).then((data) => {
+      if (data && data.length > 0) {
+        setLiveRemedies(data);
+      }
+    }).catch(() => {
+      // Graceful fallback
+    });
+  }, [diagnosis]);
 
   const toggleSection = (sec) => {
     setOpenSections((prev) => ({ ...prev, [sec]: !prev[sec] }));
@@ -31,7 +48,7 @@ export default function TreatmentPlan({ diagnosis, onBack }) {
   const severity = diagnosis?.severity || 'Moderate';
 
   // Seeded remedies fallback if diagnosis.remedies is empty
-  const remedies = diagnosis?.remedies || [];
+  const remedies = liveRemedies.length > 0 ? liveRemedies : (diagnosis?.remedies || []);
   const organicRemedies = remedies.filter((r) => r.category === 'organic' || r.category?.includes('bio'));
   const chemicalRemedies = remedies.filter((r) => r.category === 'chemical' || r.category?.includes('fungicide'));
   const culturalRemedies = remedies.filter((r) => r.category === 'cultural' || r.category?.includes('prevent'));
