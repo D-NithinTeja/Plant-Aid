@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plant Aid | Frontend Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --ink:#193027; --muted:#6c7b73; --cream:#f6f3e9; --surface:#fffdf7; --green:#2f6b4f; --green-dark:#214c39; --sage:#dce9dc; --line:#e3e4d9; --amber:#d98b3a; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--cream); font-family:'DM Sans',sans-serif; }
+    button,input { font:inherit; }
+    .shell { max-width:1180px; margin:auto; padding:24px 28px 48px; }
+    header { display:flex; align-items:center; justify-content:space-between; padding:8px 0 30px; }
+    .brand { display:flex; align-items:center; gap:12px; font-weight:700; font-size:20px; }
+    .logo { width:40px; height:40px; border-radius:13px; background:var(--green); color:white; display:grid; place-items:center; font-size:21px; }
+    nav { display:flex; gap:28px; color:var(--muted); font-size:14px; }
+    nav a { cursor:pointer; }
+    .profile { width:40px; height:40px; border-radius:50%; background:#c8d9c8; display:grid; place-items:center; font-weight:700; }
+    .hero { display:grid; grid-template-columns:1.25fr .75fr; gap:24px; margin-bottom:24px; }
+    .hero-card { min-height:330px; border-radius:28px; padding:42px; background:var(--green-dark); color:white; position:relative; overflow:hidden; }
+    .hero-card:after { content:'✿'; position:absolute; right:20px; bottom:-65px; font-size:270px; color:rgba(255,255,255,.06); }
+    .eyebrow { text-transform:uppercase; letter-spacing:.13em; font-size:11px; opacity:.7; font-weight:700; }
+    h1 { font:700 46px/1.08 'Playfair Display',serif; margin:14px 0; max-width:560px; }
+    .hero-card p { max-width:500px; color:#dbe8de; line-height:1.6; }
+    .primary { border:0; background:white; color:var(--green-dark); border-radius:12px; padding:13px 19px; font-weight:700; margin-top:12px; cursor:pointer; }
+    .scan-card { background:#dbe8dc; border-radius:28px; padding:28px; display:flex; flex-direction:column; justify-content:space-between; }
+    .scan-illustration { height:155px; border-radius:20px; background:linear-gradient(135deg,#bdd5bd,#eef2df); display:grid; place-items:center; font-size:76px; }
+    .scan-card h2 { margin:18px 0 5px; font:700 25px 'Playfair Display',serif; }
+    .scan-card p { margin:0; color:var(--muted); font-size:14px; }
+    .grid { display:grid; grid-template-columns:1.05fr 1fr 1fr; gap:18px; }
+    .card { background:var(--surface); border:1px solid var(--line); border-radius:22px; padding:23px; }
+    .card h3 { margin:0 0 5px; font-size:17px; }
+    .card .sub { color:var(--muted); font-size:13px; margin-bottom:18px; }
+    .upload { border:1.5px dashed #b7c6b8; border-radius:15px; min-height:130px; display:grid; place-items:center; text-align:center; color:var(--muted); cursor:pointer; }
+    .upload strong { display:block; color:var(--green); margin-bottom:5px; }
+    .result { display:flex; gap:14px; align-items:center; }
+    .plant-thumb { width:76px; height:76px; border-radius:16px; background:#d7e6d5; display:grid; place-items:center; font-size:42px; }
+    .confidence { margin-top:14px; height:7px; background:#e5e9df; border-radius:8px; overflow:hidden; }
+    .confidence span { display:block; width:92%; height:100%; background:var(--green); }
+    .tag { display:inline-block; margin-top:10px; padding:5px 9px; border-radius:99px; background:#e6f0e4; color:var(--green); font-size:11px; font-weight:700; }
+    .history { grid-column:1 / -1; }
+    .history-row { display:grid; grid-template-columns:1.5fr 1fr 1fr auto; padding:14px 0; border-top:1px solid var(--line); font-size:13px; align-items:center; }
+    .status { color:#b56b22; font-weight:700; }
+    .link { color:var(--green); font-weight:700; cursor:pointer; }
+    .notice { display:flex; gap:12px; padding:13px 15px; background:#f7ead8; border-radius:13px; color:#795027; font-size:12px; margin-top:16px; }
+    @media(max-width:800px){ .shell{padding:18px 16px 36px}.hero{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}nav{display:none}h1{font-size:38px}.history{grid-column:1/-1} }
+    @media(max-width:520px){.grid{grid-template-columns:1fr}.history-row{grid-template-columns:1fr 1fr;gap:7px}.hero-card{padding:30px;min-height:360px}.scan-card{min-height:300px}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand"><div class="logo">⌁</div>Plant Aid</div>
+      <nav><a>Dashboard</a><a>Scan plant</a><a>History</a><a>Learn</a></nav>
+      <div class="profile">NT</div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">Plant health companion</div>
+        <h1>Know your plant.<br>Care for it better.</h1>
+        <p>Identify visible plant diseases, understand what may be affecting your crop, and find practical treatment guidance in one place.</p>
+        <button class="primary" onclick="document.getElementById('upload').scrollIntoView({behavior:'smooth'})">Start a diagnosis →</button>
+      </div>
+      <div class="scan-card">
+        <div class="scan-illustration">🌿</div>
+        <div><h2>Live plant scan</h2><p>Camera-based diagnosis is designed for near real-time feedback.</p><button class="primary" style="background:var(--green);color:white" onclick="alert('Prototype only: camera integration is not connected yet.')">Open camera</button></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card" id="upload">
+        <h3>Upload a plant photo</h3><div class="sub">JPEG or PNG · best with a clear leaf close-up</div>
+        <div class="upload" onclick="alert('Prototype only: file upload is not connected yet.')"><div><strong>＋ Choose image</strong>or drag and drop here</div></div>
+      </div>
+      <div class="card">
+        <h3>Latest diagnosis</h3><div class="sub">Demo result · 2 minutes ago</div>
+        <div class="result"><div class="plant-thumb">🍃</div><div><strong>Tomato · Leaf spot</strong><br><span style="color:var(--muted);font-size:12px">Likely fungal infection</span><br><span class="tag">92% confidence</span></div></div>
+        <div class="confidence"><span></span></div>
+        <div class="notice">⚠ <span>Review treatment guidance before applying any remedy.</span></div>
+      </div>
+      <div class="card">
+        <h3>Care guidance</h3><div class="sub">For the latest diagnosis</div>
+        <div style="display:grid;gap:12px;font-size:13px"><div>🌱 <strong>Remove</strong><br><span style="color:var(--muted);padding-left:24px">Affected leaves and dispose safely.</span></div><div>💧 <strong>Water carefully</strong><br><span style="color:var(--muted);padding-left:24px">Keep foliage dry when possible.</span></div><div>☀️ <strong>Improve airflow</strong><br><span style="color:var(--muted);padding-left:24px">Give plants adequate spacing.</span></div></div>
+        <div class="link" style="margin-top:17px">View full treatment plan →</div>
+      </div>
+      <div class="card history">
+        <h3>Diagnosis history</h3><div class="sub">Your recent plant health records</div>
+        <div class="history-row"><strong>Plant</strong><strong>Diagnosis</strong><strong>Date</strong><strong></strong></div>
+        <div class="history-row"><span>🍅 Tomato</span><span class="status">Leaf spot</span><span>Sep 7, 2026</span><span class="link">View</span></div>
+        <div class="history-row"><span>🌶️ Chilli</span><span>Healthy</span><span>Sep 3, 2026</span><span class="link">View</span></div>
+        <div class="history-row"><span>🥒 Cucumber</span><span class="status">Powdery mildew</span><span>Aug 29, 2026</span><span class="link">View</span></div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
