@@ -1,11 +1,15 @@
 import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
 from app.database import Base, engine
+from app.limiter import limiter
 from app.routers.auth import router as auth_router
 from app.routers.history import router as history_router
 from app.routers.inference import router as inference_router
@@ -21,6 +25,10 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# SlowAPI Rate Limiting setup
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configure CORS Middleware
 app.add_middleware(
@@ -39,12 +47,13 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 app.include_router(auth_router, prefix="/api/auth")
 app.include_router(remedy_router, prefix="/api")
 app.include_router(history_router, prefix="/api/history")
-app.include_router(inference_router)
+app.include_router(inference_router, prefix="/api/inference")
 
 # Backwards-compatibility aliases (hidden from Swagger UI)
 app.include_router(auth_router, prefix="/auth", include_in_schema=False)
 app.include_router(remedy_router, include_in_schema=False)
 app.include_router(history_router, prefix="/history", include_in_schema=False)
+app.include_router(inference_router, prefix="/inference", include_in_schema=False)
 
 
 @app.get("/", tags=["System"])

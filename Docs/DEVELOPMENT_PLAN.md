@@ -309,55 +309,50 @@ Phase 7: DevOps, Containerization & Root Documentation
 ## Phase 5: ML Inference Engine & Two-Layer Localization (Module 0.3)
 
 ### Task 5.1: `ml_engine.py` Singleton & Fallback Architecture
-
-- [ ] **Goal:** Create production inference service loading TorchScript model and labels.
-- [ ] **Files to touch:**
+- [x] **Goal:** Create production inference service loading TorchScript model and labels.
+- [x] **Files to touch:**
   - `backend/app/services/ml_engine.py` [NEW]
-- [ ] **Details:**
+- [x] **Details:**
   - Checks for `backend/ml/convnext_tiny_groundnut.ts` and `backend/ml/labels.json`.
   - If files exist: load TorchScript model once at startup (`torch.jit.load`), set to `eval()`, run on CUDA if available or CPU.
   - If files do NOT exist: log warning `Model weights not found. Running in Groundnut Fallback Mode` and simulate predictions matching the 6 groundnut classes.
-- [ ] **Acceptance Criteria:** Engine loads cleanly on both CPU and GPU without crashing if weights are absent.
+- [x] **Acceptance Criteria:** Engine loads cleanly on both CPU and GPU without crashing if weights are absent.
 
 ### Task 5.2: Layer 1 Localization — Leaf ROI (HSV Mask)
-
-- [ ] **Goal:** Extract green-dominance leaf region using OpenCV per `Implementation.md` §4.2.
-- [ ] **Files to touch:**
+- [x] **Goal:** Extract green-dominance leaf region using OpenCV per `Implementation.md` §4.2.
+- [x] **Files to touch:**
   - `backend/app/services/ml_engine.py`
-- [ ] **Details:**
+- [x] **Details:**
   - Convert image to HSV.
   - Threshold green spectrum `(H: 25-85, S: 40-255, V: 40-255)`.
   - Find contours; extract bounding box of largest connected component.
   - Normalize coordinates to $[0, 1]$ (`x_min, y_min, x_max, y_max`).
-- [ ] **Acceptance Criteria:** Generates tight leaf bounding box coordinates from raw frame.
+- [x] **Acceptance Criteria:** Generates tight leaf bounding box coordinates from raw frame.
 
 ### Task 5.3: Layer 2 Localization — Grad-CAM Heatmap
-
-- [ ] **Goal:** Compute Grad-CAM on the final conv stage for suspected infection region.
-- [ ] **Files to touch:**
+- [x] **Goal:** Compute Grad-CAM on the final conv stage for suspected infection region.
+- [x] **Files to touch:**
   - `backend/app/services/ml_engine.py`
-- [ ] **Details:**
+- [x] **Details:**
   - Run Grad-CAM only for the winning disease class.
   - Intersect attention heatmap with Leaf ROI mask.
   - Produce formatted bounding box $[x_{min}, y_{min}, x_{max}, y_{max}]$ and optional base64 CAM heatmap mask.
-- [ ] **Acceptance Criteria:** Computes normalized attention coordinates within the latency budget.
+- [x] **Acceptance Criteria:** Computes normalized attention coordinates within the latency budget.
 
 ### Task 5.4: Confidence Threshold Calibration ($\tau = 0.55$)
-
-- [ ] **Goal:** Flag low-confidence frames per `Implementation.md` §4.2.
-- [ ] **Files to touch:**
+- [x] **Goal:** Flag low-confidence frames per `Implementation.md` §4.2.
+- [x] **Files to touch:**
   - `backend/app/services/ml_engine.py`
   - `backend/app/schemas.py`
-- [ ] **Details:**
+- [x] **Details:**
   - If `max_probability < 0.55`: set `is_healthy_or_uncertain = True`.
-- [ ] **Acceptance Criteria:** Ambiguous frames flagged without logging false disease alarms.
+- [x] **Acceptance Criteria:** Ambiguous frames flagged without logging false disease alarms.
 
 ### Task 5.5: `POST /inference/frame` Endpoint Implementation
-
-- [ ] **Goal:** Build endpoint matching `Implementation.md` §4.3 contract.
-- [ ] **Files to touch:**
+- [x] **Goal:** Build endpoint matching `Implementation.md` §4.3 contract.
+- [x] **Files to touch:**
   - `backend/app/routers/inference.py`
-- [ ] **Payload Contract:**
+- [x] **Payload Contract:**
   - Input: `{ "mime_type": "image/jpeg", "encoding": "base64", "image_b64": "...", "capture_timestamp": "..." }` (and multipart fallback).
   - Output:
     ```json
@@ -375,27 +370,25 @@ Phase 7: DevOps, Containerization & Root Documentation
       "is_healthy_or_uncertain": false
     }
     ```
-- [ ] **Acceptance Criteria:** Matches exact JSON response contract.
+- [x] **Acceptance Criteria:** Matches exact JSON response contract.
 
 ### Task 5.6: API Rate Limiting (SRS C.5)
-
-- [ ] **Goal:** Protect inference and auth endpoints against spam/overload.
-- [ ] **Files to touch:**
+- [x] **Goal:** Protect inference and auth endpoints against spam/overload.
+- [x] **Files to touch:**
   - `backend/app/main.py`
   - `backend/app/routers/inference.py`
   - `backend/app/routers/auth.py`
-- [ ] **Details:**
+- [x] **Details:**
   - Integrate `slowapi` Limiter using client IP or JWT `sub`.
   - Rate limit: 60 requests/min for `/inference/frame`, 10 requests/min for `/auth/login`.
-- [ ] **Acceptance Criteria:** Exceeding rate returns HTTP `429 Too Many Requests`.
+- [x] **Acceptance Criteria:** Exceeding rate returns HTTP `429 Too Many Requests`.
 
 ### Task 5.7: Module 0.3 Verification Tests
-
-- [ ] **Goal:** Test Base64 frame inference, Leaf ROI, Grad-CAM, threshold filtering, and rate limits.
-- [ ] **Files to touch:**
+- [x] **Goal:** Test Base64 frame inference, Leaf ROI, Grad-CAM, threshold filtering, and rate limits.
+- [x] **Files to touch:**
   - `backend/tests/test_inference.py` [NEW]
-- [ ] **Command:** `uv run pytest tests/test_inference.py`
-- [ ] **Acceptance Criteria:** All inference tests pass within latency budget.
+- [x] **Command:** `uv run pytest tests/test_inference.py`
+- [x] **Acceptance Criteria:** All inference tests pass within latency budget.
 
 ---
 
