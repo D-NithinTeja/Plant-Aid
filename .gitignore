@@ -47,3 +47,6 @@ backend/ml/artifacts/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Local scratch space (agent tracks, tickets, throwaway scripts)
+.scratch/
