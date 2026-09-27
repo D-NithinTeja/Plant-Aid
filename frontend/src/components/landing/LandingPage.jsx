@@ -1,149 +1,157 @@
 import React from 'react';
-import { 
-  Scan, 
-  ShieldCheck, 
-  HeartHandshake, 
-  ArrowRight, 
+import {
+  Scan,
+  ShieldCheck,
+  ArrowRight,
   Sparkles,
-  CheckCircle2
+  Eye,
+  CheckCircle2,
+  Stethoscope,
+  Microscope,
+  Leaf
 } from 'lucide-react';
 import Logo from '../common/Logo';
 
 export default function LandingPage({ onGetStarted, onLogin }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50/40 via-white to-[#f8fafc] flex flex-col">
-      {/* Landing Header */}
+    <div className="min-h-[100svh] bg-surface flex flex-col justify-between">
+      {/* Top Header */}
       <header className="max-w-6xl mx-auto w-full px-6 py-5 flex items-center justify-between">
         <Logo size="md" />
 
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-          <a href="#home" className="text-brand-800 font-semibold">Home</a>
-          <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
-          <a href="#about" className="hover:text-slate-900 transition-colors">About</a>
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-on-surface-variant">
+          <a href="#science" className="hover:text-primary transition-colors">Science & ViT Models</a>
+          <a href="#pathogens" className="hover:text-primary transition-colors">Pathogen Index</a>
+          <a href="#enterprise" className="hover:text-primary transition-colors">Farm Enterprise</a>
         </nav>
 
         <div className="flex items-center gap-3">
           <button
             onClick={onLogin}
-            className="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors"
+            className="px-4 py-2 text-xs md:text-sm font-semibold text-on-surface hover:text-primary transition-colors btn-press"
           >
-            Log in
+            Sign In
           </button>
           <button
             onClick={onGetStarted}
-            className="px-5 py-2.5 bg-brand-700 hover:bg-brand-800 text-white text-sm font-semibold rounded-full shadow-sm shadow-brand-700/20 transition-all hover:scale-[1.02]"
+            className="px-5 py-2.5 bg-primary hover:bg-primary-container text-on-primary text-xs md:text-sm font-semibold rounded-xl shadow-sm btn-press"
           >
-            Sign up
+            Get Started
           </button>
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero / Value Proposition Section */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8 md:py-16 flex flex-col justify-center">
         <div className="grid md:grid-cols-12 gap-10 items-center">
-          {/* Left Text Column */}
+
+          {/* Left Editorial Text */}
           <div className="md:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-100/80 border border-brand-200 text-brand-800 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-brand-600" />
-              <span>Real-Time AI Crop Diagnostics</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container border border-outline-variant/30 text-primary text-xs font-mono">
+              <Leaf className="w-3.5 h-3.5 text-secondary" />
+              <span>AI Agronomy Engine // v4.2</span>
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.12]">
-              Healthy Plants <br />
-              <span className="text-brand-700">Happier</span> Tomorrows
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-on-surface tracking-tight leading-[1.1]">
+              Instant plant pathology, <br />
+              <span className="text-primary italic font-serif">precision treatments.</span>
             </h1>
 
-            <p className="text-base md:text-lg text-slate-600 max-w-lg leading-relaxed">
-              Identify plant diseases with AI and get simple, effective treatment advice in real-time right from your device's camera.
+            <p className="text-sm md:text-base text-on-surface-variant max-w-lg leading-relaxed">
+              Plant-Aid bridges advanced computer vision with field-tested agronomy. Capture a diseased leaf or failing crop zone to receive instant, accurate diagnoses and tailored recovery protocols.
             </p>
 
+            {/* 3 Compact Feature Points */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/20 space-y-1">
+                <div className="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center mb-2">
+                  <Microscope className="w-4 h-4 text-secondary-fixed" />
+                </div>
+                <h2 className="text-xs font-bold text-on-surface">Identify Pathogens</h2>
+                <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                  Real-time classification across 450+ crop diseases.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/20 space-y-1">
+                <div className="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center mb-2">
+                  <Eye className="w-4 h-4 text-secondary-fixed" />
+                </div>
+                <h2 className="text-xs font-bold text-on-surface">Visual Attention</h2>
+                <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                  Grad-CAM heatmaps highlight chlorotic halos and spore clusters.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/20 space-y-1">
+                <div className="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center mb-2">
+                  <Stethoscope className="w-4 h-4 text-secondary-fixed" />
+                </div>
+                <h2 className="text-xs font-bold text-on-surface">Practical Cures</h2>
+                <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                  Field dosages for organic & chemical interventions.
+                </p>
+              </div>
+            </div>
+
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-4 pt-2">
+            <div className="flex flex-wrap items-center gap-4 pt-4">
               <button
                 onClick={onGetStarted}
-                className="px-7 py-3.5 bg-brand-700 hover:bg-brand-800 text-white font-semibold text-base rounded-full shadow-md shadow-brand-700/25 transition-all hover:scale-[1.02] flex items-center gap-2"
+                className="px-6 py-3.5 bg-primary text-on-primary font-semibold text-sm rounded-xl shadow-md btn-press flex items-center gap-2"
               >
-                <span>Get Started</span>
+                <span>Launch Field Scanner</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
-                onClick={onGetStarted}
-                className="px-7 py-3.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-base rounded-full border border-slate-200/90 shadow-sm transition-colors"
+                onClick={onLogin}
+                className="px-6 py-3.5 bg-surface-container text-on-surface font-semibold text-sm rounded-xl hover:bg-surface-container-high btn-press border border-outline-variant/20"
               >
-                Learn More
+                Already have an account? Log In
               </button>
             </div>
           </div>
 
           {/* Right Visual Graphic */}
           <div className="md:col-span-5 relative flex items-center justify-center">
-            <div className="relative w-full max-w-md aspect-square rounded-3xl bg-gradient-to-tr from-brand-100 via-emerald-50 to-brand-200/50 p-6 flex flex-col justify-between overflow-hidden shadow-xl shadow-brand-900/5 border border-brand-100">
-              {/* Decorative organic background leaves */}
-              <div className="absolute -top-10 -right-10 w-48 h-48 bg-brand-400/20 rounded-full blur-2xl pointer-events-none"></div>
-              
-              <div className="flex justify-between items-start z-10">
-                <div className="bg-white/90 backdrop-blur-sm px-3.5 py-1.5 rounded-full shadow-sm text-xs font-bold text-brand-800 border border-brand-100 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-brand-600" />
-                  <span>Groundnut AI Model v1.0</span>
-                </div>
-              </div>
-
-              {/* Center Leaf Visual Graphic */}
-              <div className="my-auto text-center z-10 py-6">
-                <div className="inline-block p-6 rounded-full bg-white shadow-lg border border-brand-100 mb-3 animate-pulse">
-                  <div className="w-20 h-20 rounded-full bg-brand-600 flex items-center justify-center text-white shadow-inner">
-                    <Scan className="w-10 h-10" />
+            <div className="relative w-full max-w-sm aspect-[4/5] rounded-2xl bg-surface-container-low border border-outline-variant/30 overflow-hidden shadow-2xl p-4 flex flex-col justify-between">
+              <div className="relative w-full h-3/5 rounded-xl overflow-hidden bg-black">
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/7/76/%27Cercospora_capsici.jpg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+                  alt="Groundnut leaf pathology"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-3">
+                  <div className="text-white text-xs font-mono">
+                    <span className="text-secondary-fixed font-bold">98.4% Match:</span> Early Leaf Spot
                   </div>
                 </div>
-                <div className="font-bold text-slate-800 text-lg">Instant Crop Diagnostic</div>
-                <p className="text-xs text-slate-500 max-w-[200px] mx-auto mt-1">
-                  Sub-second live video inference with localized bounding box overlay
-                </p>
               </div>
 
-              {/* Bottom Badge */}
-              <div className="text-right z-10">
-                <span className="inline-block px-4 py-1.5 bg-brand-800 text-white font-medium text-xs rounded-full shadow-sm">
-                  Greener Together 🌱
-                </span>
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between text-xs font-mono text-outline">
+                  <span>AgriNet ViT v2.8</span>
+                  <span className="text-secondary font-bold">NOMINAL</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-surface-container text-xs space-y-1">
+                  <p className="font-bold text-on-surface">Target Pathogen: Cercospora</p>
+                  <p className="text-[11px] text-on-surface-variant">Recommended: Chlorothalonil 720 SC (2.0 mL/L)</p>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 3 Feature Highlights at Bottom */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-16 md:pt-24">
-          <div className="bg-white rounded-2xl p-6 border border-slate-200/70 shadow-sm hover:border-brand-200 hover:shadow-md transition-all flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 flex-shrink-0">
-              <Scan className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-base">Accurate Detection</h3>
-              <p className="text-xs text-slate-500 mt-0.5">ConvNeXt deep vision with two-layer localization</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 border border-slate-200/70 shadow-sm hover:border-brand-200 hover:shadow-md transition-all flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 flex-shrink-0">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-base">Easy to Use</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Stream live from phone camera or drag and drop photos</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 border border-slate-200/70 shadow-sm hover:border-brand-200 hover:shadow-md transition-all flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 flex-shrink-0">
-              <HeartHandshake className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-base">Healthier Plants</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Organic, chemical, and cultural treatment plans</p>
             </div>
           </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="max-w-6xl mx-auto w-full px-6 py-4 border-t border-outline-variant/20 text-xs text-outline flex flex-col sm:flex-row items-center justify-between gap-2">
+        <span>© 2026 Plant-Aid Agronomy Systems. All rights reserved.</span>
+        <div className="flex items-center gap-4">
+          <a href="#" className="hover:text-primary">Privacy Policy</a>
+          <a href="#" className="hover:text-primary">Terms of Service</a>
+          <a href="#" className="hover:text-primary">Field API Docs</a>
+        </div>
+      </footer>
     </div>
   );
 }

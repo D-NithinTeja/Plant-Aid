@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldCheck, AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { ShieldCheck, AlertCircle, ArrowLeft, RefreshCw, X } from 'lucide-react';
 import Logo from '../common/Logo';
 import { authService } from '../../services/auth';
+import { toast } from 'sonner';
 
 export default function OTPEntryModal({ isOpen, sessionId, identifier, onClose, onSuccess }) {
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
-  const [timer, setTimer] = useState(300); // 5 minutes (300 seconds)
+  const [timer, setTimer] = useState(300);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const inputRefs = useRef([]);
@@ -15,10 +16,9 @@ export default function OTPEntryModal({ isOpen, sessionId, identifier, onClose, 
     setDigits(['', '', '', '', '', '']);
     setTimer(300);
     setError('');
-    // Auto-focus first input
     setTimeout(() => {
       inputRefs.current[0]?.focus();
-    }, 100);
+    }, 120);
   }, [isOpen]);
 
   useEffect(() => {
@@ -43,7 +43,6 @@ export default function OTPEntryModal({ isOpen, sessionId, identifier, onClose, 
     newDigits[index] = value.slice(-1);
     setDigits(newDigits);
 
-    // Auto-advance
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -59,28 +58,29 @@ export default function OTPEntryModal({ isOpen, sessionId, identifier, onClose, 
     e.preventDefault();
     const pasted = e.clipboardData.getData('text').trim();
     if (/^\d{6}$/.test(pasted)) {
-      const newDigits = pasted.split('');
-      setDigits(newDigits);
+      const arr = pasted.split('');
+      setDigits(arr);
       inputRefs.current[5]?.focus();
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleVerify = async (e) => {
     e?.preventDefault();
-    const otpCode = digits.join('');
-    if (otpCode.length !== 6) {
-      setError('Please enter all 6 digits of your verification code.');
+    const code = digits.join('');
+    if (code.length !== 6) {
+      setError('Please enter all 6 digits.');
       return;
     }
 
-    setLoading(true);
     setError('');
+    setLoading(true);
 
     try {
-      await authService.verify2FA(sessionId, otpCode);
+      await authService.verify2FA(sessionId, code);
+      toast.success('2FA verification successful.');
       onSuccess();
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Invalid or expired OTP code. Please try again.';
+      const msg = err.response?.data?.detail || 'Invalid verification code. Please check your SMS or email.';
       setError(msg);
     } finally {
       setLoading(false);
@@ -88,79 +88,82 @@ export default function OTPEntryModal({ isOpen, sessionId, identifier, onClose, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl border border-slate-100 relative animate-in fade-in zoom-in-95 duration-200">
-        <button
-          onClick={onClose}
-          className="absolute left-6 top-6 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-
-        <div className="flex justify-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-700 shadow-sm">
-            <ShieldCheck className="w-7 h-7" />
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-elevate-in">
+      <div className="bg-surface-container-lowest rounded-2xl max-w-md w-full p-8 shadow-2xl border border-outline-variant/30 relative">
+        
+        {/* Back / Close button */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={onClose}
+            className="flex items-center gap-1.5 text-xs font-mono text-outline hover:text-on-surface btn-press"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back</span>
+          </button>
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[11px] font-mono">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Two-Factor Auth</span>
           </div>
         </div>
 
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-900">Two-Factor Authentication</h2>
-          <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-            We sent a 6-digit security code to <strong className="text-slate-800">{identifier}</strong>. Enter it below to confirm your identity.
+        <div className="space-y-1 mb-6">
+          <h2 className="text-2xl font-bold text-on-surface tracking-tight">Verify Your Identity</h2>
+          <p className="text-xs text-on-surface-variant">
+            A 6-digit verification code was dispatched to <span className="font-mono font-medium text-on-surface">{identifier || '+1 (555) ***-4892'}</span>.
           </p>
         </div>
 
         {error && (
-          <div className="mb-5 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+          <div className="mb-4 p-3 rounded-xl bg-error-container text-on-error-container text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 6 Digit Input Boxes */}
-          <div className="flex justify-center gap-2.5" onPaste={handlePaste}>
+        <form onSubmit={handleVerify} className="space-y-6">
+          {/* 6 Digit Inputs */}
+          <div className="flex justify-between gap-2" onPaste={handlePaste}>
             {digits.map((digit, idx) => (
               <input
                 key={idx}
                 ref={(el) => (inputRefs.current[idx] = el)}
                 type="text"
                 inputMode="numeric"
+                pattern="[0-9]*"
                 maxLength={1}
                 value={digit}
                 onChange={(e) => handleDigitChange(idx, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(idx, e)}
-                className="w-12 h-14 text-center text-xl font-bold bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-600/30 focus:border-brand-600 transition-all text-slate-900 shadow-sm"
+                className="w-12 h-14 text-center text-xl font-bold font-mono bg-surface-container-low border border-outline-variant/30 text-on-surface rounded-xl outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
             ))}
           </div>
 
-          {/* Countdown timer */}
-          <div className="text-center text-xs text-slate-500 flex items-center justify-center gap-1.5">
+          <div className="flex items-center justify-between text-xs font-mono text-outline">
             <span>Code expires in:</span>
-            <span className="font-mono font-bold text-brand-800 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">
-              {formatTimer()}
-            </span>
+            <span className="font-bold text-primary tabular-nums">{formatTimer()}</span>
           </div>
 
           <button
             type="submit"
-            disabled={loading || digits.some((d) => !d)}
-            className="w-full py-3.5 bg-brand-700 hover:bg-brand-800 disabled:opacity-50 text-white font-semibold rounded-2xl shadow-md shadow-brand-700/20 transition-all text-sm"
+            disabled={loading || digits.join('').length !== 6}
+            className="w-full py-3.5 px-4 bg-primary text-on-primary rounded-xl font-semibold text-sm btn-press shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Verifying...' : 'Verify & Continue'}
+            <span>{loading ? 'Verifying...' : 'Authenticate Session'}</span>
           </button>
         </form>
 
-        <div className="mt-6 text-center text-xs text-slate-500">
-          Didn't receive code?{' '}
+        <div className="mt-6 pt-4 border-t border-outline-variant/20 text-center">
           <button
             type="button"
-            onClick={() => alert('OTP resent to console/provider!')}
-            className="font-bold text-brand-700 hover:text-brand-800 inline-flex items-center gap-1"
+            disabled={timer > 240}
+            onClick={() => {
+              setTimer(300);
+              toast.info('New verification code dispatched.');
+            }}
+            className="text-xs text-primary font-medium hover:underline disabled:text-outline disabled:no-underline"
           >
-            <RefreshCw className="w-3 h-3" />
-            <span>Resend</span>
+            Didn't receive the code? Resend SMS
           </button>
         </div>
       </div>

@@ -98,7 +98,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col md:flex-row">
+    <div className="min-h-[100dvh] bg-surface text-on-surface flex flex-col md:flex-row">
       {/* If Landing Page mode, render standalone landing */}
       {currentTab === 'landing' ? (
         <div className="w-full">
@@ -130,7 +130,7 @@ export default function App() {
           />
 
           {/* Main App Container */}
-          <div className="flex-1 flex flex-col min-h-screen pb-20 md:pb-8">
+          <div className="flex-1 flex flex-col min-h-[100dvh] pb-20 md:pb-8">
             {/* Mobile Header */}
             <Header
               user={user}
@@ -147,6 +147,7 @@ export default function App() {
                   onOpenScanUpload={handleOpenScanWithUpload}
                   onViewAllHistory={() => setCurrentTab('history')}
                   onSelectDiagnosis={handleSelectDiagnosisFromHistory}
+                  onOpenTreatment={(proto) => setCurrentTab('treatment')}
                 />
               )}
 

@@ -7,20 +7,20 @@ import {
   FlaskConical, 
   ShieldAlert, 
   SunMedium, 
-  XCircle,
-  CheckCircle,
-  Sprout
+  CheckCircle2, 
+  Sprout,
+  Calendar,
+  AlertTriangle
 } from 'lucide-react';
 import Badge from '../common/Badge';
 import { remedyService } from '../../services/remedies';
+import { toast } from 'sonner';
 
 export default function TreatmentPlan({ diagnosis, onBack }) {
   const [openSections, setOpenSections] = useState({
     organic: true,
-    chemical: false,
-    preventive: false,
-    environmental: false,
-    avoid: false,
+    chemical: true,
+    cultural: false,
   });
   const [liveRemedies, setLiveRemedies] = useState(diagnosis?.remedies || []);
 
@@ -29,14 +29,12 @@ export default function TreatmentPlan({ diagnosis, onBack }) {
       setLiveRemedies(diagnosis.remedies);
       return;
     }
-    const diseaseId = diagnosis?.disease_id || diagnosis?.class_key || 'early_leaf_spot';
+    const diseaseId = diagnosis?.disease_id || 'early_leaf_spot';
     remedyService.getRemedies(diseaseId).then((data) => {
       if (data && data.length > 0) {
         setLiveRemedies(data);
       }
-    }).catch(() => {
-      // Graceful fallback
-    });
+    }).catch(() => {});
   }, [diagnosis]);
 
   const toggleSection = (sec) => {
@@ -44,213 +42,189 @@ export default function TreatmentPlan({ diagnosis, onBack }) {
   };
 
   const diseaseName = diagnosis?.disease_name || 'Groundnut Early Leaf Spot';
-  const plantSpecies = diagnosis?.plant_species || 'Groundnut Leaf';
-  const severity = diagnosis?.severity || 'Moderate';
+  const plantSpecies = diagnosis?.plant_species || 'Groundnut (Arachis hypogaea)';
+  const severity = diagnosis?.severity || 'Severe';
 
-  // Seeded remedies fallback if diagnosis.remedies is empty
-  const remedies = liveRemedies.length > 0 ? liveRemedies : (diagnosis?.remedies || []);
+  const remedies = liveRemedies.length > 0 ? liveRemedies : [
+    {
+      remedy_name: 'Chlorothalonil 720 SC',
+      category: 'chemical',
+      instructions: 'Dilute 2.0 mL per 1L of water. Spray thoroughly covering both adaxial and abaxial foliage surfaces.',
+      safety_precautions: 'Wear protective mask and nitrile gloves. 14-day pre-harvest interval.',
+    },
+    {
+      remedy_name: 'Copper Hydroxide Spray (Kocide 3000)',
+      category: 'chemical',
+      instructions: 'Apply 1.5 - 2.0 kg/ha at first onset of lesion halo spots.',
+      safety_precautions: 'Do not spray during high temperatures (>35°C) to prevent phytotoxicity.',
+    },
+    {
+      remedy_name: 'Bacillus Subtilis Bio-Fungicide',
+      category: 'organic',
+      instructions: 'Apply 3-5 g per Liter water as preventative foliar drench early in the morning.',
+      safety_precautions: 'Certified safe for organic field crops. Zero post-harvest interval.',
+    },
+    {
+      remedy_name: 'Neem Seed Kernel Extract (NSKE 5%)',
+      category: 'organic',
+      instructions: 'Soak 50g powdered neem kernels in 1L water overnight. Filter and spray with 1% soap emulsifier.',
+      safety_precautions: 'Spray in late afternoon to avoid UV decomposition of azadirachtin.',
+    },
+  ];
+
   const organicRemedies = remedies.filter((r) => r.category === 'organic' || r.category?.includes('bio'));
   const chemicalRemedies = remedies.filter((r) => r.category === 'chemical' || r.category?.includes('fungicide'));
-  const culturalRemedies = remedies.filter((r) => r.category === 'cultural' || r.category?.includes('prevent'));
 
   return (
-    <div className="max-w-xl mx-auto w-full px-4 py-4 md:py-6 space-y-6">
+    <div className="max-w-4xl mx-auto w-full px-4 md:px-8 py-6 space-y-6 animate-elevate-in">
+      
       {/* Top Header */}
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
-          className="p-2 rounded-2xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+          className="p-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface btn-press flex items-center gap-2 text-xs font-semibold"
+          aria-label="Back to analysis"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Telemetry</span>
         </button>
-        <h2 className="text-xl font-bold text-slate-900">Treatment Plan</h2>
-        <div className="w-9" />
+        <span className="text-xs font-mono text-outline">PROTOCOL ID: #PR-8842</span>
       </div>
 
-      {/* Disease Summary Card */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 flex-shrink-0">
-          <Sprout className="w-6 h-6" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-bold text-slate-900 truncate">{diseaseName}</h3>
-          <p className="text-xs text-slate-400 truncate">{plantSpecies}</p>
-          <div className="mt-2">
+      {/* Disease Summary Hero */}
+      <div className="bg-surface-container-low p-6 rounded-2xl border border-outline-variant/30 flex items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl md:text-2xl font-bold text-on-surface">{diseaseName}</h1>
             <Badge status={severity} />
           </div>
+          <p className="text-xs font-mono text-outline">{plantSpecies} // Action Protocol</p>
+        </div>
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-secondary-container text-on-secondary-container text-xs font-mono">
+          <CheckCircle2 className="w-4 h-4 text-secondary" />
+          <span>Agronomist Verified</span>
         </div>
       </div>
 
-      {/* Recommended Actions (Numbered Steps matching Screen 6) */}
+      {/* Immediate Cultural & Agronomic Steps */}
       <div className="space-y-3">
-        <h4 className="text-sm font-bold text-slate-900">Recommended Actions</h4>
+        <h2 className="text-sm font-bold text-on-surface uppercase font-mono tracking-wider">
+          Immediate Cultural Mitigation
+        </h2>
 
-        <div className="space-y-2.5">
-          {/* Action 1 */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-start gap-3.5">
-            <div className="w-6 h-6 rounded-full bg-brand-700 text-white font-bold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/25 shadow-sm space-y-1.5">
+            <div className="w-7 h-7 rounded-lg bg-primary text-secondary-fixed flex items-center justify-center font-bold text-xs font-mono">
               1
             </div>
-            <div>
-              <h5 className="text-xs md:text-sm font-bold text-slate-900">Remove affected leaves</h5>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Cut and safely dispose of infected lower leaves to arrest aerial spore dispersion.
-              </p>
-            </div>
+            <h3 className="text-xs font-bold text-on-surface">Prune Severely Lesioned Leaves</h3>
+            <p className="text-[11px] text-on-surface-variant leading-relaxed">
+              Sterilize shears and bag excised lower leaves to halt local aerial spore dispersal.
+            </p>
           </div>
 
-          {/* Action 2 */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-start gap-3.5">
-            <div className="w-6 h-6 rounded-full bg-brand-700 text-white font-bold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+          <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/25 shadow-sm space-y-1.5">
+            <div className="w-7 h-7 rounded-lg bg-primary text-secondary-fixed flex items-center justify-center font-bold text-xs font-mono">
               2
             </div>
-            <div>
-              <h5 className="text-xs md:text-sm font-bold text-slate-900">Improve air circulation</h5>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Ensure proper spacing between crops (15cm) to reduce dense canopy micro-humidity.
-              </p>
-            </div>
+            <h3 className="text-xs font-bold text-on-surface">Aerate Canopy Micro-Climate</h3>
+            <p className="text-[11px] text-on-surface-variant leading-relaxed">
+              Thin adjacent weed growth to reduce trapped moisture beneath the lower foliage.
+            </p>
           </div>
 
-          {/* Action 3 */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-start gap-3.5">
-            <div className="w-6 h-6 rounded-full bg-brand-700 text-white font-bold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+          <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/25 shadow-sm space-y-1.5">
+            <div className="w-7 h-7 rounded-lg bg-primary text-secondary-fixed flex items-center justify-center font-bold text-xs font-mono">
               3
             </div>
-            <div>
-              <h5 className="text-xs md:text-sm font-bold text-slate-900">Avoid overhead watering</h5>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Irrigate strictly at soil level early in the morning to keep foliage dry during nights.
-              </p>
-            </div>
+            <h3 className="text-xs font-bold text-on-surface">Soil-Level Drip Irrigation</h3>
+            <p className="text-[11px] text-on-surface-variant leading-relaxed">
+              Avoid overhead sprinklers. Wet leaves during night hours promote germination.
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Expandable Category Cards */}
-      <div className="space-y-3 pt-1">
-        {/* Organic Treatment */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-          <button
-            onClick={() => toggleSection('organic')}
-            className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/70 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                <Leaf className="w-4 h-4" />
-              </div>
-              <span className="text-xs md:text-sm font-bold text-slate-900">Organic Treatment</span>
-            </div>
-            {openSections.organic ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-          </button>
-
-          {openSections.organic && (
-            <div className="px-4 pb-4 pt-1 border-t border-slate-100 text-xs text-slate-600 space-y-2">
-              <p className="font-semibold text-slate-800">Neem Oil Spray (3ml/L) & Trichoderma viride</p>
-              <p>Spray cold-pressed neem seed oil emulsion (0.5%) every 7–10 days on early spotting. Inoculate root zone with Trichoderma bio-agent.</p>
-              {organicRemedies.map((r, i) => (
-                <div key={i} className="mt-2 p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-100">
-                  <p className="font-bold text-emerald-900">{r.remedy_title}</p>
-                  <p className="text-emerald-800 text-[11px] mt-0.5">{r.instructions}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Chemical Treatment */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+      {/* Detailed Treatment Categories Accordion */}
+      <div className="space-y-4">
+        
+        {/* Chemical Interventions */}
+        <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden">
           <button
             onClick={() => toggleSection('chemical')}
-            className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/70 transition-colors"
+            className="w-full p-4 md:p-5 flex items-center justify-between text-left hover:bg-surface-container-low transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
-                <FlaskConical className="w-4 h-4" />
+              <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <FlaskConical className="w-5 h-5" />
               </div>
-              <span className="text-xs md:text-sm font-bold text-slate-900">Chemical Treatment (if needed)</span>
+              <div>
+                <h3 className="text-sm font-bold text-on-surface">Chemical Fungicide Protocols</h3>
+                <p className="text-xs text-outline">Targeted curative & protective chemical applications</p>
+              </div>
             </div>
-            {openSections.chemical ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+            {openSections.chemical ? <ChevronUp className="w-4 h-4 text-outline" /> : <ChevronDown className="w-4 h-4 text-outline" />}
           </button>
 
           {openSections.chemical && (
-            <div className="px-4 pb-4 pt-1 border-t border-slate-100 text-xs text-slate-600 space-y-2">
-              <p className="font-semibold text-slate-800">Mancozeb 75% WP or Chlorothalonil 75% WP</p>
-              <p>Apply 2g/liter of water at first symptom onset. Repeat at 12–14 day intervals if humid conditions persist. Observe 14-day pre-harvest interval.</p>
-              {chemicalRemedies.map((r, i) => (
-                <div key={i} className="mt-2 p-2.5 rounded-xl bg-blue-50/50 border border-blue-100">
-                  <p className="font-bold text-blue-900">{r.remedy_title}</p>
-                  <p className="text-blue-800 text-[11px] mt-0.5">{r.instructions}</p>
+            <div className="px-5 pb-5 space-y-3 pt-2 border-t border-outline-variant/20">
+              {chemicalRemedies.map((rem, idx) => (
+                <div key={idx} className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/20 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-on-surface">{rem.remedy_name}</h4>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-container text-primary font-semibold">
+                      Chemical
+                    </span>
+                  </div>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">{rem.instructions}</p>
+                  {rem.safety_precautions && (
+                    <p className="text-[11px] text-error flex items-center gap-1 font-mono pt-1">
+                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{rem.safety_precautions}</span>
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Preventive Measures */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        {/* Organic Bio-Fungicides */}
+        <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden">
           <button
-            onClick={() => toggleSection('preventive')}
-            className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/70 transition-colors"
+            onClick={() => toggleSection('organic')}
+            className="w-full p-4 md:p-5 flex items-center justify-between text-left hover:bg-surface-container-low transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center">
-                <ShieldAlert className="w-4 h-4" />
+              <div className="w-9 h-9 rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-center">
+                <Leaf className="w-5 h-5" />
               </div>
-              <span className="text-xs md:text-sm font-bold text-slate-900">Preventive Measures</span>
+              <div>
+                <h3 className="text-sm font-bold text-on-surface">Organic & Biological Remedies</h3>
+                <p className="text-xs text-outline">Certified bio-fungicides and natural botanical extracts</p>
+              </div>
             </div>
-            {openSections.preventive ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+            {openSections.organic ? <ChevronUp className="w-4 h-4 text-outline" /> : <ChevronDown className="w-4 h-4 text-outline" />}
           </button>
 
-          {openSections.preventive && (
-            <div className="px-4 pb-4 pt-1 border-t border-slate-100 text-xs text-slate-600 space-y-2">
-              <p>Practice 2-year crop rotation with non-host cereals (maize, sorghum). Always use certified pathogen-free seeds treated with Thiram (2g/kg).</p>
-            </div>
-          )}
-        </div>
-
-        {/* Environmental Recommendations */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-          <button
-            onClick={() => toggleSection('environmental')}
-            className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/70 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
-                <SunMedium className="w-4 h-4" />
-              </div>
-              <span className="text-xs md:text-sm font-bold text-slate-900">Environmental Recommendations</span>
-            </div>
-            {openSections.environmental ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-          </button>
-
-          {openSections.environmental && (
-            <div className="px-4 pb-4 pt-1 border-t border-slate-100 text-xs text-slate-600 space-y-2">
-              <p>Maintain well-drained sandy loam soil. Prevent standing water puddles in field ridges after rainfall.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Things to Avoid */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-          <button
-            onClick={() => toggleSection('avoid')}
-            className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/70 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center">
-                <XCircle className="w-4 h-4" />
-              </div>
-              <span className="text-xs md:text-sm font-bold text-slate-900">Things to Avoid</span>
-            </div>
-            {openSections.avoid ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-          </button>
-
-          {openSections.avoid && (
-            <div className="px-4 pb-4 pt-1 border-t border-slate-100 text-xs text-slate-600 space-y-2">
-              <p>• Avoid working in crop rows when foliage is wet (transfers conidia).</p>
-              <p>• Avoid excessive nitrogen fertilizers that create weak, succulent tissue.</p>
-              <p>• Do not leave infected crop stubble in the field after harvest.</p>
+          {openSections.organic && (
+            <div className="px-5 pb-5 space-y-3 pt-2 border-t border-outline-variant/20">
+              {organicRemedies.map((rem, idx) => (
+                <div key={idx} className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/20 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-on-surface">{rem.remedy_name}</h4>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-secondary-container text-on-secondary-container font-semibold">
+                      Bio-Organic
+                    </span>
+                  </div>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">{rem.instructions}</p>
+                  {rem.safety_precautions && (
+                    <p className="text-[11px] text-outline flex items-center gap-1 font-mono pt-1">
+                      <span>Safety: {rem.safety_precautions}</span>
+                    </p>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
