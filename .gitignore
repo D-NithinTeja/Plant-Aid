@@ -41,7 +41,7 @@ frontend/.vite/
 backend/ml/data/
 backend/ml/artifacts/
 *.pt
-*.ts
+backend/ml/**/*.ts
 
 # Operating System files
 .DS_Store
