@@ -395,88 +395,77 @@ Phase 7: DevOps, Containerization & Root Documentation
 ## Phase 6: Frontend React.js Application (Module 0.2 & GUI)
 
 ### Task 6.1: Initialize React + Vite + Tailwind Project
-
-- [ ] **Goal:** Scaffold modern, mobile-responsive React application in `frontend/`.
-- [ ] **Commands:**
+- [x] **Goal:** Scaffold modern, mobile-responsive React application in `frontend/`.
+- [x] **Commands:**
   ```bash
   npm create vite@latest frontend -- --template react
   cd frontend
   npm install
   npm install -D tailwindcss postcss autoprefixer
-  npx tailwindcss init -p
   npm install axios lucide-react
   ```
-- [ ] **Acceptance Criteria:** `npm run dev` serves default page at `http://localhost:5173`.
+- [x] **Acceptance Criteria:** `npm run dev` serves default page at `http://localhost:5173`.
 
 ### Task 6.2: API Client & JWT Interceptor
-
-- [ ] **Goal:** Configure centralized Axios instance.
-- [ ] **Files to create:**
+- [x] **Goal:** Configure centralized Axios instance.
+- [x] **Files to create:**
   - `frontend/src/services/api.js`
   - `frontend/src/services/auth.js`
   - `frontend/src/services/inference.js`
-- [ ] **Details:**
+- [x] **Details:**
   - Request interceptor: attaches `Authorization: Bearer <token>` from localStorage.
   - Response interceptor: redirects to `/login` on 401 Unauthorized.
-- [ ] **Acceptance Criteria:** Authenticated requests automatically carry JWT header.
+- [x] **Acceptance Criteria:** Authenticated requests automatically carry JWT header.
 
 ### Task 6.3: Authentication UI Components
-
-- [ ] **Goal:** Build login, registration, and 2FA challenge screens.
-- [ ] **Files to create:**
-  - `frontend/src/components/auth/Register.jsx`
-  - `frontend/src/components/auth/Login.jsx`
-  - `frontend/src/components/auth/OTPEntry.jsx`
-- [ ] **Features:**
+- [x] **Goal:** Build login, registration, and 2FA challenge screens.
+- [x] **Files to create:**
+  - `frontend/src/components/auth/RegisterModal.jsx`
+  - `frontend/src/components/auth/LoginModal.jsx`
+  - `frontend/src/components/auth/OTPEntryModal.jsx`
+- [x] **Features:**
   - Form validation (email regex, password rules).
   - 6-digit OTP entry with 5-minute countdown timer and resend button.
   - Stores JWT and hydrates user state on 2FA success.
-- [ ] **Acceptance Criteria:** Seamless user registration, login, and 2FA authentication flow.
+- [x] **Acceptance Criteria:** Seamless user registration, login, and 2FA authentication flow.
 
 ### Task 6.4: Camera Stream & Preprocessing (Module 0.2)
-
-- [ ] **Goal:** Implement camera capture and frame streaming loop per `Implementation.md` §3.
-- [ ] **Files to create:**
-  - `frontend/src/components/camera/CameraStream.jsx`
-  - `frontend/src/components/camera/FrameCapture.jsx`
-  - `frontend/src/components/camera/UploadPanel.jsx`
-- [ ] **Features:**
+- [x] **Goal:** Implement camera capture and frame streaming loop per `Implementation.md` §3.
+- [x] **Files to create:**
+  - `frontend/src/components/scan/ScanPlant.jsx`
+- [x] **Features:**
   - WebRTC `navigator.mediaDevices.getUserMedia` preferring rear camera (`facingMode: "environment"`).
   - Offscreen `<canvas>` resizing to 640×480 (aspect-preserving letterbox).
   - 1.5s `setInterval` polling loop with `isInFlight` overlap guard.
   - Manual file upload panel with JPEG/PNG drag-and-drop validation.
-- [ ] **Acceptance Criteria:** Live video feeds frames every 1.5s without request stacking.
+- [x] **Acceptance Criteria:** Live video feeds frames every 1.5s without request stacking.
 
 ### Task 6.5: Diagnostic Overlays & Results Panel
-
-- [ ] **Goal:** Display real-time bounding box, Grad-CAM attention, and diagnosis metrics.
-- [ ] **Files to create:**
-  - `frontend/src/components/dashboard/BoundingBoxOverlay.jsx`
-  - `frontend/src/components/dashboard/ResultPanel.jsx`
-- [ ] **Features:**
+- [x] **Goal:** Display real-time bounding box, Grad-CAM attention, and diagnosis metrics.
+- [x] **Files to create:**
+  - `frontend/src/components/analysis/AnalysisResult.jsx`
+- [x] **Features:**
   - Renders scaled bounding box over camera preview from normalized coordinates.
   - Visual status for "Healthy", "Suspected Infection", or "Uncertain (low confidence)".
   - One-click "Log Diagnosis" button triggering `POST /history`.
-- [ ] **Acceptance Criteria:** Smooth bounding box overlay aligned over plant leaves in preview.
+- [x] **Acceptance Criteria:** Smooth bounding box overlay aligned over plant leaves in preview.
 
 ### Task 6.6: Treatment Tabs & History Dashboard
-
-- [ ] **Goal:** Render remedies and searchable history log.
-- [ ] **Files to create:**
-  - `frontend/src/components/recommendations/RemedyTabs.jsx`
-  - `frontend/src/components/dashboard/HistoryTable.jsx`
-- [ ] **Features:**
+- [x] **Goal:** Render remedies and searchable history log.
+- [x] **Files to create:**
+  - `frontend/src/components/treatment/TreatmentPlan.jsx`
+  - `frontend/src/components/history/HistoryDashboard.jsx`
+- [x] **Features:**
   - 3 tabs: Organic / Biological, Chemical / Fungicide, Preventive Cultural Practice.
   - History table displaying image thumbnails, disease tag, confidence score, date, and detail modal.
-- [ ] **Acceptance Criteria:** Remedies render clearly; history displays logged records.
+- [x] **Acceptance Criteria:** Remedies render clearly; history displays logged records.
 
 ### Task 6.7: Application Shell & Navigation
-
-- [ ] **Goal:** Connect components into a responsive single-page application.
-- [ ] **Files to update:**
+- [x] **Goal:** Connect components into a responsive single-page application.
+- [x] **Files to update:**
   - `frontend/src/App.jsx`
   - `frontend/src/main.jsx`
-- [ ] **Acceptance Criteria:** Seamless switching between Live Scan, Upload, History, and Logout views.
+- [x] **Acceptance Criteria:** Seamless switching between Live Scan, Upload, History, and Logout views.
 
 ---
 

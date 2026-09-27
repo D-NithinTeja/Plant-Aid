@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Emil Kowalski custom cubic-bezier curves */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@layer base {
+  html {
+    /* Mobile-native: remove default tap highlight flash */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-surface text-on-surface font-sans antialiased min-h-[100dvh];
+    overscroll-behavior-y: none;
+    selection: bg-secondary-fixed text-primary;
+  }
+
+  /* Universal pressable button responsiveness */
+  button, [role="button"], a[class*="rounded"] {
+    touch-action: manipulation;
+  }
+}
+
+/* Tactile press feedback & motion utilities */
+.btn-press {
+  transition: transform 140ms var(--ease-out), opacity 140ms ease-out, background-color 140ms ease-out;
+}
+
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* Telemetry tabular numbers */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Safe entrance animation from scale(0.95) with opacity */
+@keyframes elevateFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-elevate-in {
+  animation: elevateFadeIn 220ms var(--ease-out) forwards;
+}
+
+/* Smooth viewfinder sweep */
+@keyframes laserSweep {
+  0% {
+    top: 10%;
+    opacity: 0.2;
+  }
+  50% {
+    top: 90%;
+    opacity: 0.9;
+  }
+  100% {
+    top: 10%;
+    opacity: 0.2;
+  }
+}
+
+.animate-laser-sweep {
+  animation: laserSweep 2.4s ease-in-out infinite;
+}
+
+/* Modern subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c1c8c2;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #717973;
+}
