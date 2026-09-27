@@ -44,14 +44,15 @@ class BackendTestSuite(unittest.TestCase):
         res_login = self.client.post("/api/auth/login", json=login_payload)
         self.assertEqual(res_login.status_code, 200)
         login_data = res_login.json()
-        self.assertIn("user_id", login_data)
+        self.assertIn("session_id", login_data)
+        self.assertNotIn("user_id", login_data)
         self.assertIn("otp_code_dev", login_data)
 
-        user_id = login_data["user_id"]
+        session_id = login_data["session_id"]
         otp_code = login_data["otp_code_dev"]
 
-        # 3. Verify 2FA -> Returns JWT
-        verify_payload = {"user_id": user_id, "otp_code": otp_code}
+        # 3. Verify 2FA -> Returns JWT (challenge session only, no user id exposure)
+        verify_payload = {"session_id": session_id, "otp_code": otp_code}
         res_verify = self.client.post("/api/auth/verify-2fa", json=verify_payload)
         self.assertEqual(res_verify.status_code, 200)
         token_data = res_verify.json()
@@ -69,17 +70,20 @@ class BackendTestSuite(unittest.TestCase):
         self.assertEqual(res_me.json()["email_address"], test_email)
 
     def test_03_remedy_lookup(self):
-        # 1. List all diseases
-        res = self.client.get("/api/diseases")
+        # 1. List all diseases (Bearer JWT required per §5.2)
+        res = self.client.get("/api/diseases", headers=BackendTestSuite.headers)
         self.assertEqual(res.status_code, 200)
         diseases = res.json()
         self.assertGreater(len(diseases), 0)
 
-        # 2. Get specific disease
-        res_single = self.client.get("/api/diseases/TOMATO_LATE_BLIGHT")
+        # 2. Get a specific disease from the catalogue
+        first_id = diseases[0]["id"]
+        res_single = self.client.get(
+            f"/api/diseases/{first_id}", headers=BackendTestSuite.headers
+        )
         self.assertEqual(res_single.status_code, 200)
         data = res_single.json()
-        self.assertEqual(data["id"], "TOMATO_LATE_BLIGHT")
+        self.assertEqual(data["id"], first_id)
         self.assertGreater(len(data["remedies"]), 0)
 
     def test_04_inference_and_media_upload(self):

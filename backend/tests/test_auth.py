@@ -1,4 +1,5 @@
 import pytest
+from app.config import settings
 from app.database import Base, SessionLocal, engine
 from app.main import app
 from app.models import User
@@ -144,15 +145,45 @@ def test_2fa_brute_force_lockout():
             "/auth/verify-2fa", json={"session_id": session_id, "otp_code": "111111"}
         )
 
-    # 6th attempt should be blocked with lockout
+    # 6th attempt should be blocked with the lockout-specific outcome, not a generic failure
     locked = client.post(
         "/auth/verify-2fa", json={"session_id": session_id, "otp_code": "111111"}
     )
     assert locked.status_code == 401
-    assert (
-        "Too many failed" in locked.json()["detail"]
-        or "Invalid or expired" in locked.json()["detail"]
+    assert "Too many failed verification attempts" in locked.json()["detail"]
+
+
+def test_login_response_hides_internal_user_id():
+    """Task 2.4 + Ticket 07: the 2FA challenge exposes a session id, never the numeric user id."""
+    client.post(
+        "/auth/register",
+        json={
+            "user_name": "Opaque Tester",
+            "email_address": "opaque@testauth.com",
+            "phone_number": "+15550005555",
+            "password": "OpaquePassword123!",
+        },
     )
+    login_res = client.post(
+        "/auth/login",
+        json={"login_id": "opaque@testauth.com", "password": "OpaquePassword123!"},
+    )
+    assert login_res.status_code == 200
+    data = login_res.json()
+    assert data["session_id"]
+    assert "user_id" not in data
+    # The debug echo is explicitly a debug affordance, not part of the production payload
+    assert ("otp_code_dev" in data) is settings.APP_DEBUG
+
+
+def test_verify_2fa_rejects_unknown_session():
+    """Ticket 07: verification is bound to the challenge session, so an unknown id is refused."""
+    res = client.post(
+        "/auth/verify-2fa",
+        json={"session_id": "00000000-0000-0000-0000-000000000000", "otp_code": "123456"},
+    )
+    assert res.status_code == 401
+    assert "Invalid or expired challenge session" in res.json()["detail"]
 
 
 def test_api_prefix_aliasing():

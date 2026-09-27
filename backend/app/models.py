@@ -15,7 +15,11 @@ from sqlalchemy.orm import relationship
 from app.database import Base
 
 
-def utcnow():
+def utcnow() -> datetime.datetime:
+    """
+    Single UTC "now" helper for the whole backend (column defaults, token expiry, log
+    timestamps). Stored timezone-naive to match the DateTime columns and SQLite.
+    """
     return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 
 
@@ -84,11 +88,14 @@ class DiseaseHistoryLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    disease_id = Column(String(50), nullable=False)
+    disease_id = Column(String(50), ForeignKey("diseases.id"), nullable=False)
     disease_name = Column(String(150), nullable=False)
     confidence_score = Column(Float, nullable=False)
     s3_storage_uri = Column(String(500), nullable=False)
     bounding_box_json = Column(Text, nullable=True)
     diagnosis_timestamp = Column(DateTime, default=utcnow)
+    # Soft deletion (Implementation.md §6.3, NF.5): a user-removed diagnosis disappears from
+    # the dashboard but the audit record is retained rather than hard-deleted.
+    deleted_at = Column(DateTime, nullable=True, default=None)
 
     user = relationship("User", back_populates="history_logs")

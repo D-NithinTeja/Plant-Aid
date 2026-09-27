@@ -33,6 +33,15 @@ def _create_synthetic_leaf_b64(color=(34, 139, 34)) -> str:
     return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
+def _create_synthetic_leaf_png_b64() -> str:
+    """Creates the same synthetic leaf encoded as PNG, for content-sniffing tests."""
+    arr = np.zeros((200, 200, 3), dtype=np.uint8)
+    arr[40:160, 40:160] = (34, 139, 34)
+    buf = io.BytesIO()
+    Image.fromarray(arr).save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
+
+
 @pytest.fixture(scope="module", autouse=True)
 def setup_module():
     Base.metadata.create_all(bind=engine)
@@ -159,8 +168,9 @@ def test_confidence_calibration_uncertainty_flag():
         assert pred["is_healthy_or_uncertain"] is False
 
 
-def test_streaming_frame_endpoint_contract():
+def test_streaming_frame_endpoint_contract(auth_user):
     """Task 5.5: POST /api/inference/frame matches exact contract without writing to history DB."""
+    headers, _ = auth_user
     db: Session = SessionLocal()
     count_before = db.query(DiseaseHistoryLog).count()
     db.close()
@@ -172,7 +182,7 @@ def test_streaming_frame_endpoint_contract():
         "capture_timestamp": "2026-09-07T12:00:00Z",
     }
 
-    res = client.post("/api/inference/frame", json=payload)
+    res = client.post("/api/inference/frame", json=payload, headers=headers)
     assert res.status_code == 200
     data = res.json()
 
@@ -197,11 +207,37 @@ def test_streaming_frame_endpoint_contract():
     assert count_after == count_before
 
 
+def test_inference_endpoints_require_jwt(auth_user):
+    """Ticket 02: both inference endpoints demand a Bearer JWT per NF.3 / Implementation.md §8."""
+    payload = {
+        "mime_type": "image/jpeg",
+        "encoding": "base64",
+        "image_b64": _create_synthetic_leaf_b64(),
+    }
+
+    assert client.post("/api/inference/frame", json=payload).status_code == 401
+    assert client.post(
+        "/api/inference/frame",
+        json=payload,
+        headers={"Authorization": "Bearer not-a-real-token"},
+    ).status_code == 401
+
+    image_bytes = base64.b64decode(_create_synthetic_leaf_b64())
+    assert client.post(
+        "/api/inference/predict",
+        files={"file": ("leaf.jpg", image_bytes, "image/jpeg")},
+    ).status_code == 401
+
+
 def test_multipart_predict_endpoint(auth_user):
-    """Task 5.5: POST /api/inference/predict file upload with S3 compensation and DB record."""
+    """Task 5.5 + Ticket 02: authenticated upload returns a storage URI and writes no history row."""
     headers, _ = auth_user
     img_b64 = _create_synthetic_leaf_b64()
     image_bytes = base64.b64decode(img_b64)
+
+    db: Session = SessionLocal()
+    count_before = db.query(DiseaseHistoryLog).count()
+    db.close()
 
     res = client.post(
         "/api/inference/predict",
@@ -214,17 +250,116 @@ def test_multipart_predict_endpoint(auth_user):
     assert "disease_name" in data
     assert data["confidence"] > 0.0
 
+    # Persistence is the caller's explicit decision, not a side effect of uploading.
+    db = SessionLocal()
+    count_after = db.query(DiseaseHistoryLog).count()
+    db.close()
+    assert count_after == count_before
 
-def test_inference_aliased_routes():
-    """Verify both /api/inference/frame and /inference/frame are accessible."""
+
+def test_frame_response_matches_documented_contract(auth_user):
+    """Task 5.5 + Ticket 07: assert the §4.3 response shape and field types, not just key presence."""
+    headers, _ = auth_user
     payload = {
         "mime_type": "image/jpeg",
         "encoding": "base64",
         "image_b64": _create_synthetic_leaf_b64(),
     }
-    res = client.post("/inference/frame", json=payload)
+
+    res = client.post("/api/inference/frame", json=payload, headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+
+    # Documented §4.3 contract fields, by type
+    assert isinstance(data["disease_id"], int)
+    assert isinstance(data["disease_name"], str) and data["disease_name"]
+    assert isinstance(data["confidence"], float)
+    assert 0.0 <= data["confidence"] <= 1.0
+    assert isinstance(data["frame_id"], str) and data["frame_id"]
+    assert isinstance(data["is_healthy_or_uncertain"], bool)
+
+    bbox = data["bounding_box"]
+    assert set(bbox.keys()) == {"x_min", "y_min", "x_max", "y_max"}
+    for key, value in bbox.items():
+        assert isinstance(value, float), key
+        assert 0.0 <= value <= 1.0, key
+    assert bbox["x_min"] < bbox["x_max"]
+    assert bbox["y_min"] < bbox["y_max"]
+
+    # Enrichment the §5 flow depends on
+    assert isinstance(data["scientific_name"], str) and data["scientific_name"]
+    assert isinstance(data["plant_species"], str) and data["plant_species"]
+    assert isinstance(data["confidence_score"], float)
+    assert data["confidence_score"] == data["confidence"]
+    assert isinstance(data["cam_heatmap_b64"], str) and data["cam_heatmap_b64"]
+
+    assert isinstance(data["remedies"], list) and data["remedies"]
+    for remedy in data["remedies"]:
+        assert isinstance(remedy["title"], str)
+        assert isinstance(remedy["description"], str)
+        assert isinstance(remedy["category"], str)
+
+
+def test_inference_aliased_routes(auth_user):
+    """Verify both /api/inference/frame and /inference/frame are accessible."""
+    headers, _ = auth_user
+    payload = {
+        "mime_type": "image/jpeg",
+        "encoding": "base64",
+        "image_b64": _create_synthetic_leaf_b64(),
+    }
+    res = client.post("/inference/frame", json=payload, headers=headers)
     assert res.status_code == 200
     assert "disease_id" in res.json()
+
+
+def test_upload_validation_sniffs_content_not_declared_type(auth_user):
+    """Ticket 04 / NF.4: only real JPEG or PNG bytes pass, whatever the caller declares."""
+    headers, _ = auth_user
+
+    # A valid PNG is accepted even though the declared type says otherwise
+    png_b64 = _create_synthetic_leaf_png_b64()
+    res = client.post(
+        "/api/inference/frame",
+        json={
+            "mime_type": "image/jpeg",
+            "encoding": "base64",
+            "image_b64": f"data:image/jpeg;base64,{png_b64}",
+        },
+        headers=headers,
+    )
+    assert res.status_code == 200
+
+    # Not-an-image bytes claiming to be a JPEG are refused on both endpoints
+    fake_bytes = b"this is definitely not a jpeg"
+    res = client.post(
+        "/api/inference/predict",
+        files={"file": ("leaf.jpg", fake_bytes, "image/jpeg")},
+        headers=headers,
+    )
+    assert res.status_code == 400
+    assert "JPEG or PNG" in res.json()["detail"]
+
+    res = client.post(
+        "/api/inference/frame",
+        json={
+            "mime_type": "image/jpeg",
+            "encoding": "base64",
+            "image_b64": base64.b64encode(fake_bytes).decode("utf-8"),
+        },
+        headers=headers,
+    )
+    assert res.status_code == 400
+    assert "JPEG or PNG" in res.json()["detail"]
+
+    # A valid PNG upload passes content sniffing on the multipart path too
+    png_bytes = base64.b64decode(png_b64)
+    res = client.post(
+        "/api/inference/predict",
+        files={"file": ("leaf.bin", png_bytes, "application/octet-stream")},
+        headers=headers,
+    )
+    assert res.status_code == 200
 
 
 def test_rate_limiting_auth_endpoint():
@@ -236,6 +371,36 @@ def test_rate_limiting_auth_endpoint():
         res = client.post(
             "/api/auth/login",
             json={"email_address": "ratelimit_tester@example.com", "password": "WrongPassword!"},
+        )
+        status_codes.append(res.status_code)
+        if res.status_code == 429:
+            break
+
+    assert 429 in status_codes
+
+
+def test_rate_limiting_inference_endpoint(auth_user):
+    """Task 5.6 + Ticket 05: the inference limit is enforced against the JWT subject."""
+    headers, user_id = auth_user
+
+    db: Session = SessionLocal()
+    user = db.query(User).filter(User.id == user_id).first()
+    token = create_access_token({"sub": str(user.id)})
+    db.close()
+
+    payload = {
+        "mime_type": "image/jpeg",
+        "encoding": "base64",
+        "image_b64": _create_synthetic_leaf_b64(),
+    }
+
+    # A distinct user gets its own bucket rather than sharing one with the rest of the suite
+    status_codes = []
+    for _ in range(int(settings.RATE_LIMIT_INFERENCE.split("/")[0]) + 5):
+        res = client.post(
+            "/api/inference/frame",
+            json=payload,
+            headers={"Authorization": f"Bearer {token}"},
         )
         status_codes.append(res.status_code)
         if res.status_code == 429:

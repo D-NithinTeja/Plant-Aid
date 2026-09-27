@@ -12,12 +12,9 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models import User
+from app.models import utcnow as get_now_utc
 
 security_scheme = HTTPBearer(auto_error=False)
-
-
-def get_now_utc() -> datetime.datetime:
-    return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 
 
 def hash_password(password: str) -> str:

@@ -2,7 +2,7 @@
 the confidence threshold, and run the Grad-CAM smoke test (Docs/plan.md §4 Step 7).
 
 Usage:
-    python export.py --checkpoint artifacts/convnext_tiny_best.pt \
+    uv run python export.py --checkpoint artifacts/convnext_tiny_best.pt \
         --data-dir <path/to/input_images>
 """
 
@@ -151,6 +151,7 @@ def main() -> None:
                 "class_key": name,
                 "disease_id": CLASS_DISPLAY[name]["disease_id"],
                 "disease_name": CLASS_DISPLAY[name]["disease_name"],
+                "scientific_name": CLASS_DISPLAY[name]["scientific_name"],
                 "is_healthy": CLASS_DISPLAY[name]["is_healthy"],
             }
             for name, idx in class_to_idx.items()

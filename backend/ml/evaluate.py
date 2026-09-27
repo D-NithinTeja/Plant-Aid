@@ -2,7 +2,7 @@
 and latency benchmark (Docs/plan.md §4 Step 5).
 
 Usage:
-    python evaluate.py --checkpoint artifacts/convnext_tiny_best.pt \
+    uv run python evaluate.py --checkpoint artifacts/convnext_tiny_best.pt \
         --data-dir <path/to/input_images> [--split test] [--bench-cpu]
 """
 

@@ -12,14 +12,16 @@ class OTPService:
     def __init__(self):
         self.provider = settings.OTP_PROVIDER.lower()
 
-    def send_otp(self, destination: str, otp_code: str, channel: str = "auto") -> bool:
+    def send_otp(self, destination: str, otp_code: str) -> bool:
         """
-        Dispatches 2FA OTP code to user via SMS or Email based on provider configuration.
-        `destination`: Phone number or Email address
-        `channel`: 'sms', 'email', or 'auto' (determined by presence of '@')
+        Dispatches the 2FA OTP to the user.
+
+        `destination` is a phone number or an email address; the channel is derived from it
+        (an '@' means email), and the configured provider decides the transport. When the
+        provider is misconfigured or the send fails, the code falls back to console dispatch
+        so a local run is never blocked on third-party credentials.
         """
-        if channel == "auto":
-            channel = "email" if "@" in destination else "sms"
+        channel = "email" if "@" in destination else "sms"
 
         if self.provider == "twilio" and channel == "sms":
             return self._send_twilio_sms(destination, otp_code)

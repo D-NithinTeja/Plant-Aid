@@ -26,15 +26,17 @@ class TwoFactorChallengeResponse(BaseModel):
     session_id: str
     expires_in: int = 300
     message: str
-    otp_code_dev: str | None = (
-        None  # Populated when APP_DEBUG=True for seamless local testing
+    otp_code_dev: str | None = Field(
+        None,
+        description=(
+            "DEBUG ONLY. Populated only when APP_DEBUG=True so local and automated flows can "
+            "complete without a real SMS/email provider. It is always omitted in production."
+        ),
     )
-    user_id: int | None = None  # Optional back-compat for legacy tests
 
 
 class TwoFactorVerifyRequest(BaseModel):
-    session_id: str | None = None
-    user_id: int | None = None  # Backwards compatibility
+    session_id: str = Field(..., description="Opaque challenge session id issued by /auth/login")
     otp_code: str = Field(..., min_length=6, max_length=6)
 
 

@@ -64,6 +64,8 @@ class StorageService:
                     Key=object_key,
                     Body=image_bytes,
                     ContentType=mime_type,
+                    # SSE-S3 at rest for every stored frame (Implementation.md §7, store D4)
+                    ServerSideEncryption="AES256",
                 )
                 return f"s3://{settings.S3_BUCKET_NAME}/{object_key}"
             except (BotoCoreError, ClientError) as e:

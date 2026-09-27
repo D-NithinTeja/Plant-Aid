@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Disease, DiseaseHistoryLog, User
+from app.models import DiseaseHistoryLog, User
 from app.schemas import (
     HistoryLogCreate,
     HistoryLogCreateResponse,
@@ -14,6 +14,7 @@ from app.schemas import (
     PaginatedHistoryResponse,
 )
 from app.security import get_current_user, get_now_utc
+from app.services.disease_lookup import resolve_disease
 from app.services.storage import storage_service
 
 router = APIRouter(tags=["Disease History & Media Storage Management"])
@@ -42,13 +43,14 @@ def create_history_log_item(
     Triggered when the user clicks 'Save Diagnosis' rather than on every ephemeral video frame.
     Enforces S3 compensation rollback if the database commit fails.
     """
-    disease_name = payload.disease_name
-    if not disease_name:
-        disease_obj = db.query(Disease).filter(Disease.id == payload.disease_id).first()
-        if disease_obj:
-            disease_name = disease_obj.disease_name
-        else:
-            disease_name = payload.disease_id.replace("_", " ").title()
+    disease_obj = resolve_disease(db, payload.disease_id)
+    if not disease_obj:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Unknown disease reference '{payload.disease_id}'. Use a catalogued disease id, numeric index, or name.",
+        )
+
+    disease_name = payload.disease_name or disease_obj.disease_name
 
     bbox_json = (
         json.dumps(payload.bounding_box.model_dump())
@@ -59,7 +61,7 @@ def create_history_log_item(
 
     log_entry = DiseaseHistoryLog(
         user_id=current_user.id,
-        disease_id=payload.disease_id,
+        disease_id=disease_obj.id,
         disease_name=disease_name,
         confidence_score=payload.confidence_score,
         s3_storage_uri=payload.s3_storage_uri,
@@ -98,6 +100,22 @@ def _parse_dt(dt_str: Optional[str]) -> Optional[datetime.datetime]:
         return None
 
 
+def _get_visible_log_or_404(db: Session, log_id: int, user_id: int) -> DiseaseHistoryLog:
+    """Fetches one of the caller's non-deleted history rows, or raises 404."""
+    log = (
+        db.query(DiseaseHistoryLog)
+        .filter(
+            DiseaseHistoryLog.id == log_id,
+            DiseaseHistoryLog.user_id == user_id,
+            DiseaseHistoryLog.deleted_at.is_(None),
+        )
+        .first()
+    )
+    if not log:
+        raise HTTPException(status_code=404, detail="History log entry not found")
+    return log
+
+
 @router.get(
     "",
     response_model=PaginatedHistoryResponse,
@@ -121,7 +139,8 @@ def get_user_history(
     Includes active, time-limited presigned URLs for image thumbnails and supports disease and date filtering.
     """
     query = db.query(DiseaseHistoryLog).filter(
-        DiseaseHistoryLog.user_id == current_user.id
+        DiseaseHistoryLog.user_id == current_user.id,
+        DiseaseHistoryLog.deleted_at.is_(None),
     )
 
     dt_from = _parse_dt(date_from)
@@ -164,15 +183,7 @@ def get_history_log_item(
     current_user: User = Depends(get_current_user),
 ):
     """Retrieves a single diagnosis history log record by ID with an active presigned media URL."""
-    log = (
-        db.query(DiseaseHistoryLog)
-        .filter(
-            DiseaseHistoryLog.id == log_id, DiseaseHistoryLog.user_id == current_user.id
-        )
-        .first()
-    )
-    if not log:
-        raise HTTPException(status_code=404, detail="History log entry not found")
+    log = _get_visible_log_or_404(db, log_id, current_user.id)
     return _to_response(log)
 
 
@@ -186,19 +197,14 @@ def delete_history_log_item(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Deletes a diagnosis history log entry and cleans up associated S3 / disk media."""
-    log = (
-        db.query(DiseaseHistoryLog)
-        .filter(
-            DiseaseHistoryLog.id == log_id, DiseaseHistoryLog.user_id == current_user.id
-        )
-        .first()
-    )
-    if not log:
-        raise HTTPException(status_code=404, detail="History log entry not found")
+    """
+    Removes a diagnosis from the user's dashboard and cleans up associated S3 / disk media.
+    The record itself is soft-deleted rather than dropped, so the audit trail survives (NF.5).
+    """
+    log = _get_visible_log_or_404(db, log_id, current_user.id)
 
     media_uri = log.s3_storage_uri
-    db.delete(log)
+    log.deleted_at = get_now_utc()
     db.commit()
 
     # Clean up associated media object (Task 4.2)

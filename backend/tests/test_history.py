@@ -181,6 +181,49 @@ def test_delete_history_item(auth_user):
     # Second delete returns 404
     assert client.delete(f"/api/history/{log_id}", headers=headers).status_code == 404
 
+    # A soft-deleted record is hidden from the dashboard, its direct lookup, and the total count
+    assert client.get(f"/api/history/{log_id}", headers=headers).status_code == 404
+    listed = client.get("/api/history?limit=100", headers=headers).json()
+    assert all(entry["id"] != log_id for entry in listed["items"])
+    assert all(entry["id"] != log_id for entry in client.get("/api/history?page=2&limit=100", headers=headers).json()["items"])
+
+
+def test_delete_is_soft_and_preserves_audit_row(auth_user):
+    """Ticket 03 / NF.5: the row survives deletion in the database with a deletion marker."""
+    headers, _ = auth_user
+    create_res = client.post(
+        "/api/history",
+        json={
+            "disease_id": "rust",
+            "confidence_score": 0.93,
+            "s3_storage_uri": "s3://plant-aid-media-bucket/frames/audit-test.jpg",
+        },
+        headers=headers,
+    )
+    log_id = create_res.json()["log_id"]
+
+    total_before = client.get("/api/history?limit=1", headers=headers).json()["total"]
+
+    assert client.delete(f"/api/history/{log_id}", headers=headers).status_code == 204
+
+    # Gone from the user's view...
+    assert client.get(f"/api/history/{log_id}", headers=headers).status_code == 404
+    total_after = client.get("/api/history?limit=1", headers=headers).json()["total"]
+    assert total_after == total_before - 1
+
+    # ...but retained in the database for the audit trail.
+    db: Session = SessionLocal()
+    try:
+        row = (
+            db.query(DiseaseHistoryLog)
+            .filter(DiseaseHistoryLog.id == log_id)
+            .first()
+        )
+        assert row is not None
+        assert row.deleted_at is not None
+    finally:
+        db.close()
+
 
 def test_history_aliased_path(auth_user):
     headers, _ = auth_user
@@ -190,3 +233,52 @@ def test_history_aliased_path(auth_user):
     data = res.json()
     assert "items" in data
     assert "total" in data
+
+
+def test_history_log_normalizes_disease_reference(auth_user):
+    """Ticket 01: slug, numeric index, and disease name all normalize to the canonical slug."""
+    headers, _ = auth_user
+
+    cases = [
+        ("rust", "rust"),
+        ("4", "late_leaf_spot"),
+        ("Groundnut Rust", "rust"),
+        ("early_leaf_spot", "early_leaf_spot"),
+    ]
+    for raw, expected in cases:
+        res = client.post(
+            "/api/history",
+            json={
+                "disease_id": raw,
+                "confidence_score": 0.9,
+                "s3_storage_uri": "s3://plant-aid-media-bucket/frames/normalize.jpg",
+            },
+            headers=headers,
+        )
+        assert res.status_code == 201, raw
+        log_id = res.json()["log_id"]
+
+        item = client.get(f"/api/history/{log_id}", headers=headers).json()
+        assert item["disease_id"] == expected, raw
+
+        # The dashboard filter agrees with the stored canonical key
+        filtered = client.get(
+            f"/api/history?disease_id={expected}", headers=headers
+        ).json()
+        assert any(entry["id"] == log_id for entry in filtered["items"]), raw
+
+
+def test_history_log_rejects_unknown_disease_reference(auth_user):
+    """Ticket 01: an uncatalogued disease reference is refused rather than stored as free text."""
+    headers, _ = auth_user
+    res = client.post(
+        "/api/history",
+        json={
+            "disease_id": "not_a_real_disease",
+            "confidence_score": 0.9,
+            "s3_storage_uri": "s3://plant-aid-media-bucket/frames/unknown.jpg",
+        },
+        headers=headers,
+    )
+    assert res.status_code == 422
+    assert "not_a_real_disease" in res.json()["detail"]

@@ -19,6 +19,12 @@ All Python environments, dependency management, scripts, and tests **must** use 
 - Test runner: `uv run pytest`
 - Server launch: `uv run uvicorn app.main:app --reload`
 
+**Sanctioned exception — Google Colab:** `backend/ml/COLAB.md` documents the GPU training
+workflow, which runs on a managed Colab runtime where `uv` is not the provisioned toolchain.
+Plain `pip install` / `python <script>.py` cells are correct **in that document only**; the
+same scripts run locally via `uv run python ...`. Everywhere else the standard applies
+without exception.
+
 Frontend uses **Node.js v22+** and **npm** with **Vite + React + Tailwind CSS**.
 
 ---
@@ -329,15 +335,19 @@ Phase 7: DevOps, Containerization & Root Documentation
   - Normalize coordinates to $[0, 1]$ (`x_min, y_min, x_max, y_max`).
 - [x] **Acceptance Criteria:** Generates tight leaf bounding box coordinates from raw frame.
 
-### Task 5.3: Layer 2 Localization — Grad-CAM Heatmap
-- [x] **Goal:** Compute Grad-CAM on the final conv stage for suspected infection region.
+### Task 5.3: Layer 2 Localization — Lesion-Attention Heatmap
+- [x] **Goal:** Compute a lesion-attention (hue-distance saliency) map over the leaf ROI for the suspected infection region.
 - [x] **Files to touch:**
   - `backend/app/services/ml_engine.py`
 - [x] **Details:**
-  - Run Grad-CAM only for the winning disease class.
+  - Compute the attention map over the leaf ROI and threshold connected components inside it.
   - Intersect attention heatmap with Leaf ROI mask.
-  - Produce formatted bounding box $[x_{min}, y_{min}, x_{max}, y_{max}]$ and optional base64 CAM heatmap mask.
+  - Produce formatted bounding box $[x_{min}, y_{min}, x_{max}, y_{max}]$ and optional base64 attention-map overlay.
 - [x] **Acceptance Criteria:** Computes normalized attention coordinates within the latency budget.
+- **Note:** this heuristic is *not* gradient-weighted class activation. True Grad-CAM lives in
+  `backend/ml/gradcam.py` and is used for offline sample generation and report figures. The
+  in-request path uses HSV hue-distance saliency so that a CPU request stays inside the NF.4
+  latency budget; `Docs/Implementation.md` §4.2/§4.4 records the same distinction.
 
 ### Task 5.4: Confidence Threshold Calibration ($\tau = 0.55$)
 - [x] **Goal:** Flag low-confidence frames per `Implementation.md` §4.2.
@@ -486,17 +496,44 @@ Phase 7: DevOps, Containerization & Root Documentation
 
 ### Task 7.2: Comprehensive Root `README.md`
 
-- [ ] **Goal:** Document architecture, prerequisites, environment variables, and execution steps.
-- [ ] **Files to create:**
+- [x] **Goal:** Document architecture, prerequisites, environment variables, and execution steps.
+- [x] **Files to create:**
   - `README.md` [NEW]
-- [ ] **Details:** Include API documentation, `uv` instructions, React setup, and Colab ML handoff guide.
-- [ ] **Acceptance Criteria:** New developers can clone and run the project in under 5 minutes.
+- [x] **Details:** Include API documentation, `uv` instructions, React setup, and Colab ML handoff guide.
+- [x] **Acceptance Criteria:** New developers can clone and run the project in under 5 minutes.
 
 ### Task 7.3: Full End-to-End System Audit
 
 - [ ] **Goal:** Run complete test suite and verify all functional requirements (F.1–F.6) and non-functional requirements (NF.1–NF.5).
 - [ ] **Command:** `uv run pytest backend/tests`
+- **Status:** backend suite green (59 passing, including the remediation tests below). The end-to-end pass over F.1/F.2 (browser camera capture) has not been exercised in a real browser, so this task stays open.
 - [ ] **Acceptance Criteria:** All unit, integration, and contract tests pass.
+
+---
+
+## Backend Review Remediation Pass (28/09/26)
+
+A two-axis review (standards + spec) of `backend/` from the root commit surfaced the findings
+below. Each was fixed under its own ticket in `.scratch/backend-review-fixes/issues/` and is
+covered by a regression test.
+
+| Ticket | Finding | Resolution |
+| --- | --- | --- |
+| 01 | History stored numeric `"1"` and slugs in the same column; catalogue duplicated in `ml_engine` | One canonical slug, FK to `diseases`, `ml_config.py` as the single catalogue source |
+| 02 | `/inference/frame` served anonymous callers; upload wrote history implicitly | Both inference routes require a JWT; persistence is explicit-only via `POST /history` |
+| 03 | `DELETE /history/{id}` hard-deleted, contradicting NF.5 | Soft delete (`deleted_at`) with media cleanup retained |
+| 04 | Upload validation trusted the caller's `Content-Type` | JPEG/PNG magic-byte allow-list on both endpoints |
+| 05 | Rate limiting keyed only by IP | Keyed by JWT `sub`, with IP fallback for anonymous callers |
+| 06 | S3 uploads were unencrypted despite §7 / store D4 | `ServerSideEncryption=AES256` on every upload |
+| 07 | 2FA challenge exposed `user_id`; weak lockout test; contract test checked key presence only | Session-only challenge, lockout-specific assertion, typed §4.3 contract test |
+| 08 | `inference_stub.py` modelled tomato/potato classes and was unreferenced | Removed |
+| 09 | Duplicated response/404/UTC helpers; repeated four-key bbox literals | Shared response builder, `_get_visible_log_or_404`, one `utcnow`, `normalized_bbox` |
+| 10 | Spec described a layout, libraries, and localization strategy that never shipped | `Implementation.md` v1.1 and this plan realigned to the shipped code |
+
+**Deliberately not addressed** (structural, each needs its own migration or router split — no ticket opened):
+free-string `account_status` / `severity_level` / `remedy_type` columns wanting enum types, the
+category string-cascade in `remedy.py`, and `inference.py` mixing streaming, upload, storage and
+remedy concerns in one module.
 
 ---
 

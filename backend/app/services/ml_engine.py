@@ -3,6 +3,7 @@ import io
 import json
 import logging
 import os
+import sys
 
 # Prevent Windows OpenMP runtime conflict between PyTorch and OpenCV
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -17,11 +18,33 @@ import torch.nn.functional as F
 
 from app.config import settings
 
+# The class catalogue has one source of truth in ml/ml_config.py, shared with the
+# training and export pipeline. The sys.path guard keeps this import working when the
+# process working directory is not backend/.
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _BACKEND_DIR not in sys.path:
+    sys.path.insert(0, _BACKEND_DIR)
+
+from ml.ml_config import CLASS_ALLOWLIST, CLASS_DISPLAY, PLANT_SPECIES  # noqa: E402
+
 logger = logging.getLogger("plant_aid.ml_engine")
 
 IMG_SIZE = 224
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
+
+
+def normalized_bbox(x_min: float, y_min: float, x_max: float, y_max: float) -> Dict[str, float]:
+    """
+    Single constructor for the normalized [0, 1] bounding box, so every producer of a box
+    (leaf ROI, lesion hotspot, ROI-relative fallback) emits the same four rounded, clamped keys.
+    """
+    return {
+        "x_min": round(max(0.0, min(1.0, x_min)), 4),
+        "y_min": round(max(0.0, min(1.0, y_min)), 4),
+        "x_max": round(max(0.0, min(1.0, x_max)), 4),
+        "y_max": round(max(0.0, min(1.0, y_max)), 4),
+    }
 
 
 class MLEngine:
@@ -47,57 +70,10 @@ class MLEngine:
 
         self.model: Optional[torch.jit.ScriptModule] = None
         self.is_fallback: bool = True
-        self.classes: List[str] = [
-            "early_leaf_spot",
-            "early_rust",
-            "healthy_leaf",
-            "late_leaf_spot",
-            "nutrition_deficiency",
-            "rust",
-        ]
+        self.classes: List[str] = list(CLASS_ALLOWLIST)
         self.display_map: Dict[str, Dict[str, Any]] = {
-            "early_leaf_spot": {
-                "disease_id": 1,
-                "disease_name": "Groundnut Early Leaf Spot",
-                "scientific_name": "Cercospora arachidicola",
-                "plant_species": "Groundnut (Arachis hypogaea)",
-                "is_healthy": False,
-            },
-            "early_rust": {
-                "disease_id": 2,
-                "disease_name": "Groundnut Early Rust",
-                "scientific_name": "Puccinia arachidis",
-                "plant_species": "Groundnut (Arachis hypogaea)",
-                "is_healthy": False,
-            },
-            "healthy_leaf": {
-                "disease_id": 3,
-                "disease_name": "Healthy Leaf",
-                "scientific_name": "Arachis hypogaea",
-                "plant_species": "Groundnut (Arachis hypogaea)",
-                "is_healthy": True,
-            },
-            "late_leaf_spot": {
-                "disease_id": 4,
-                "disease_name": "Groundnut Late Leaf Spot",
-                "scientific_name": "Phaeoisariopsis personata",
-                "plant_species": "Groundnut (Arachis hypogaea)",
-                "is_healthy": False,
-            },
-            "nutrition_deficiency": {
-                "disease_id": 5,
-                "disease_name": "Nutrition Deficiency",
-                "scientific_name": "Nutritional Chlorosis",
-                "plant_species": "Groundnut (Arachis hypogaea)",
-                "is_healthy": False,
-            },
-            "rust": {
-                "disease_id": 6,
-                "disease_name": "Groundnut Rust",
-                "scientific_name": "Puccinia arachidis Speg.",
-                "plant_species": "Groundnut (Arachis hypogaea)",
-                "is_healthy": False,
-            },
+            class_key: {**meta, "plant_species": PLANT_SPECIES}
+            for class_key, meta in CLASS_DISPLAY.items()
         }
         self.confidence_threshold = settings.ML_CONFIDENCE_THRESHOLD
 
@@ -132,7 +108,7 @@ class MLEngine:
                                     "disease_id": item.get("disease_id"),
                                     "disease_name": item.get("disease_name"),
                                     "scientific_name": item.get("scientific_name", ""),
-                                    "plant_species": "Groundnut (Arachis hypogaea)",
+                                    "plant_species": PLANT_SPECIES,
                                     "is_healthy": item.get("is_healthy", False),
                                 }
                             elif isinstance(item, str):
@@ -191,20 +167,16 @@ class MLEngine:
             if area > (0.01 * h * w):  # At least 1% of total frame area
                 x, y, bw, bh = cv2.boundingRect(largest)
                 return {
-                    "x_min": round(max(0.0, float(x) / w), 4),
-                    "y_min": round(max(0.0, float(y) / h), 4),
-                    "x_max": round(min(1.0, float(x + bw) / w), 4),
-                    "y_max": round(min(1.0, float(y + bh) / h), 4),
+                    **normalized_bbox(
+                        float(x) / w, float(y) / h, float(x + bw) / w, float(y + bh) / h
+                    ),
                     "mask": mask_clean,
                     "detected": True,
                 }
 
         # Fallback default ROI (centered region) if no green leaf detected
         return {
-            "x_min": 0.1,
-            "y_min": 0.1,
-            "x_max": 0.9,
-            "y_max": 0.9,
+            **normalized_bbox(0.1, 0.1, 0.9, 0.9),
             "mask": mask_clean,
             "detected": False,
         }
@@ -295,12 +267,9 @@ class MLEngine:
         """
         if is_healthy or not leaf_roi.get("detected", False):
             # Healthy leaf or fallback: bounding box encompasses the full leaf ROI
-            return {
-                "x_min": leaf_roi["x_min"],
-                "y_min": leaf_roi["y_min"],
-                "x_max": leaf_roi["x_max"],
-                "y_max": leaf_roi["y_max"],
-            }
+            return normalized_bbox(
+                leaf_roi["x_min"], leaf_roi["y_min"], leaf_roi["x_max"], leaf_roi["y_max"]
+            )
 
         h, w = image_np.shape[:2]
 
@@ -319,32 +288,22 @@ class MLEngine:
                 if cv2.contourArea(largest) > (0.001 * h * w):
                     bx, by, bw, bh = cv2.boundingRect(largest)
                     # Normalize and clamp within leaf ROI bounds
-                    x_min = round(max(leaf_roi["x_min"], float(bx) / w), 4)
-                    y_min = round(max(leaf_roi["y_min"], float(by) / h), 4)
-                    x_max = round(min(leaf_roi["x_max"], float(bx + bw) / w), 4)
-                    y_max = round(min(leaf_roi["y_max"], float(by + bh) / h), 4)
+                    x_min = max(leaf_roi["x_min"], float(bx) / w)
+                    y_min = max(leaf_roi["y_min"], float(by) / h)
+                    x_max = min(leaf_roi["x_max"], float(bx + bw) / w)
+                    y_max = min(leaf_roi["y_max"], float(by + bh) / h)
                     if x_max > x_min and y_max > y_min:
-                        return {
-                            "x_min": x_min,
-                            "y_min": y_min,
-                            "x_max": x_max,
-                            "y_max": y_max,
-                        }
+                        return normalized_bbox(x_min, y_min, x_max, y_max)
 
         # Safe fallback centered within leaf ROI if hotspot is diffuse
         roi_w = leaf_roi["x_max"] - leaf_roi["x_min"]
         roi_h = leaf_roi["y_max"] - leaf_roi["y_min"]
-        x_min = round(leaf_roi["x_min"] + 0.15 * roi_w, 4)
-        y_min = round(leaf_roi["y_min"] + 0.18 * roi_h, 4)
-        x_max = round(min(1.0, x_min + 0.58 * roi_w), 4)
-        y_max = round(min(1.0, y_min + 0.52 * roi_h), 4)
+        x_min = leaf_roi["x_min"] + 0.15 * roi_w
+        y_min = leaf_roi["y_min"] + 0.18 * roi_h
+        x_max = min(1.0, x_min + 0.58 * roi_w)
+        y_max = min(1.0, y_min + 0.52 * roi_h)
 
-        return {
-            "x_min": x_min,
-            "y_min": y_min,
-            "x_max": x_max,
-            "y_max": y_max,
-        }
+        return normalized_bbox(x_min, y_min, x_max, y_max)
 
     def predict(self, image_bytes: bytes) -> Dict[str, Any]:
         """
@@ -407,16 +366,7 @@ class MLEngine:
                 class_key = "nutrition_deficiency"
                 confidence = 0.51  # Below tau = 0.55 threshold to test uncertainty
 
-        info = self.display_map.get(
-            class_key,
-            {
-                "disease_id": 1,
-                "disease_name": "Groundnut Early Leaf Spot",
-                "scientific_name": "Cercospora arachidicola",
-                "plant_species": "Groundnut (Arachis hypogaea)",
-                "is_healthy": False,
-            },
-        )
+        info = self.display_map.get(class_key) or next(iter(self.display_map.values()))
 
         is_healthy = info.get("is_healthy", False) or (class_key == "healthy_leaf")
 
@@ -452,12 +402,9 @@ class MLEngine:
             "confidence_score": round(confidence, 4),
             "bounding_box": bbox,
             "cam_heatmap_b64": cam_b64,
-            "leaf_roi": {
-                "x_min": leaf_roi["x_min"],
-                "y_min": leaf_roi["y_min"],
-                "x_max": leaf_roi["x_max"],
-                "y_max": leaf_roi["y_max"],
-            },
+            "leaf_roi": normalized_bbox(
+                leaf_roi["x_min"], leaf_roi["y_min"], leaf_roi["x_max"], leaf_roi["y_max"]
+            ),
             "is_healthy_or_uncertain": is_healthy_or_uncertain,
             "is_fallback": self.is_fallback,
         }

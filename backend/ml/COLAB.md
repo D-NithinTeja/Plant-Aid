@@ -1,5 +1,10 @@
 # Running the Groundnut Classifier Training on Google Colab
 
+> **Tooling exception:** this document is the one sanctioned place where the project's `uv`
+> standard does not apply. Colab provisions its own Python/CUDA toolchain, so the cells below
+> use plain `pip install` / `python`. On a local machine, run the same scripts as
+> `uv run python train.py ...` instead — see `Docs/DEVELOPMENT_PLAN.md`.
+
 Everything needed ships as two zips (created in `Downloads/` on the project machine):
 
 - `GroundNutDataset.zip` (~99 MB) — the raw `input_images/` set

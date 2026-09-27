@@ -18,16 +18,49 @@ CLASS_ALLOWLIST = [
 
 CLASS_TO_IDX = {name: idx for idx, name in enumerate(CLASS_ALLOWLIST)}
 HEALTHY_CLASS = "healthy_leaf"
+PLANT_SPECIES = "Groundnut (Arachis hypogaea)"
 
 # Human-readable names for the UI. `disease_id` is 1-based and must match the
 # seed rows of data store D2 (diseases table) used by the Module 0.4 remedy lookup.
+# This is the single source of truth for the class catalogue: export.py emits it to
+# labels.json and the inference engine reads it directly (ml_engine.py).
 CLASS_DISPLAY = {
-    "early_leaf_spot": {"disease_id": 1, "disease_name": "Groundnut Early Leaf Spot", "is_healthy": False},
-    "early_rust": {"disease_id": 2, "disease_name": "Groundnut Early Rust", "is_healthy": False},
-    "healthy_leaf": {"disease_id": 3, "disease_name": "Healthy Leaf", "is_healthy": True},
-    "late_leaf_spot": {"disease_id": 4, "disease_name": "Groundnut Late Leaf Spot", "is_healthy": False},
-    "nutrition_deficiency": {"disease_id": 5, "disease_name": "Nutrition Deficiency", "is_healthy": False},
-    "rust": {"disease_id": 6, "disease_name": "Groundnut Rust", "is_healthy": False},
+    "early_leaf_spot": {
+        "disease_id": 1,
+        "disease_name": "Groundnut Early Leaf Spot",
+        "scientific_name": "Cercospora arachidicola",
+        "is_healthy": False,
+    },
+    "early_rust": {
+        "disease_id": 2,
+        "disease_name": "Groundnut Early Rust",
+        "scientific_name": "Puccinia arachidis",
+        "is_healthy": False,
+    },
+    "healthy_leaf": {
+        "disease_id": 3,
+        "disease_name": "Healthy Leaf",
+        "scientific_name": "Arachis hypogaea",
+        "is_healthy": True,
+    },
+    "late_leaf_spot": {
+        "disease_id": 4,
+        "disease_name": "Groundnut Late Leaf Spot",
+        "scientific_name": "Phaeoisariopsis personata",
+        "is_healthy": False,
+    },
+    "nutrition_deficiency": {
+        "disease_id": 5,
+        "disease_name": "Nutrition Deficiency",
+        "scientific_name": "Nutritional Chlorosis",
+        "is_healthy": False,
+    },
+    "rust": {
+        "disease_id": 6,
+        "disease_name": "Groundnut Rust",
+        "scientific_name": "Puccinia arachidis Speg.",
+        "is_healthy": False,
+    },
 }
 
 IMG_SIZE = 224

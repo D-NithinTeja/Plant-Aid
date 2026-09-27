@@ -2,10 +2,10 @@
 groundnut splits (Docs/plan.md §4 Step 4).
 
 Local CPU smoke test (2-3 min, validates the full loop):
-    python train.py --epochs 1 --batch-size 8 --limit-steps 5 --num-workers 0
+    uv run python train.py --epochs 1 --batch-size 8 --limit-steps 5 --num-workers 0
 
-Full GPU run (e.g. Colab T4):
-    python train.py --data-dir <path/to/input_images> --num-workers 8
+Full GPU run (e.g. Colab T4; see ml/COLAB.md for the sanctioned non-uv workflow):
+    uv run python train.py --data-dir <path/to/input_images> --num-workers 8
 """
 
 from __future__ import annotations

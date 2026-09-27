@@ -5,7 +5,7 @@ Also renders the Decision-Gate D-1 sample grid (`early_rust` vs `rust`) and a
 six-class overview grid into `review/`, for the training report.
 
 Usage:
-    python prepare_data.py --data-dir <path/to/input_images> --out-dir ./data
+    uv run python prepare_data.py --data-dir <path/to/input_images> --out-dir ./data
 """
 
 from __future__ import annotations

@@ -5,43 +5,40 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Disease, Remedy
+from app.models import Disease, Remedy, User
 from app.schemas import (
     DiseaseRemedyDetailResponse,
     DiseaseSchema,
     GroupedRemediesSchema,
     RemedySchema,
 )
+from app.security import get_current_user
+from app.services.disease_lookup import resolve_disease
 
 router = APIRouter(tags=["Treatment & Remedy Lookup"])
 
 
-def _find_disease(db: Session, disease_id: str) -> Disease | None:
-    """Helper to locate a disease by numeric ID, slug ID, or disease name."""
-    disease = None
-    if disease_id.isdigit():
-        disease = (
-            db.query(Disease).filter(Disease.numeric_id == int(disease_id)).first()
-        )
-    if not disease:
-        disease = db.query(Disease).filter(Disease.id.ilike(disease_id)).first()
-    if not disease:
-        disease = (
-            db.query(Disease)
-            .filter(Disease.disease_name.ilike(f"%{disease_id}%"))
-            .first()
-        )
-    return disease
-
-
 @router.get("/remedies/{disease_id}", response_model=DiseaseRemedyDetailResponse)
-def get_remedies_for_disease(disease_id: str, db: Session = Depends(get_db)):
+def get_remedies_for_disease(
+    disease_id: str,
+    language: Optional[str] = Query(
+        None,
+        description=(
+            "Optional IETF language tag (e.g. 'en', 'te', 'hi') for localized remedy text. "
+            "Accepted for contract compatibility; canonical text is served until localized "
+            "remedy rows are seeded."
+        ),
+    ),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """
     Fetches treatment recommendations for a given disease ID (Module 0.4 per Implementation.md §5).
     Accepts numeric index (e.g. 1), slug key (e.g. 'early_leaf_spot'), or exact name.
     Returns remedies grouped by Organic / Biological, Chemical / Fungicide, and Preventive Cultural Practice.
+    Requires a verified Bearer JWT per §5.2.
     """
-    disease = _find_disease(db, disease_id)
+    disease = resolve_disease(db, disease_id)
     if not disease:
         raise HTTPException(
             status_code=404,
@@ -94,8 +91,9 @@ def list_or_search_remedies(
         description="Category filter: Organic / Biological, Chemical / Fungicide, Preventive Cultural Practice",
     ),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    """Lists all remedies or searches by query keyword and category."""
+    """Lists all remedies or searches by query keyword and category. Requires a Bearer JWT."""
     query = db.query(Remedy)
     if q:
         query = query.filter(
@@ -108,15 +106,28 @@ def list_or_search_remedies(
 
 
 @router.get("/diseases", response_model=list[DiseaseSchema])
-def list_diseases(db: Session = Depends(get_db)):
-    """Lists all cataloged plant diseases with remedies."""
+def list_diseases(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Lists all cataloged plant diseases with remedies.
+    Authenticated like /remedies/{disease_id}: it exposes the same treatment data.
+    """
     return db.query(Disease).order_by(Disease.numeric_id.asc().nulls_last()).all()
 
 
 @router.get("/diseases/{disease_id}", response_model=DiseaseSchema)
-def get_disease(disease_id: str, db: Session = Depends(get_db)):
-    """Fetches full disease record and remedy list by ID or name."""
-    disease = _find_disease(db, disease_id)
+def get_disease(
+    disease_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Fetches a full disease record and its remedy list by ID or name.
+    Authenticated like /remedies/{disease_id}: it exposes the same treatment data.
+    """
+    disease = resolve_disease(db, disease_id)
     if not disease:
         raise HTTPException(
             status_code=404,

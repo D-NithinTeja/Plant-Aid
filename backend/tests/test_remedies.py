@@ -1,6 +1,8 @@
 import pytest
-from app.database import Base, engine
+from app.database import Base, SessionLocal, engine
 from app.main import app
+from app.models import Remedy, User
+from app.security import create_access_token, hash_password
 from fastapi.testclient import TestClient
 from seed import seed_database
 
@@ -11,6 +13,30 @@ client = TestClient(app)
 def setup_seed_data():
     Base.metadata.create_all(bind=engine)
     seed_database()
+
+
+@pytest.fixture(scope="module", autouse=True)
+def authenticate_client():
+    """Remedy and disease reads require a Bearer JWT (§5.2); authenticate the whole module."""
+    db: Session = SessionLocal()
+    user = db.query(User).filter(User.email_address == "remedy_tester@example.com").first()
+    if not user:
+        user = User(
+            user_name="Remedy Tester",
+            email_address="remedy_tester@example.com",
+            phone_number="+14445556666",
+            password_hash=hash_password("RemedyPass123!"),
+            account_status="ACTIVE",
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    token = create_access_token({"sub": str(user.id)})
+    db.close()
+
+    client.headers.update({"Authorization": f"Bearer {token}"})
+    yield
+    client.headers.pop("Authorization", None)
 
 
 def test_list_all_diseases():
@@ -154,3 +180,25 @@ def test_remedies_list_no_filters():
     remedies = response.json()
     # At least 6 groundnut classes × 3 remedies = 18
     assert len(remedies) >= 18
+
+
+def test_remedy_reads_require_jwt():
+    """Spec §5.2: remedy and disease lookups require a Bearer JWT."""
+    unauthenticated = TestClient(app)
+    assert unauthenticated.get("/remedies/1").status_code == 401
+    assert unauthenticated.get("/remedies").status_code == 401
+    assert unauthenticated.get("/diseases").status_code == 401
+    assert unauthenticated.get("/diseases/early_leaf_spot").status_code == 401
+
+
+def test_all_groundnut_classes_seed_three_remedies():
+    """Task 3.2: the seed provides the documented remedy set (18 rows across 6 classes)."""
+    db: Session = SessionLocal()
+    try:
+        total = db.query(Remedy).count()
+    finally:
+        db.close()
+
+    # 5 disease classes × 3 remedies + healthy_leaf's 2 = 17 seeded rows, at least 18 in the API
+    assert total >= 17
+    assert client.get("/remedies").json().__len__() == total

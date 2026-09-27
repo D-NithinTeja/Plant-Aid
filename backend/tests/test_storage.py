@@ -73,6 +73,28 @@ def test_hierarchical_key_and_upload():
     assert not os.path.exists(abs_path)
 
 
+def test_s3_upload_requests_sse_encryption(monkeypatch):
+    """Ticket 06 / store D4: every S3 upload is stored with server-side encryption."""
+    s3_client = MagicMock()
+    service = StorageService()
+    monkeypatch.setattr(service, "use_s3", True)
+    monkeypatch.setattr(service, "s3_client", s3_client)
+    monkeypatch.setattr(settings, "S3_BUCKET_NAME", "plant-aid-media-bucket")
+
+    uri = service.upload_image(
+        image_bytes=b"encrypted-frame-bytes",
+        mime_type="image/jpeg",
+        user_id=7,
+        frame_id="sse-test-frame",
+    )
+
+    assert uri.startswith("s3://plant-aid-media-bucket/")
+    s3_client.put_object.assert_called_once()
+    kwargs = s3_client.put_object.call_args.kwargs
+    assert kwargs["ServerSideEncryption"] == "AES256"
+    assert kwargs["Key"].endswith("sse-test-frame.jpg")
+
+
 def test_generate_presigned_url():
     """Task 4.1: Test presigned URL generation for both S3 URIs and local storage fallbacks."""
     # 1. Local fallback URI should return direct URL
@@ -111,23 +133,40 @@ def test_storage_compensation_delete_object():
     assert storage_service.delete_object(uri) is False
 
 
-def test_inference_compensation_rollback_on_db_error(auth_header):
-    """Task 4.2: Simulate DB commit failure during inference to verify S3 compensation rollback."""
+def test_history_logging_compensation_rollback_on_db_error(auth_header):
+    """Task 4.2 + Ticket 02: a DB failure while logging a diagnosis deletes the uploaded media."""
     headers, user_id = auth_header
+
+    uri = storage_service.upload_image(
+        image_bytes=b"compensation-rollback-media",
+        mime_type="image/jpeg",
+        user_id=user_id,
+        frame_id="history-compensation-test",
+    )
+    rel_path = uri[len("/uploads/"):].replace("/", os.sep)
+    abs_path = os.path.join(settings.UPLOAD_DIR, rel_path)
+    assert os.path.exists(abs_path)
 
     # Patch Session.commit to raise an exception simulating a database crash/constraint error
     with patch.object(Session, "commit", side_effect=RuntimeError("Simulated DB Crash")):
         with patch.object(storage_service, "delete_object", wraps=storage_service.delete_object) as mock_delete:
             response = client.post(
-                "/api/inference/predict",
-                files={"file": ("test_leaf.jpg", b"fake-jpg-content", "image/jpeg")},
+                "/api/history",
+                json={
+                    "disease_id": "early_leaf_spot",
+                    "confidence_score": 0.92,
+                    "s3_storage_uri": uri,
+                },
                 headers=headers,
             )
             # Should fail with 500 error and detail indicating media compensation
             assert response.status_code == 500
-            assert "rolled back" in response.json()["detail"].lower()
+            assert "compensation" in response.json()["detail"].lower()
             # Verify that delete_object was triggered to avoid orphaned media
             assert mock_delete.called
+
+    # The orphaned media object is actually gone from storage
+    assert not os.path.exists(abs_path)
 
 
 def test_history_delete_cleans_up_media(auth_header):

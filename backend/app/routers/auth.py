@@ -113,7 +113,6 @@ def login(
 
     return TwoFactorChallengeResponse(
         session_id=session_id,
-        user_id=user.id,
         expires_in=settings.OTP_EXPIRE_MINUTES * 60,
         message="2FA verification challenge initiated. Please verify with the 6-digit code sent to your registered contact.",
         otp_code_dev=otp_code if settings.APP_DEBUG else None,
@@ -123,17 +122,9 @@ def login(
 @router.post("/verify-2fa", response_model=TokenResponse)
 def verify_2fa(req: TwoFactorVerifyRequest, db: Session = Depends(get_db)):
     """Verifies the 2FA OTP code against the challenge session with brute-force rate capping."""
-    query = db.query(User)
-    if req.session_id:
-        query = query.filter(User.active_session_id == req.session_id)
-    elif req.user_id:
-        query = query.filter(User.id == req.user_id)
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Either session_id or user_id must be provided.",
-        )
-    user = query.first()
+    # Challenge sessions are the only lookup path: the client never needs to know the user id,
+    # so account enumeration through /auth/login stays closed (Task 2.2 / Task 2.4).
+    user = db.query(User).filter(User.active_session_id == req.session_id).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
