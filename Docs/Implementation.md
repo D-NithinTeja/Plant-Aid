@@ -10,17 +10,24 @@ This document describes the implementation of the system module by module, follo
 
 ## 1. Implementation Overview
 
+> **Frontend status (28/09/26): the React application has been removed pending a rebuild.**
+> Branch `frontend-cleanup` deletes `frontend/` so the UI can be redone from scratch; the design
+> reference (per-screen HTML mockups, exported screenshots, `DESIGN.md`, logo) is preserved in
+> `frontend_prototype/`. **Module 0.2, and every "UI shell" item below, is therefore unimplemented
+> on this branch.** Modules 0.1 and 0.3–0.5 remain complete and tested, and the endpoint contracts
+> in §8 define the interface the rebuild must satisfy.
+
 ### 1.1 Technology Stack
 
 | Layer | Technology | Role |
 | --- | --- | --- |
-| Frontend | React.js (JavaScript, HTML5, CSS3) | Responsive GUI, camera capture, dashboards |
+| Frontend | *Removed pending rebuild* — previously React 19 + Vite + Tailwind CSS | Responsive GUI, camera capture, dashboards (Module 0.2) |
 | Backend | Python 3.11+ / FastAPI | RESTful API layer, auth, orchestration |
 | Machine Learning | PyTorch (CUDA-enabled) + `timm` | CNN inference (ConvNeXt-Tiny) for disease classification |
 | Database | PostgreSQL (SQLite for local dev) | User accounts, disease/remedy master data, history logs |
 | Object Storage | AWS S3 (via `boto3`), local-disk fallback | Raw frame/image storage |
 | Auth | JWT (`pyjwt`, HS256), OTP via Twilio (SMS) / SendGrid (Email) / console (dev) | 2FA and token-based sessions |
-| Tooling | `uv` (Python env, deps, scripts, tests), Node.js 22+ / npm (frontend) | Reproducible local and CI runs |
+| Tooling | `uv` (Python env, deps, scripts, tests) | Reproducible local and CI runs |
 | Communications | HTTPS + REST (HTTP POST polling) | Client–server transport |
 
 ### 1.2 Repository / Project Structure
@@ -32,23 +39,7 @@ functionally equivalent and this document is the authority on the shipped layout
 ```
 Plant-Aid/
 ├── Docs/                          # SRS, design document, implementation doc, dev plan
-├── frontend/                      # React 19 + Vite + Tailwind application (Module 0.2 + UI of all modules)
-│   ├── public/
-│   └── src/
-│       ├── components/
-│       │   ├── auth/              # Register, Login, OTPEntry forms
-│       │   ├── camera/            # CameraStream, FrameCapture, UploadPanel
-│       │   ├── dashboard/         # ResultPanel, BoundingBoxOverlay, HistoryTable
-│       │   └── recommendations/   # RemedyTabs (Organic / Chemical / Preventive)
-│       ├── services/
-│       │   ├── api.js             # Axios wrapper: baseURL, JWT interceptor, 401 handling
-│       │   ├── inference.js       # Frame capture loop + POST /inference/frame
-│       │   ├── history.js         # History CRUD + media URL resolution
-│       │   ├── remedies.js        # Disease / remedy lookups
-│       │   └── auth.js            # Login / 2FA / token storage helpers
-│       ├── App.jsx
-│       └── main.jsx
-├── frontend_prototype/            # HTML design mockups and reference screenshots
+├── frontend_prototype/            # UI design reference: HTML mockups, screenshots, DESIGN.md, logo
 ├── backend/
 │   ├── app/
 │   │   ├── main.py                # FastAPI app factory, CORS, router registration
@@ -66,23 +57,24 @@ Plant-Aid/
 │   │   └── services/
 │   │       ├── otp_service.py     # Console / Twilio / SendGrid dispatch
 │   │       ├── storage.py         # S3 upload, presigned URLs, local-disk fallback
+│   │       ├── disease_lookup.py  # Shared disease-reference resolution (slug / numeric / name)
 │   │       └── ml_engine.py       # Model load, tensor conversion, two-layer localization
 │   ├── alembic/                   # Migrations for D1–D3
 │   ├── ml/
 │   │   ├── ml_config.py           # Class catalogue (single source of truth for class keys)
 │   │   ├── train.py               # Offline training on the groundnut disease dataset
 │   │   ├── evaluate.py            # Metrics, confusion matrix, error review
-│   │   ├── gradcam.py             # Grad-CAM sample generation
-│   │   ├── export.py              # Checkpoint → TorchScript inference artifact
-│   │   └── labels.json            # Class-index → disease-name mapping (emitted by export)
-│   ├── seed.py                    # D2 seed: 6 classes + 17 remedies
-│   ├── tests/                     # pytest suite
+│   │   ├── gradcam.py             # Grad-CAM sample generation (offline / report figures)
+│   │   ├── export.py              # Checkpoint → TorchScript artifact, emits labels.json
+│   │   └── labels.json            # Class-index → disease mapping (emitted by export)
+│   ├── seed.py                    # D2 seed: 6 groundnut classes + their remedies
+│   ├── tests/                     # pytest suite (59 tests)
 │   └── requirements.txt
 └── README.md
 ```
 
-`infra/docker-compose.yml` is **not yet present** — it is scoped to Phase 7 of the
-development plan and remains outstanding.
+**Not present:** `frontend/` (removed pending rebuild — see the status note above), and
+`infra/docker-compose.yml` (scoped to Phase 7 of the development plan, still outstanding).
 
 ### 1.3 Cross-Cutting Implementation Decisions
 
@@ -145,6 +137,9 @@ User account creation, credential validation, mandatory two-factor authenticatio
 
 ### 2.4 Frontend Components
 
+> **Removed pending rebuild.** The components below were deleted with `frontend/` on the
+> `frontend-cleanup` branch and are listed here as the specification the rebuild must meet.
+
 - `Register.jsx`, `Login.jsx`: form validation (email regex, phone format, password strength).
 - `OTPEntry.jsx`: 6-digit input with countdown timer and resend control; on success stores the JWT in memory (+ refresh-safe storage) and routes to the dashboard.
 
@@ -153,6 +148,10 @@ User account creation, credential validation, mandatory two-factor authenticatio
 ## 3. Module 0.2 — Image Frame Capture & Preprocessing
 
 **Designer:** GHANTA BHAVANA SRI SAI — **Requirements covered:** F.1, F.2, NF.1, NF.2
+
+> **Status: unimplemented on this branch.** The entire module is client-side (browser camera +
+> canvas capture), so removing `frontend/` removed it. Below is the specification for the rebuild,
+> verified to match the endpoint the backend actually serves.
 
 ### 3.1 Responsibility
 
@@ -172,7 +171,7 @@ Access the device camera through the browser's **MediaDevices API**, capture fra
 
 3. **MIME validation (`MIME type validation`, C.6)**
    - Upload panel accepts only `image/jpeg` and `image/png` (input `accept` attribute + client-side check of `file.type` and extension).
-   - Server side re-validates (Module 0.3) — client checks are UX, not security.
+   - Server side re-validates (Module 0.3) by magic bytes — client checks are UX, not security.
 
 4. **Preprocessing & resizing (`Preprocessing & Resizing Frame`)**
    - Canvas is drawn at a fixed **640×480** working resolution (aspect-preserving letterbox) to bound payload size (~100–200 KB/frame at JPEG q=0.8).
@@ -184,12 +183,14 @@ Access the device camera through the browser's **MediaDevices API**, capture fra
 
 ### 3.3 Frontend Components
 
+> **Removed pending rebuild.** Specification for the rebuild:
+
 | Component | Role |
 | --- | --- |
 | `CameraStream.jsx` | getUserMedia lifecycle, video preview, error states |
 | `FrameCapture.jsx` | canvas snapshot + interval loop + in-flight guard |
 | `UploadPanel.jsx` | drag-and-drop / file-picker for manual JPEG/PNG upload (F.1) |
-| `BoundingBoxOverlay.jsx` | absolutely-positioned leaf-ROI box + Grad-CAM heatmap layer, scaled from normalized [0,1] coords over the preview |
+| `BoundingBoxOverlay.jsx` | absolutely-positioned leaf-ROI box + attention-heatmap layer, scaled from normalized [0,1] coords over the preview |
 
 ---
 
@@ -297,6 +298,8 @@ Given a predicted `disease-id`, query the persistent database and return the ful
 
 ### 5.3 Frontend Rendering
 
+> **Removed pending rebuild.** Specification for the rebuild:
+
 `RemedyTabs.jsx` renders three tabs (Organic / Chemical / Preventive); each record shows title, description, and application instructions; chemical records additionally display any safety notes stored in the description field.
 
 ---
@@ -387,25 +390,28 @@ additional prefixes registered in `main.py` and are functionally identical to th
 
 | Requirement | Implementing Module(s) | Key Artifacts |
 | --- | --- | --- |
-| F.1 Image capture/upload | 0.2 | `CameraStream`, `UploadPanel`, getUserMedia integration |
-| F.2 Near real-time stream analysis | 0.2 + 0.3 | `setInterval` capture loop, Base64 POST `/inference/frame` |
+| F.1 Image capture/upload | 0.2 | *Removed (UI)* — `CameraStream`, `UploadPanel`, getUserMedia integration to be rebuilt |
+| F.2 Near real-time stream analysis | 0.2 + 0.3 | *Client removed (UI)* — capture loop to be rebuilt; server side (`POST /inference/frame`) complete |
 | F.3 Disease classification | 0.3 | `ml_engine.py`, ConvNeXt-Tiny (+ EfficientNetV2-S ablation); localization is Layer-1 HSV leaf ROI + Layer-2 hue-distance lesion attention (see §4.2 step 5) |
-| F.4 Treatment recommendations | 0.4 | `GET /remedies/{disease_id}` (JWT), D2 seed data, `RemedyTabs` |
-| F.5 Disease history logging | 0.5 | `services/storage.py`, D3 writes, `GET /history` |
+| F.4 Treatment recommendations | 0.4 | `GET /remedies/{disease_id}` (JWT), D2 seed data; `RemedyTabs` to be rebuilt |
+| F.5 Disease history logging | 0.5 | `services/storage.py`, D3 writes, `GET /history`, soft delete |
 | F.6 Two-factor authentication | 0.1 | OTP service (console/Twilio/SendGrid), session-scoped challenge, JWT issuance |
-| NF.1 Platform (desktop + mobile web) | 0.2 | Responsive React layout, rear-camera `facingMode` |
-| NF.2 Browser support | 0.2 | Standards-based MediaDevices/canvas APIs |
+| NF.1 Platform (desktop + mobile web) | 0.2 | *Removed (UI)* — responsive layout and rear-camera `facingMode` to be rebuilt |
+| NF.2 Browser support | 0.2 | *Removed (UI)* — MediaDevices/canvas APIs to be rebuilt |
 | NF.3 Secure API access | 0.1 + all | JWT guard dependency on every data route, HTTPS everywhere |
 | NF.4 Performance (1–2 s) | 0.3 | TorchScript artifact, CPU/GPU device fallback, per-user rate limiting |
 | NF.5 Reliability of storage | 0.5 | Transactional D3 writes, soft-delete retention, SSE-S3, upload compensation |
+
+**Requirements currently unmet:** F.1, F.2 (client half), NF.1, and NF.2 — all dependent on the
+Module 0.2 rebuild. Every server-side requirement (F.3–F.6, NF.3–NF.5) is implemented and tested.
 
 ---
 
 ## 10. Deployment & Environments
 
-- **Local development:** the backend runs directly under `uv` (`uv run uvicorn app.main:app --reload`, port 8000) against SQLite by default, with ML inference in CPU mode; the frontend runs under `npm run dev` (Vite, port 5173) and proxies `/api` to the backend. `infra/docker-compose.yml` (PostgreSQL + backend + frontend) is scoped to Phase 7 and is not yet in the repository.
+- **Local development:** the backend runs directly under `uv` (`uv run uvicorn app.main:app --reload`, port 8000) against SQLite by default, with ML inference in CPU mode. **There is no frontend dev server on this branch**; until Module 0.2 is rebuilt, drive the API from Swagger UI (`/docs`) or `curl`. `infra/docker-compose.yml` (PostgreSQL + backend + frontend) is scoped to Phase 7 and is not in the repository.
 - **Cloud (production):**
-  - Frontend: static build served via S3 + CloudFront (or Netlify/Vercel), HTTPS enforced.
+  - Frontend: *pending rebuild* — planned as a static build served via S3 + CloudFront (or Netlify/Vercel) with HTTPS enforced.
   - Backend: FastAPI on an AWS EC2 instance with a CUDA GPU behind an ALB; Uvicorn workers.
   - Database: Amazon RDS for PostgreSQL (automated backups, Multi-AZ option).
   - Storage: S3 bucket with SSE + versioning (D4).
@@ -420,3 +426,4 @@ additional prefixes registered in `main.py` and are functionally identical to th
 | --- | --- | --- |
 | 1.0 | 29/08/26 | Initial implementation document, mapped to SRS & SA/SD design modules 0.1–0.5 |
 | 1.1 | 28/09/26 | Realigned with the shipped code: actual module layout and libraries (`pyjwt`, `services/storage.py`), JWT requirement on all data routes, session-only 2FA challenge, explicit-only history persistence, soft-delete retention, SSE-S3 uploads, and an honest description of the two-layer localization (hue-distance attention rather than gradient-weighted CAM). |
+| 1.2 | 28/09/26 | Frontend removed on branch `frontend-cleanup` pending a from-scratch rebuild. Module 0.2, the UI sub-sections of 0.1/0.4, and requirements F.1, F.2 (client half), NF.1, NF.2 are marked unimplemented; `frontend_prototype/` is retained as the design reference. |

@@ -41,9 +41,12 @@ frontend/.vite/
 backend/ml/data/
 backend/ml/artifacts/
 *.pt
-*.ts
+backend/ml/**/*.ts
 
 # Operating System files
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Local scratch space (agent tracks, tickets, throwaway scripts)
+.scratch/

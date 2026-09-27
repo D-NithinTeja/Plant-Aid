@@ -25,7 +25,8 @@ Plain `pip install` / `python <script>.py` cells are correct **in that document 
 same scripts run locally via `uv run python ...`. Everywhere else the standard applies
 without exception.
 
-Frontend uses **Node.js v22+** and **npm** with **Vite + React + Tailwind CSS**.
+The frontend — when it is rebuilt in Phase 8 — uses **Node.js v22+** and **npm** with
+**Vite + React + Tailwind CSS**. No frontend is present on this branch.
 
 ---
 
@@ -42,10 +43,17 @@ Phase 4: S3 Media Storage & History Management (Module 0.5)
    │
 Phase 5: ML Inference Engine & Two-Layer Localization (Module 0.3)
    │
-Phase 6: Frontend React.js Application (Module 0.2 & GUI)
+Phase 6: Frontend React.js Application — REMOVED (28/09/26, branch `frontend-cleanup`)
+   │
+Phase 8: Frontend Rebuild (Module 0.2 & GUI) — NOT STARTED
    │
 Phase 7: DevOps, Containerization & Root Documentation
 ```
+
+Phases 1–5 are complete and verified. Phase 6 was delivered and then deliberately removed so the
+UI can be rebuilt from scratch; its replacement, Phase 8, is the remaining implementation work.
+Phase 7 is complete except for the container stack (Task 7.1), whose frontend service now waits on
+Phase 8.
 
 ---
 
@@ -402,11 +410,18 @@ Phase 7: DevOps, Containerization & Root Documentation
 
 ---
 
-## Phase 6: Frontend React.js Application (Module 0.2 & GUI)
+## Phase 6: Frontend Application (Module 0.2 & GUI) — SUPERSEDED
+
+> **⚠️ This entire phase was removed by the `frontend-cleanup` branch (28/09/26).**
+> The React application built under Tasks 6.1–6.7 has been deleted from the repository so the UI
+> can be redone from scratch. The tasks below are retained as the record of what existed and as
+> the starting specification for the rebuild; **none of them are satisfied by the current tree.**
+> `frontend_prototype/` holds the design reference (per-screen HTML mockups, exported screenshots,
+> `DESIGN.md`, logo). The remaining work is tracked as Phase 8 below.
 
 ### Task 6.1: Initialize React + Vite + Tailwind Project
-- [x] **Goal:** Scaffold modern, mobile-responsive React application in `frontend/`.
-- [x] **Commands:**
+- [x] **Goal:** Scaffold modern, mobile-responsive React application in `frontend/`. *(delivered, then removed)*
+- **Commands:**
   ```bash
   npm create vite@latest frontend -- --template react
   cd frontend
@@ -414,68 +429,74 @@ Phase 7: DevOps, Containerization & Root Documentation
   npm install -D tailwindcss postcss autoprefixer
   npm install axios lucide-react
   ```
-- [x] **Acceptance Criteria:** `npm run dev` serves default page at `http://localhost:5173`.
+- **Acceptance Criteria:** `npm run dev` serves default page at `http://localhost:5173`.
 
 ### Task 6.2: API Client & JWT Interceptor
-- [x] **Goal:** Configure centralized Axios instance.
-- [x] **Files to create:**
+- [x] **Goal:** Configure centralized Axios instance. *(delivered, then removed)*
+- **Files to create:**
   - `frontend/src/services/api.js`
   - `frontend/src/services/auth.js`
   - `frontend/src/services/inference.js`
-- [x] **Details:**
+- **Details:**
   - Request interceptor: attaches `Authorization: Bearer <token>` from localStorage.
   - Response interceptor: redirects to `/login` on 401 Unauthorized.
-- [x] **Acceptance Criteria:** Authenticated requests automatically carry JWT header.
+- **Acceptance Criteria:** Authenticated requests automatically carry JWT header.
 
 ### Task 6.3: Authentication UI Components
-- [x] **Goal:** Build login, registration, and 2FA challenge screens.
-- [x] **Files to create:**
+- [x] **Goal:** Build login, registration, and 2FA challenge screens. *(delivered, then removed)*
+- **Files to create:**
   - `frontend/src/components/auth/RegisterModal.jsx`
   - `frontend/src/components/auth/LoginModal.jsx`
   - `frontend/src/components/auth/OTPEntryModal.jsx`
-- [x] **Features:**
+- **Features:**
   - Form validation (email regex, password rules).
   - 6-digit OTP entry with 5-minute countdown timer and resend button.
   - Stores JWT and hydrates user state on 2FA success.
-- [x] **Acceptance Criteria:** Seamless user registration, login, and 2FA authentication flow.
+  - Note: the login response carries `session_id` only (no `user_id`) — the 2FA screen must submit
+    `session_id` + `otp_code` to `/auth/verify-2fa`.
+- **Acceptance Criteria:** Seamless user registration, login, and 2FA authentication flow.
 
 ### Task 6.4: Camera Stream & Preprocessing (Module 0.2)
-- [x] **Goal:** Implement camera capture and frame streaming loop per `Implementation.md` §3.
-- [x] **Files to create:**
+- [x] **Goal:** Implement camera capture and frame streaming loop per `Implementation.md` §3. *(delivered, then removed)*
+- **Files to create:**
   - `frontend/src/components/scan/ScanPlant.jsx`
-- [x] **Features:**
+- **Features:**
   - WebRTC `navigator.mediaDevices.getUserMedia` preferring rear camera (`facingMode: "environment"`).
   - Offscreen `<canvas>` resizing to 640×480 (aspect-preserving letterbox).
   - 1.5s `setInterval` polling loop with `isInFlight` overlap guard.
   - Manual file upload panel with JPEG/PNG drag-and-drop validation.
-- [x] **Acceptance Criteria:** Live video feeds frames every 1.5s without request stacking.
+- **Acceptance Criteria:** Live video feeds frames every 1.5s without request stacking.
 
 ### Task 6.5: Diagnostic Overlays & Results Panel
-- [x] **Goal:** Display real-time bounding box, Grad-CAM attention, and diagnosis metrics.
-- [x] **Files to create:**
+- [x] **Goal:** Display real-time bounding box, attention overlay, and diagnosis metrics. *(delivered, then removed)*
+- **Files to create:**
   - `frontend/src/components/analysis/AnalysisResult.jsx`
-- [x] **Features:**
+- **Features:**
   - Renders scaled bounding box over camera preview from normalized coordinates.
   - Visual status for "Healthy", "Suspected Infection", or "Uncertain (low confidence)".
   - One-click "Log Diagnosis" button triggering `POST /history`.
-- [x] **Acceptance Criteria:** Smooth bounding box overlay aligned over plant leaves in preview.
+- **Regression note for the rebuild:** the previous `AnalysisResult.jsx` rendered the overlay but
+  never wired up its save action, and `inference.js#logDiagnosis` was dead code. The backend no
+  longer writes history as a side effect of uploading, so **without this button no diagnosis is
+  ever persisted.** Add it and cover it with a click-through test.
+- **Acceptance Criteria:** Smooth bounding box overlay aligned over plant leaves in preview.
 
 ### Task 6.6: Treatment Tabs & History Dashboard
-- [x] **Goal:** Render remedies and searchable history log.
-- [x] **Files to create:**
+- [x] **Goal:** Render remedies and searchable history log. *(delivered, then removed)*
+- **Files to create:**
   - `frontend/src/components/treatment/TreatmentPlan.jsx`
   - `frontend/src/components/history/HistoryDashboard.jsx`
-- [x] **Features:**
+- **Features:**
   - 3 tabs: Organic / Biological, Chemical / Fungicide, Preventive Cultural Practice.
   - History table displaying image thumbnails, disease tag, confidence score, date, and detail modal.
-- [x] **Acceptance Criteria:** Remedies render clearly; history displays logged records.
+- **Acceptance Criteria:** Remedies render clearly; history displays logged records.
 
 ### Task 6.7: Application Shell & Navigation
-- [x] **Goal:** Connect components into a responsive single-page application.
-- [x] **Files to update:**
+- [x] **Goal:** Connect components into a responsive single-page application. *(delivered, then removed)*
+- **Files to update:**
   - `frontend/src/App.jsx`
   - `frontend/src/main.jsx`
-- [x] **Acceptance Criteria:** Seamless switching between Live Scan, Upload, History, and Logout views.
+- **Acceptance Criteria:** Seamless switching between Live Scan, Upload, History, and Logout views.
 
 ---
 
@@ -487,12 +508,12 @@ Phase 7: DevOps, Containerization & Root Documentation
 - [ ] **Files to create:**
   - `infra/docker-compose.yml` [NEW]
   - `backend/Dockerfile` [NEW]
-  - `frontend/Dockerfile` [NEW]
+  - `frontend/Dockerfile` [NEW] — **deferred to Phase 8**; the frontend does not exist on this branch, so build `db` + `backend` first and add the third service when the UI returns.
 - [ ] **Services:**
   - `db`: PostgreSQL 16 on port 5432 with health checks.
   - `backend`: FastAPI running via `uvicorn` on port 8000.
-  - `frontend`: Vite React dev server on port 3000.
-- [ ] **Acceptance Criteria:** `docker compose up` brings up all 3 services.
+  - `frontend`: Vite React dev server on port 3000. *(deferred to Phase 8)*
+- [ ] **Acceptance Criteria:** `docker compose up` brings up the services that exist.
 
 ### Task 7.2: Comprehensive Root `README.md`
 
@@ -506,8 +527,8 @@ Phase 7: DevOps, Containerization & Root Documentation
 
 - [ ] **Goal:** Run complete test suite and verify all functional requirements (F.1–F.6) and non-functional requirements (NF.1–NF.5).
 - [ ] **Command:** `uv run pytest backend/tests`
-- **Status:** backend suite green (59 passing, including the remediation tests below). The end-to-end pass over F.1/F.2 (browser camera capture) has not been exercised in a real browser, so this task stays open.
-- [ ] **Acceptance Criteria:** All unit, integration, and contract tests pass.
+- **Status:** backend suite green (59 passing, including the remediation tests below). **F.1, F.2 (client half), NF.1 and NF.2 cannot be verified at all until Phase 8 rebuilds the UI** — there is no frontend on this branch.
+- [ ] **Acceptance Criteria:** All unit, integration, and contract tests pass, and the browser-driven requirements are re-verified end to end.
 
 ---
 
@@ -537,6 +558,24 @@ remedy concerns in one module.
 
 ---
 
+## Phase 8: Frontend Rebuild (was Module 0.2 / GUI)
+
+**Status: not started.** The `frontend-cleanup` branch deleted the React application so it can be
+rebuilt from scratch; `frontend_prototype/` retains the design reference. This is the only
+outstanding implementation work — the backend already serves every endpoint the UI needs.
+
+- **Start from:** `frontend_prototype/` (per-screen HTML mockups, exported screenshots,
+  `plant_aid_enterprise/DESIGN.md`, logo) and the component inventory in `Implementation.md`
+  §2.4, §3.3, §5.3.
+- **Contract to satisfy:** `Implementation.md` §8 — every data route requires a Bearer JWT,
+  including `/inference/frame` and the remedy/disease catalogues.
+- **Must not assume:** per-frame history writes (removed), a `user_id` in the 2FA challenge
+  (removed), or unauthenticated remedy lookups (now JWT-guarded).
+- **Definition of done:** Tasks 6.1–6.7 are satisfied again, plus a save-to-history action covered
+  by an automated click-through, and `frontend/Dockerfile` unblocking Task 7.1.
+
+---
+
 ## Task Dependency & Execution Sequence
 
 ```mermaid
@@ -546,6 +585,7 @@ graph TD
     T2 --> T4[Phase 4: S3 & History Management]
     T3 --> T4
     T1 --> T5[Phase 5: ML Engine & Localization]
-    T2 & T3 & T4 & T5 --> T6[Phase 6: React.js Frontend]
-    T6 --> T7[Phase 7: Docker & README]
+    T2 & T3 & T4 & T5 --> T8[Phase 8: Frontend Rebuild]
+    T8 --> T7[Phase 7: Docker & README]
+    T6[Phase 6: React Frontend — REMOVED] -.superseded by.-> T8
 ```
