@@ -80,17 +80,17 @@ export const LandingPage: React.FC = () => {
     <div className="bg-transparent min-h-screen py-6 sm:py-8">
       {/* Hero Floating Card */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
-        <div className="relative overflow-hidden bg-agri-950 text-white rounded-3xl p-8 sm:p-14 shadow-xl border border-agri-900 text-center space-y-6">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-agri-900/90 border border-agri-700/80 text-agri-300 text-xs font-semibold tracking-wide uppercase">
-            <ShieldCheck className="w-3.5 h-3.5 text-agri-400" />
+        <div className="relative overflow-hidden bg-white/95 backdrop-blur-sm rounded-3xl p-8 sm:p-14 shadow-sm border border-slate-200/90 text-center space-y-6">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#edf6ee] border border-[#d2e8d3] text-[#2c6e3b] text-xs font-semibold tracking-wide uppercase">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#2c6e3b]" />
             <span>Field-Calibrated Groundnut Vision • Confidence Floor τ = 0.55</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-extrabold tracking-tight text-slate-900 leading-tight">
             Real-Time Plant Disease Identification & Treatment Advisory
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
+          <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed font-normal">
             Equipping farmers, agronomists, and field extension workers with instant foliage scanning, two-layer lesion localization, and validated organic, chemical, and cultural remedies.
           </p>
 
@@ -98,39 +98,39 @@ export const LandingPage: React.FC = () => {
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to={isAuthenticated ? '/scan' : '/auth?mode=register'}
-              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2.5 px-8 py-3.5 rounded-xl bg-agri-500 hover:bg-agri-400 text-slate-950 font-bold text-base shadow-lg shadow-agri-500/20 transition-all hover:scale-[1.02] touch-target"
+              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2.5 px-8 py-3.5 rounded-xl bg-agri-700 hover:bg-agri-800 text-white font-bold text-base shadow-sm transition-all hover:scale-[1.02] touch-target"
             >
-              <Scan className="w-5 h-5 text-slate-950" />
+              <Scan className="w-5 h-5 text-white" />
               <span>{isAuthenticated ? 'Launch Field Scanner' : 'Start Field Scan'}</span>
               <ArrowRight className="w-4 h-4 ml-1" />
             </Link>
 
             <Link
               to="/guide"
-              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl bg-agri-900/90 hover:bg-agri-800 text-slate-200 font-medium text-base border border-agri-800 transition-colors touch-target"
+              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-base border border-slate-300 shadow-sm transition-colors touch-target"
             >
-              <BookOpen className="w-5 h-5 text-agri-400" />
+              <BookOpen className="w-5 h-5 text-agri-700" />
               <span>Browse Pathology Catalog</span>
             </Link>
           </div>
 
           {/* Trust badges */}
-          <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left max-w-3xl mx-auto">
-            <div className="p-3.5 rounded-xl bg-agri-900/60 border border-agri-800/80">
-              <div className="text-agri-400 font-bold text-xl font-mono">&lt; 1.5s</div>
-              <div className="text-[11px] text-slate-300 mt-1 font-medium">On-Device Sampling</div>
+          <div className="pt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left max-w-3xl mx-auto">
+            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
+              <div className="text-agri-800 font-bold text-xl font-mono">&lt; 1.5s</div>
+              <div className="text-[11px] text-slate-500 mt-1 font-medium">On-Device Sampling</div>
             </div>
-            <div className="p-3.5 rounded-xl bg-agri-900/60 border border-agri-800/80">
-              <div className="text-agri-400 font-bold text-xl font-mono">6 Classes</div>
-              <div className="text-[11px] text-slate-300 mt-1 font-medium">Groundnut Pathology</div>
+            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
+              <div className="text-agri-800 font-bold text-xl font-mono">6 Classes</div>
+              <div className="text-[11px] text-slate-500 mt-1 font-medium">Groundnut Pathology</div>
             </div>
-            <div className="p-3.5 rounded-xl bg-agri-900/60 border border-agri-800/80">
-              <div className="text-agri-400 font-bold text-xl font-mono">3 Tiers</div>
-              <div className="text-[11px] text-slate-300 mt-1 font-medium">Organic • Chemical • Cultural</div>
+            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
+              <div className="text-agri-800 font-bold text-xl font-mono">3 Tiers</div>
+              <div className="text-[11px] text-slate-500 mt-1 font-medium">Organic • Chemical • Cultural</div>
             </div>
-            <div className="p-3.5 rounded-xl bg-agri-900/60 border border-agri-800/80">
-              <div className="text-agri-400 font-bold text-xl font-mono">2FA Auth</div>
-              <div className="text-[11px] text-slate-300 mt-1 font-medium">Verified Farm Records</div>
+            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
+              <div className="text-agri-800 font-bold text-xl font-mono">2FA Auth</div>
+              <div className="text-[11px] text-slate-500 mt-1 font-medium">Verified Farm Records</div>
             </div>
           </div>
         </div>
@@ -261,28 +261,28 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Action Banner */}
-      <section className="py-16 sm:py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="bg-agri-950 border border-agri-900 rounded-3xl p-8 sm:p-12 text-white shadow-xl space-y-6">
-          <div className="w-14 h-14 rounded-2xl bg-agri-900 border border-agri-800 flex items-center justify-center mx-auto text-agri-300">
+      {/* Action Banner Floating Card */}
+      <section className="py-12 sm:py-16 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="bg-white/95 backdrop-blur-sm border border-slate-200/90 rounded-3xl p-8 sm:p-12 text-slate-900 shadow-sm space-y-6">
+          <div className="w-14 h-14 rounded-2xl bg-agri-50 border border-agri-200/80 flex items-center justify-center mx-auto text-agri-700">
             <Sprout className="w-8 h-8" />
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-serif font-extrabold tracking-tight text-slate-900">
             Protect Your Groundnut Crop Today
           </h2>
-          <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto">
+          <p className="text-slate-600 text-sm sm:text-base max-w-xl mx-auto font-normal">
             Experience sub-second foliage diagnosis directly in your field browser. No complex hardware required.
           </p>
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to={isAuthenticated ? '/scan' : '/auth?mode=register'}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-agri-500 hover:bg-agri-400 text-slate-950 font-bold shadow-md transition-colors touch-target"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-agri-700 hover:bg-agri-800 text-white font-bold shadow-sm transition-colors touch-target"
             >
               Get Started Now
             </Link>
             <Link
               to="/auth"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-agri-900 text-white font-medium hover:bg-agri-800 border border-agri-700 transition-colors touch-target"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white text-slate-700 font-semibold hover:bg-slate-50 border border-slate-300 shadow-sm transition-colors touch-target"
             >
               Registered User Sign In
             </Link>

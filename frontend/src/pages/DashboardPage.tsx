@@ -46,16 +46,16 @@ export const DashboardPage: React.FC = () => {
     <div className="min-h-screen bg-transparent py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Welcome Banner */}
-        <div className="bg-agri-950 border border-agri-900 rounded-3xl p-6 sm:p-8 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-white/95 backdrop-blur-sm border border-slate-200/90 rounded-3xl p-6 sm:p-8 text-slate-900 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-agri-900 border border-agri-700 text-agri-300 text-xs font-semibold">
-              <ShieldCheck className="w-3.5 h-3.5 text-agri-400" />
+            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#edf6ee] border border-[#d2e8d3] text-[#2c6e3b] text-xs font-semibold">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#2c6e3b]" />
               <span>Groundnut Agronomic Intelligence</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-serif font-extrabold tracking-tight text-slate-900">
               Welcome back, {user?.user_name || 'Agronomist'}!
             </h1>
-            <p className="text-slate-300 text-sm max-w-xl leading-relaxed">
+            <p className="text-slate-600 text-sm max-w-xl leading-relaxed font-normal">
               Field-ready diagnostic pipeline calibrated for rapid leaf lesion identification, confidence scoring, and immediate organic and chemical remedy guidance.
             </p>
           </div>
@@ -63,17 +63,17 @@ export const DashboardPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-3">
             <Link
               to="/scan"
-              className="inline-flex items-center space-x-2 px-5 py-3 rounded-xl bg-agri-500 hover:bg-agri-400 text-slate-950 font-bold text-sm shadow-md transition-all hover:scale-[1.02] touch-target"
+              className="inline-flex items-center space-x-2 px-5 py-3 rounded-xl bg-agri-700 hover:bg-agri-800 text-white font-bold text-sm shadow-sm transition-all hover:scale-[1.02] touch-target"
             >
-              <Scan className="w-4 h-4 text-slate-950" />
+              <Scan className="w-4 h-4 text-white" />
               <span>Start Camera Scan</span>
             </Link>
 
             <Link
               to="/scan?mode=upload"
-              className="inline-flex items-center space-x-2 px-4 py-3 rounded-xl bg-agri-900 hover:bg-agri-800 text-slate-200 font-medium text-sm border border-agri-800 transition-colors touch-target"
+              className="inline-flex items-center space-x-2 px-4 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm border border-slate-300 shadow-sm transition-colors touch-target"
             >
-              <Upload className="w-4 h-4 text-agri-400" />
+              <Upload className="w-4 h-4 text-agri-700" />
               <span>Upload Photo</span>
             </Link>
           </div>

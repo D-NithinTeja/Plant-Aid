@@ -459,13 +459,13 @@ export const ScanPage: React.FC = () => {
                       )}
                     </div>
                   ) : (
-                    <label className="cursor-pointer flex flex-col items-center space-y-3 p-8 border-2 border-dashed border-slate-700 rounded-3xl hover:border-agri-500 hover:bg-slate-900/50 transition-all">
-                      <div className="w-16 h-16 rounded-2xl bg-agri-950 text-agri-400 flex items-center justify-center border border-agri-800">
+                    <label className="cursor-pointer flex flex-col items-center space-y-3 p-8 border-2 border-dashed border-slate-300 rounded-3xl hover:border-agri-500 hover:bg-agri-50/50 transition-all">
+                      <div className="w-16 h-16 rounded-2xl bg-agri-50 text-agri-700 flex items-center justify-center border border-agri-200">
                         <Upload className="w-8 h-8" />
                       </div>
                       <div className="space-y-1">
-                        <div className="text-base font-bold text-white">Upload Groundnut Foliage Photo</div>
-                        <p className="text-xs text-slate-400">JPEG or PNG magic-byte verified</p>
+                        <div className="text-base font-bold text-slate-800">Upload Groundnut Foliage Photo</div>
+                        <p className="text-xs text-slate-500">JPEG or PNG magic-byte verified</p>
                       </div>
                       <input
                         type="file"
