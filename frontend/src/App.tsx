@@ -17,7 +17,7 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <div className="flex flex-col min-h-screen bg-[#edf4ed] text-slate-900 font-sans relative selection:bg-agri-200 selection:text-agri-950">
+        <div className="flex flex-col min-h-screen bg-transparent text-slate-900 font-sans relative selection:bg-agri-200 selection:text-agri-950">
           <BotanicalBackground />
           <Navbar />
           <main className="flex-1 relative z-10">

@@ -77,25 +77,25 @@ export const LandingPage: React.FC = () => {
   ];
 
   return (
-    <div className="bg-transparent min-h-screen">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-agri-950 text-white pt-16 pb-24 px-4 sm:px-6 lg:px-8 border-b border-agri-900">
-        <div className="relative max-w-5xl mx-auto text-center space-y-6">
+    <div className="bg-transparent min-h-screen py-6 sm:py-8">
+      {/* Hero Floating Card */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+        <div className="relative overflow-hidden bg-agri-950 text-white rounded-3xl p-8 sm:p-14 shadow-xl border border-agri-900 text-center space-y-6">
           <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-agri-900/90 border border-agri-700/80 text-agri-300 text-xs font-semibold tracking-wide uppercase">
             <ShieldCheck className="w-3.5 h-3.5 text-agri-400" />
             <span>Field-Calibrated Groundnut Vision • Confidence Floor τ = 0.55</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
             Real-Time Plant Disease Identification & Treatment Advisory
           </h1>
 
-          <p className="text-lg sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal">
+          <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
             Equipping farmers, agronomists, and field extension workers with instant foliage scanning, two-layer lesion localization, and validated organic, chemical, and cultural remedies.
           </p>
 
           {/* Action CTAs */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to={isAuthenticated ? '/scan' : '/auth?mode=register'}
               className="w-full sm:w-auto inline-flex items-center justify-center space-x-2.5 px-8 py-3.5 rounded-xl bg-agri-500 hover:bg-agri-400 text-slate-950 font-bold text-base shadow-lg shadow-agri-500/20 transition-all hover:scale-[1.02] touch-target"
@@ -115,52 +115,52 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* Trust badges */}
-          <div className="pt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 text-left max-w-4xl mx-auto">
-            <div className="p-4 rounded-xl bg-agri-900/60 border border-agri-800/80">
-              <div className="text-agri-400 font-bold text-2xl font-mono">&lt; 1.5s</div>
-              <div className="text-xs text-slate-300 mt-1 font-medium">On-Device Sampling</div>
+          <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left max-w-3xl mx-auto">
+            <div className="p-3.5 rounded-xl bg-agri-900/60 border border-agri-800/80">
+              <div className="text-agri-400 font-bold text-xl font-mono">&lt; 1.5s</div>
+              <div className="text-[11px] text-slate-300 mt-1 font-medium">On-Device Sampling</div>
             </div>
-            <div className="p-4 rounded-xl bg-agri-900/60 border border-agri-800/80">
-              <div className="text-agri-400 font-bold text-2xl font-mono">6 Classes</div>
-              <div className="text-xs text-slate-300 mt-1 font-medium">Groundnut Pathology</div>
+            <div className="p-3.5 rounded-xl bg-agri-900/60 border border-agri-800/80">
+              <div className="text-agri-400 font-bold text-xl font-mono">6 Classes</div>
+              <div className="text-[11px] text-slate-300 mt-1 font-medium">Groundnut Pathology</div>
             </div>
-            <div className="p-4 rounded-xl bg-agri-900/60 border border-agri-800/80">
-              <div className="text-agri-400 font-bold text-2xl font-mono">3 Tiers</div>
-              <div className="text-xs text-slate-300 mt-1 font-medium">Organic • Chemical • Cultural</div>
+            <div className="p-3.5 rounded-xl bg-agri-900/60 border border-agri-800/80">
+              <div className="text-agri-400 font-bold text-xl font-mono">3 Tiers</div>
+              <div className="text-[11px] text-slate-300 mt-1 font-medium">Organic • Chemical • Cultural</div>
             </div>
-            <div className="p-4 rounded-xl bg-agri-900/60 border border-agri-800/80">
-              <div className="text-agri-400 font-bold text-2xl font-mono">2FA Auth</div>
-              <div className="text-xs text-slate-300 mt-1 font-medium">Verified Farm Records</div>
+            <div className="p-3.5 rounded-xl bg-agri-900/60 border border-agri-800/80">
+              <div className="text-agri-400 font-bold text-xl font-mono">2FA Auth</div>
+              <div className="text-[11px] text-slate-300 mt-1 font-medium">Verified Farm Records</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Mechanism Deep Dive */}
-      <section className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-agri-700 mb-2">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-14">
+        <div className="text-center max-w-2xl mx-auto mb-10">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-agri-700 mb-1.5">
             Engineered For Outdoor Agricultural Reality
           </h2>
-          <p className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+          <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             How Plant-Aid Eliminates Diagnostic Hallucinations
           </p>
-          <p className="text-base text-slate-600 mt-4 leading-relaxed">
+          <p className="text-sm text-slate-600 mt-2 leading-relaxed">
             Generic models guess diseases even on healthy leaves or dry soil. Plant-Aid applies a two-layer computer vision pipeline calibrated against a strict confidence threshold.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1 */}
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-field transition-shadow space-y-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
-              <Layers className="w-6 h-6" />
+          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-field transition-shadow space-y-3.5">
+            <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+              <Layers className="w-5 h-5" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900">Layer 1: Leaf ROI Masking</h3>
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <h3 className="text-lg font-bold text-slate-900">Layer 1: Leaf ROI Masking</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
               OpenCV HSV green-dominance filtering isolates the plant foliage and strips out soil, hands, and field debris, ensuring only genuine leaf surface is fed to the deep network.
             </p>
-            <ul className="text-xs text-slate-500 space-y-1.5 pt-2">
+            <ul className="text-xs text-slate-500 space-y-1 pt-1">
               <li className="flex items-center space-x-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
                 <span>Eliminates background noise</span>
@@ -173,15 +173,15 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* Card 2 */}
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-field transition-shadow space-y-4">
-            <div className="w-12 h-12 rounded-xl bg-agri-50 text-agri-700 flex items-center justify-center font-bold">
-              <Cpu className="w-6 h-6" />
+          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-field transition-shadow space-y-3.5">
+            <div className="w-11 h-11 rounded-xl bg-agri-50 text-agri-700 flex items-center justify-center font-bold">
+              <Cpu className="w-5 h-5" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900">Layer 2: ConvNeXt & Saliency</h3>
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <h3 className="text-lg font-bold text-slate-900">Layer 2: ConvNeXt & Saliency</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
               ConvNeXt-Tiny performs deep multi-class classification, coupled with hue-distance saliency mapping that pinpoints the exact lesion focus area with normalized coordinates.
             </p>
-            <ul className="text-xs text-slate-500 space-y-1.5 pt-2">
+            <ul className="text-xs text-slate-500 space-y-1 pt-1">
               <li className="flex items-center space-x-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-agri-600 flex-shrink-0" />
                 <span>Sub-second CPU inference</span>
@@ -194,15 +194,15 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* Card 3 */}
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-field transition-shadow space-y-4">
-            <div className="w-12 h-12 rounded-xl bg-soil-50 text-soil-700 flex items-center justify-center font-bold">
-              <ShieldCheck className="w-6 h-6" />
+          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-field transition-shadow space-y-3.5">
+            <div className="w-11 h-11 rounded-xl bg-soil-50 text-soil-700 flex items-center justify-center font-bold">
+              <ShieldCheck className="w-5 h-5" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900">Calibration Floor (τ = 0.55)</h3>
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <h3 className="text-lg font-bold text-slate-900">Calibration Floor (τ = 0.55)</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
               When prediction probability falls below τ = 0.55, Plant-Aid marks the frame as uncertain instead of emitting false alarms, advising the user to steady the camera or inspect closer.
             </p>
-            <ul className="text-xs text-slate-500 space-y-1.5 pt-2">
+            <ul className="text-xs text-slate-500 space-y-1 pt-1">
               <li className="flex items-center space-x-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-soil-700 flex-shrink-0" />
                 <span>Prevents unnecessary pesticide sprays</span>
@@ -216,44 +216,44 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Disease Taxonomy Preview */}
-      <section className="bg-white py-16 sm:py-24 border-y border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+      {/* Disease Taxonomy Preview Floating Card */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mb-14">
+        <div className="bg-white/95 backdrop-blur-sm rounded-3xl border border-slate-200/90 p-8 sm:p-10 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
             <div>
-              <h2 className="text-xs font-bold uppercase tracking-widest text-agri-700 mb-2">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-agri-700 mb-1.5">
                 Groundnut Disease Catalogue
               </h2>
-              <p className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 6 Verified Pathological & Healthy Classes
               </p>
-              <p className="text-sm text-slate-600 mt-2 max-w-xl">
+              <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-xl">
                 Aligned with canonical database records, expert agronomic literature, and Hugging Face crop pathology standards.
               </p>
             </div>
             <Link
               to="/guide"
-              className="mt-4 md:mt-0 inline-flex items-center space-x-1.5 text-sm font-semibold text-agri-700 hover:text-agri-800"
+              className="mt-3 md:mt-0 inline-flex items-center space-x-1.5 text-xs sm:text-sm font-semibold text-agri-700 hover:text-agri-800"
             >
               <span>Explore all remedies & dosages</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {supportedDiseases.map((disease) => (
               <div
                 key={disease.slug}
-                className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-agri-300 hover:shadow-field transition-all space-y-3"
+                className="p-5 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-agri-300 hover:shadow-field transition-all space-y-2.5"
               >
                 <div className="flex items-center justify-between">
-                  <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${disease.badgeColor}`}>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${disease.badgeColor}`}>
                     {disease.type}
                   </span>
-                  <span className="text-xs font-mono text-slate-400">{disease.slug}</span>
+                  <span className="text-[11px] font-mono text-slate-400">{disease.slug}</span>
                 </div>
-                <h4 className="text-lg font-bold text-slate-900">{disease.name}</h4>
-                <p className="text-xs italic text-slate-500 font-mono">{disease.pathogen}</p>
+                <h4 className="text-base font-bold text-slate-900">{disease.name}</h4>
+                <p className="text-[11px] italic text-slate-500 font-mono">{disease.pathogen}</p>
                 <p className="text-xs text-slate-600 leading-relaxed">{disease.description}</p>
               </div>
             ))}

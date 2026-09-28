@@ -3,363 +3,386 @@ import React from 'react';
 export const BotanicalBackground: React.FC = () => {
   return (
     <div
-      className="fixed inset-0 pointer-events-none -z-10 overflow-hidden select-none bg-[#edf4ed]"
+      className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none bg-[#edf4ed]"
       aria-hidden="true"
     >
-      <svg
-        className="w-full h-full object-cover min-w-[1024px]"
-        viewBox="0 0 1440 900"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        <defs>
-          {/* Subtle soft gradient background overlay */}
-          <linearGradient id="botanical-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#f3f8f3" />
-            <stop offset="60%" stopColor="#edf4ed" />
-            <stop offset="100%" stopColor="#e3ede3" />
-          </linearGradient>
+      {/* Subtle soft gradient background overlay matching reference */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#f2f7f2] via-[#edf4ed] to-[#e4ede4] opacity-90" />
 
-          {/* Leaf / Canopy soft organic green fill */}
-          <radialGradient id="canopy-glow" cx="40%" cy="40%" r="60%">
-            <stop offset="0%" stopColor="#d4e7d5" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#bdd4be" stopOpacity="0.45" />
-          </radialGradient>
-        </defs>
+      {/* ============================================================ */}
+      {/* 1. LEFT BOTANICAL TREE (PINNED TO BOTTOM-LEFT)               */}
+      {/* ============================================================ */}
+      <div className="absolute left-0 bottom-0 w-[260px] sm:w-[340px] md:w-[420px] lg:w-[480px] h-[65vh] sm:h-[75vh] md:h-[82vh] max-h-[850px] min-h-[420px] pointer-events-none">
+        <svg
+          className="w-full h-full"
+          viewBox="0 0 460 780"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="xMinYMax meet"
+        >
+          <defs>
+            <radialGradient id="canopy-glow-left" cx="38%" cy="38%" r="62%">
+              <stop offset="0%" stopColor="#cfdec0" stopOpacity="0.9" />
+              <stop offset="70%" stopColor="#bdd4bf" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#a9c4ab" stopOpacity="0.7" />
+            </radialGradient>
+          </defs>
 
-        {/* Global canvas wash */}
-        <rect width="1440" height="900" fill="url(#botanical-bg-grad)" />
-
-        {/* ============================================================ */}
-        {/* LEFT BOTANICAL TREE ILLUSTRATION                            */}
-        {/* ============================================================ */}
-        <g opacity="0.95">
-          {/* Ground contour & concentric ripple arcs */}
+          {/* Concentric ripple arcs radiating from tree base */}
           <ellipse
-            cx="170"
-            cy="900"
-            rx="480"
-            ry="280"
-            stroke="#688a6d"
-            strokeWidth="1.2"
-            strokeDasharray="4 6"
-            strokeOpacity="0.25"
+            cx="160"
+            cy="780"
+            rx="460"
+            ry="290"
+            stroke="#537559"
+            strokeWidth="1.6"
+            strokeDasharray="5 7"
+            strokeOpacity="0.4"
           />
           <ellipse
-            cx="170"
-            cy="900"
-            rx="340"
+            cx="160"
+            cy="780"
+            rx="320"
             ry="200"
-            stroke="#688a6d"
-            strokeWidth="1.2"
-            strokeDasharray="4 6"
-            strokeOpacity="0.28"
+            stroke="#537559"
+            strokeWidth="1.6"
+            strokeDasharray="5 7"
+            strokeOpacity="0.45"
           />
           <ellipse
-            cx="170"
-            cy="900"
-            rx="200"
+            cx="160"
+            cy="780"
+            rx="190"
             ry="120"
-            stroke="#688a6d"
-            strokeWidth="1.2"
-            strokeDasharray="4 6"
-            strokeOpacity="0.32"
+            stroke="#537559"
+            strokeWidth="1.6"
+            strokeDasharray="5 7"
+            strokeOpacity="0.5"
           />
 
-          {/* Leaf Canopy Circles (Dotted & Translucent Fill) */}
+          {/* Leaf Canopy Circles with Soft Sage Fills and Dotted Outlines */}
           {/* 1. Lower Left Canopy */}
           <circle
             cx="75"
-            cy="565"
-            r="46"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
-            strokeDasharray="5 5"
+            cy="470"
+            r="48"
+            fill="url(#canopy-glow-left)"
+            stroke="#344e37"
+            strokeWidth="2.2"
+            strokeDasharray="6 6"
           />
 
           {/* 2. Mid Left Canopy */}
           <circle
             cx="115"
-            cy="420"
-            r="54"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
-            strokeDasharray="5 5"
+            cy="325"
+            r="58"
+            fill="url(#canopy-glow-left)"
+            stroke="#344e37"
+            strokeWidth="2.2"
+            strokeDasharray="6 6"
           />
 
           {/* 3. Upper Left Canopy */}
           <circle
             cx="155"
-            cy="330"
-            r="66"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
-            strokeDasharray="5 5"
+            cy="235"
+            r="68"
+            fill="url(#canopy-glow-left)"
+            stroke="#344e37"
+            strokeWidth="2.2"
+            strokeDasharray="6 6"
           />
 
           {/* 4. Top Center Crown Canopy (Largest, Overlapping) */}
           <circle
-            cx="210"
-            cy="265"
-            r="72"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            cx="215"
+            cy="170"
+            r="76"
+            fill="url(#canopy-glow-left)"
+            stroke="#344e37"
+            strokeWidth="2.2"
           />
 
           {/* 5. Top Right Crown Canopy */}
           <circle
-            cx="280"
-            cy="335"
-            r="58"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
-            strokeDasharray="5 5"
+            cx="285"
+            cy="240"
+            r="62"
+            fill="url(#canopy-glow-left)"
+            stroke="#344e37"
+            strokeWidth="2.2"
+            strokeDasharray="6 6"
           />
 
           {/* 6. Mid Right Canopy */}
           <circle
-            cx="320"
-            cy="500"
-            r="52"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
-            strokeDasharray="5 5"
+            cx="325"
+            cy="410"
+            r="54"
+            fill="url(#canopy-glow-left)"
+            stroke="#344e37"
+            strokeWidth="2.2"
+            strokeDasharray="6 6"
           />
 
           {/* Main Tree Trunk & Organic Branches */}
           {/* Main vertical trunk */}
           <path
-            d="M 172 900 C 170 760, 168 620, 166 480 C 165 420, 172 350, 192 280"
-            stroke="#537559"
-            strokeWidth="2.8"
+            d="M 168 780 C 166 630, 164 470, 163 330 C 162 265, 172 200, 196 170"
+            stroke="#263829"
+            strokeWidth="3.6"
             strokeLinecap="round"
           />
 
           {/* Branch to Lower Left */}
           <path
-            d="M 169 725 C 150 680, 115 625, 78 575"
-            stroke="#5e8264"
-            strokeWidth="2.2"
+            d="M 166 610 C 146 560, 115 510, 78 475"
+            stroke="#344e37"
+            strokeWidth="2.6"
             strokeLinecap="round"
           />
 
           {/* Branch to Mid Left */}
           <path
-            d="M 167 590 C 152 535, 134 475, 118 430"
-            stroke="#5e8264"
-            strokeWidth="2.2"
+            d="M 164 475 C 148 420, 134 375, 118 335"
+            stroke="#344e37"
+            strokeWidth="2.6"
             strokeLinecap="round"
           />
 
           {/* Branch to Upper Left */}
           <path
-            d="M 166 485 C 162 430, 160 380, 156 345"
-            stroke="#5e8264"
-            strokeWidth="2.0"
+            d="M 163 365 C 160 310, 158 270, 156 245"
+            stroke="#344e37"
+            strokeWidth="2.4"
             strokeLinecap="round"
           />
 
           {/* Branch to Upper Right Crown */}
           <path
-            d="M 176 385 C 205 365, 245 350, 275 340"
-            stroke="#5e8264"
-            strokeWidth="2.0"
+            d="M 172 270 C 205 250, 248 240, 280 238"
+            stroke="#344e37"
+            strokeWidth="2.4"
             strokeLinecap="round"
           />
 
           {/* Branch to Mid Right */}
           <path
-            d="M 167 635 C 210 595, 270 550, 315 510"
-            stroke="#5e8264"
-            strokeWidth="2.2"
+            d="M 165 520 C 206 480, 275 445, 320 415"
+            stroke="#344e37"
+            strokeWidth="2.6"
             strokeLinecap="round"
           />
 
-          {/* Little sprig at very top left */}
+          {/* Delicate leaf sprig at top left */}
           <path
-            d="M 140 100 C 150 115, 175 125, 185 110 C 170 95, 150 90, 140 100 Z"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.5"
+            d="M 140 60 C 152 76, 178 86, 188 70 C 172 54, 150 50, 140 60 Z"
+            fill="url(#canopy-glow-left)"
+            stroke="#344e37"
+            strokeWidth="2.0"
           />
-        </g>
+        </svg>
+      </div>
 
-        {/* ============================================================ */}
-        {/* TOP RIGHT HANGING BOTANICAL SPRIG                           */}
-        {/* ============================================================ */}
-        <g opacity="0.9">
-          {/* Main curving vine stem */}
+      {/* ============================================================ */}
+      {/* 2. TOP-RIGHT HANGING BOTANICAL SPRIG (PINNED TO TOP-RIGHT)   */}
+      {/* ============================================================ */}
+      <div className="absolute right-0 top-0 w-[140px] sm:w-[180px] md:w-[220px] h-[25vh] sm:h-[30vh] md:h-[36vh] max-h-[360px] min-h-[180px] pointer-events-none">
+        <svg
+          className="w-full h-full"
+          viewBox="0 0 220 340"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="xMaxYMin meet"
+        >
+          <defs>
+            <radialGradient id="canopy-glow-top" cx="40%" cy="40%" r="60%">
+              <stop offset="0%" stopColor="#cfdec0" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#a9c4ab" stopOpacity="0.7" />
+            </radialGradient>
+          </defs>
+
+          {/* Curving vine stem */}
           <path
-            d="M 1410 0 C 1380 90, 1350 210, 1335 320"
-            stroke="#537559"
-            strokeWidth="2.2"
+            d="M 210 0 C 180 80, 150 200, 135 310"
+            stroke="#263829"
+            strokeWidth="2.8"
             strokeLinecap="round"
           />
 
           {/* Leaf Pair 1 */}
           <path
-            d="M 1396 75 C 1350 60, 1315 75, 1300 95 C 1335 115, 1375 105, 1396 75 Z"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            d="M 196 75 C 150 60, 115 75, 100 95 C 135 115, 175 105, 196 75 Z"
+            fill="url(#canopy-glow-top)"
+            stroke="#344e37"
+            strokeWidth="2.2"
           />
           <path
-            d="M 1388 90 C 1425 90, 1445 75, 1455 60 C 1435 98, 1410 110, 1388 90 Z"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            d="M 188 90 C 225 90, 245 75, 255 60 C 235 98, 210 110, 188 90 Z"
+            fill="url(#canopy-glow-top)"
+            stroke="#344e37"
+            strokeWidth="2.2"
           />
 
           {/* Leaf Pair 2 */}
           <path
-            d="M 1372 165 C 1320 155, 1285 175, 1270 200 C 1310 220, 1350 205, 1372 165 Z"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            d="M 172 165 C 120 155, 85 175, 70 200 C 110 220, 150 205, 172 165 Z"
+            fill="url(#canopy-glow-top)"
+            stroke="#344e37"
+            strokeWidth="2.2"
           />
           <path
-            d="M 1365 185 C 1405 190, 1430 180, 1440 160 C 1420 205, 1390 215, 1365 185 Z"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            d="M 165 185 C 205 190, 230 180, 240 160 C 220 205, 190 215, 165 185 Z"
+            fill="url(#canopy-glow-top)"
+            stroke="#344e37"
+            strokeWidth="2.2"
           />
 
           {/* Leaf Pair 3 */}
           <path
-            d="M 1348 260 C 1300 255, 1265 275, 1250 300 C 1290 320, 1330 300, 1348 260 Z"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            d="M 148 250 C 100 245, 65 265, 50 290 C 90 310, 130 290, 148 250 Z"
+            fill="url(#canopy-glow-top)"
+            stroke="#344e37"
+            strokeWidth="2.2"
           />
           <path
-            d="M 1342 278 C 1378 285, 1405 280, 1415 260 C 1395 305, 1365 310, 1342 278 Z"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            d="M 142 268 C 178 275, 205 270, 215 250 C 195 295, 165 300, 142 268 Z"
+            fill="url(#canopy-glow-top)"
+            stroke="#344e37"
+            strokeWidth="2.2"
           />
-        </g>
+        </svg>
+      </div>
 
-        {/* ============================================================ */}
-        {/* RIGHT ARCHITECTURAL PINE / FIR TREES                         */}
-        {/* ============================================================ */}
-        <g opacity="0.95">
-          {/* Subtle terrain curves on right */}
+      {/* ============================================================ */}
+      {/* 3. RIGHT ARCHITECTURAL PINE TREES (PINNED TO BOTTOM-RIGHT)   */}
+      {/* ============================================================ */}
+      <div className="absolute right-0 bottom-0 w-[220px] sm:w-[280px] md:w-[350px] lg:w-[420px] h-[55vh] sm:h-[65vh] md:h-[72vh] max-h-[750px] min-h-[380px] pointer-events-none">
+        <svg
+          className="w-full h-full"
+          viewBox="0 0 420 650"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="xMaxYMax meet"
+        >
+          <defs>
+            <radialGradient id="canopy-glow-right" cx="45%" cy="40%" r="60%">
+              <stop offset="0%" stopColor="#dbe8dc" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#c5dac7" stopOpacity="0.75" />
+            </radialGradient>
+          </defs>
+
+          {/* Terrain contour arcs */}
           <ellipse
-            cx="1350"
-            cy="900"
-            rx="500"
-            ry="260"
-            stroke="#688a6d"
-            strokeWidth="1.2"
-            strokeDasharray="4 6"
-            strokeOpacity="0.25"
+            cx="320"
+            cy="650"
+            rx="480"
+            ry="240"
+            stroke="#537559"
+            strokeWidth="1.6"
+            strokeDasharray="5 7"
+            strokeOpacity="0.4"
           />
           <ellipse
-            cx="1350"
-            cy="900"
-            rx="320"
-            ry="170"
-            stroke="#688a6d"
-            strokeWidth="1.2"
-            strokeDasharray="4 6"
-            strokeOpacity="0.28"
+            cx="320"
+            cy="650"
+            rx="300"
+            ry="150"
+            stroke="#537559"
+            strokeWidth="1.6"
+            strokeDasharray="5 7"
+            strokeOpacity="0.45"
           />
 
           {/* --- Smaller Pine Tree (Left of Pair) --- */}
           {/* Central Trunk */}
           <line
-            x1="1200"
-            y1="450"
-            x2="1200"
-            y2="900"
-            stroke="#537559"
-            strokeWidth="2.4"
+            x1="120"
+            y1="190"
+            x2="120"
+            y2="650"
+            stroke="#263829"
+            strokeWidth="3.0"
             strokeLinecap="round"
           />
 
           {/* Tier 1 (Top) */}
           <polygon
-            points="1200,440 1162,530 1238,530"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            points="120,180 78,275 162,275"
+            fill="url(#canopy-glow-right)"
+            stroke="#344e37"
+            strokeWidth="2.2"
             strokeLinejoin="round"
           />
 
           {/* Tier 2 (Middle) */}
           <polygon
-            points="1200,515 1140,625 1260,625"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            points="120,255 55,365 185,365"
+            fill="url(#canopy-glow-right)"
+            stroke="#344e37"
+            strokeWidth="2.2"
             strokeLinejoin="round"
           />
 
           {/* Tier 3 (Bottom) */}
           <polygon
-            points="1200,600 1110,735 1290,735"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            points="120,340 25,480 215,480"
+            fill="url(#canopy-glow-right)"
+            stroke="#344e37"
+            strokeWidth="2.2"
             strokeLinejoin="round"
           />
 
           {/* --- Larger Pine Tree (Right of Pair) --- */}
           {/* Central Trunk */}
           <line
-            x1="1340"
-            y1="280"
-            x2="1340"
-            y2="900"
-            stroke="#537559"
-            strokeWidth="2.6"
+            x1="270"
+            y1="40"
+            x2="270"
+            y2="650"
+            stroke="#263829"
+            strokeWidth="3.4"
             strokeLinecap="round"
           />
 
           {/* Tier 1 (Top) */}
           <polygon
-            points="1340,265 1285,385 1395,385"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            points="270,30 210,155 330,155"
+            fill="url(#canopy-glow-right)"
+            stroke="#344e37"
+            strokeWidth="2.4"
             strokeLinejoin="round"
           />
 
           {/* Tier 2 */}
           <polygon
-            points="1340,365 1255,505 1425,505"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            points="270,135 180,275 360,275"
+            fill="url(#canopy-glow-right)"
+            stroke="#344e37"
+            strokeWidth="2.4"
             strokeLinejoin="round"
           />
 
           {/* Tier 3 */}
           <polygon
-            points="1340,475 1220,645 1460,645"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            points="270,245 145,420 395,420"
+            fill="url(#canopy-glow-right)"
+            stroke="#344e37"
+            strokeWidth="2.4"
             strokeLinejoin="round"
           />
 
           {/* Tier 4 (Bottom) */}
           <polygon
-            points="1340,600 1175,795 1505,795"
-            fill="url(#canopy-glow)"
-            stroke="#5e8264"
-            strokeWidth="1.8"
+            points="270,370 100,570 440,570"
+            fill="url(#canopy-glow-right)"
+            stroke="#344e37"
+            strokeWidth="2.4"
             strokeLinejoin="round"
           />
-        </g>
-      </svg>
+        </svg>
+      </div>
     </div>
   );
 };
