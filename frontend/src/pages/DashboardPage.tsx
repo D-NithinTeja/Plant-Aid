@@ -10,8 +10,8 @@ import {
   Cpu,
   Calendar,
   Layers,
-  Sparkles,
   Activity,
+  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -46,17 +46,17 @@ export const DashboardPage: React.FC = () => {
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-agri-900 to-agri-800 rounded-3xl p-6 sm:p-8 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-agri-950 border border-agri-900 rounded-3xl p-6 sm:p-8 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-agri-700/60 border border-agri-500/40 text-agri-300 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-agri-900 border border-agri-700 text-agri-300 text-xs font-semibold">
+              <ShieldCheck className="w-3.5 h-3.5 text-agri-400" />
               <span>Groundnut Agronomic Intelligence</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Welcome back, {user?.user_name || 'Agronomist'}!
             </h1>
-            <p className="text-slate-300 text-sm max-w-xl">
-              Camera-ready edge diagnostic pipeline calibrated for rapid leaf lesion identification, confidence scoring, and remedy guidance.
+            <p className="text-slate-300 text-sm max-w-xl leading-relaxed">
+              Field-ready diagnostic pipeline calibrated for rapid leaf lesion identification, confidence scoring, and immediate organic and chemical remedy guidance.
             </p>
           </div>
 
@@ -71,9 +71,9 @@ export const DashboardPage: React.FC = () => {
 
             <Link
               to="/scan?mode=upload"
-              className="inline-flex items-center space-x-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-sm border border-white/20 transition-colors touch-target"
+              className="inline-flex items-center space-x-2 px-4 py-3 rounded-xl bg-agri-900 hover:bg-agri-800 text-slate-200 font-medium text-sm border border-agri-800 transition-colors touch-target"
             >
-              <Upload className="w-4 h-4 text-slate-200" />
+              <Upload className="w-4 h-4 text-agri-400" />
               <span>Upload Photo</span>
             </Link>
           </div>
@@ -82,39 +82,39 @@ export const DashboardPage: React.FC = () => {
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
+            <div className="flex items-center justify-between text-slate-600 text-xs font-semibold">
               <span>Total Field Logs</span>
               <Activity className="w-4 h-4 text-agri-600" />
             </div>
             <div className="text-3xl font-extrabold text-slate-900 font-mono">{totalCount}</div>
-            <div className="text-[11px] text-slate-400">Persisted diagnosis records</div>
+            <div className="text-[11px] text-slate-600">Persisted diagnosis records</div>
           </div>
 
           <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-              <span>Calibration τ Floor</span>
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <div className="flex items-center justify-between text-slate-600 text-xs font-semibold">
+              <span>Healthy Baseline Scans</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             </div>
-            <div className="text-3xl font-extrabold text-slate-900 font-mono">0.55</div>
-            <div className="text-[11px] text-emerald-700 font-medium">Flags ambiguous frames</div>
+            <div className="text-3xl font-extrabold text-emerald-700 font-mono">{healthyCount}</div>
+            <div className="text-[11px] text-slate-600">Non-pathological foliage</div>
           </div>
 
           <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-              <span>Recent Infections</span>
+            <div className="flex items-center justify-between text-slate-600 text-xs font-semibold">
+              <span>Confirmed Pathologies</span>
               <Layers className="w-4 h-4 text-amber-600" />
             </div>
             <div className="text-3xl font-extrabold text-amber-700 font-mono">{infectedCount}</div>
-            <div className="text-[11px] text-slate-400">Active fungal/stress cases</div>
+            <div className="text-[11px] text-slate-600">Active fungal/stress cases</div>
           </div>
 
           <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-              <span>Deep Classifier</span>
-              <Cpu className="w-4 h-4 text-agri-600" />
+            <div className="flex items-center justify-between text-slate-600 text-xs font-semibold">
+              <span>Pathology Protocols</span>
+              <BookOpen className="w-4 h-4 text-agri-600" />
             </div>
-            <div className="text-xl font-bold text-slate-900 truncate">ConvNeXt-Tiny</div>
-            <div className="text-[11px] text-slate-400">CPU/GPU edge optimized</div>
+            <div className="text-3xl font-extrabold text-slate-900 font-mono">6</div>
+            <div className="text-[11px] text-slate-600">Active treatment guides</div>
           </div>
         </div>
 

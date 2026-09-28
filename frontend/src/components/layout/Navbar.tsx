@@ -57,17 +57,17 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
           <Link to={isAuthenticated ? '/dashboard' : '/'} className="flex items-center space-x-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-agri-800 to-agri-600 flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105">
+            <div className="w-10 h-10 rounded-xl bg-agri-800 border border-agri-700 flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105">
               <Sprout className="w-6 h-6 stroke-[2.2]" />
             </div>
             <div>
               <div className="flex items-center space-x-1.5">
                 <span className="font-bold text-lg text-slate-900 tracking-tight">Plant-Aid</span>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-agri-100 text-agri-800">
-                  AI
+                <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-agri-100 text-agri-800 border border-agri-200">
+                  Field Vision
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium hidden sm:block">Groundnut Crop Diagnostic</p>
+              <p className="text-[11px] text-slate-600 font-medium hidden sm:block">Groundnut Pathology Suite</p>
             </div>
           </Link>
 
@@ -135,11 +135,11 @@ export const Navbar: React.FC = () => {
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                  className="p-2 rounded-lg hover:bg-rose-50 transition-colors"
                   title="Sign out"
                   aria-label="Sign out"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-4 h-4 text-slate-600 hover:text-rose-700" />
                 </button>
               </div>
             ) : (

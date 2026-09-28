@@ -260,11 +260,11 @@ export const HistoryPage: React.FC = () => {
 
                     <button
                       onClick={() => setDeleteId(item.id)}
-                      className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors"
+                      className="p-2 rounded-lg hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors"
                       title="Soft delete record"
                       aria-label="Delete diagnosis record"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4 text-slate-600 hover:text-rose-700" />
                     </button>
                   </div>
                 </div>

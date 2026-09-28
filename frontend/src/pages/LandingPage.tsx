@@ -5,11 +5,11 @@ import {
   ShieldCheck,
   Cpu,
   Layers,
-  Sparkles,
   ArrowRight,
   CheckCircle2,
   BookOpen,
   Sprout,
+  Activity,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -79,13 +79,11 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="bg-slate-50 min-h-screen">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-agri-950 via-agri-900 to-slate-900 text-white pt-16 pb-24 px-4 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#4ade80_1px,transparent_1px)] [background-size:24px_24px]" />
-
+      <section className="relative overflow-hidden bg-agri-950 text-white pt-16 pb-24 px-4 sm:px-6 lg:px-8 border-b border-agri-900">
         <div className="relative max-w-5xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-agri-800/80 border border-agri-600/40 text-agri-300 text-xs font-semibold tracking-wide uppercase">
-            <Sparkles className="w-3.5 h-3.5 text-agri-400" />
-            <span>Edge-Calibrated Crop Vision • τ = 0.55 Confidence Floor</span>
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-agri-900/90 border border-agri-700/80 text-agri-300 text-xs font-semibold tracking-wide uppercase">
+            <ShieldCheck className="w-3.5 h-3.5 text-agri-400" />
+            <span>Field-Calibrated Groundnut Vision • Confidence Floor τ = 0.55</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
@@ -103,36 +101,36 @@ export const LandingPage: React.FC = () => {
               className="w-full sm:w-auto inline-flex items-center justify-center space-x-2.5 px-8 py-3.5 rounded-xl bg-agri-500 hover:bg-agri-400 text-slate-950 font-bold text-base shadow-lg shadow-agri-500/20 transition-all hover:scale-[1.02] touch-target"
             >
               <Scan className="w-5 h-5 text-slate-950" />
-              <span>{isAuthenticated ? 'Launch Scanner' : 'Start Live Scan'}</span>
+              <span>{isAuthenticated ? 'Launch Field Scanner' : 'Start Field Scan'}</span>
               <ArrowRight className="w-4 h-4 ml-1" />
             </Link>
 
             <Link
               to="/guide"
-              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-white font-medium text-base border border-slate-700 transition-colors touch-target"
+              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl bg-agri-900/90 hover:bg-agri-800 text-slate-200 font-medium text-base border border-agri-800 transition-colors touch-target"
             >
-              <BookOpen className="w-5 h-5 text-slate-300" />
-              <span>Browse Disease Catalog</span>
+              <BookOpen className="w-5 h-5 text-agri-400" />
+              <span>Browse Pathology Catalog</span>
             </Link>
           </div>
 
           {/* Trust badges */}
           <div className="pt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 text-left max-w-4xl mx-auto">
-            <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 backdrop-blur">
-              <div className="text-agri-400 font-bold text-2xl font-mono">1.5s</div>
-              <div className="text-xs text-slate-400 mt-1">Video Stream Loop</div>
+            <div className="p-4 rounded-xl bg-agri-900/60 border border-agri-800/80">
+              <div className="text-agri-400 font-bold text-2xl font-mono">&lt; 1.5s</div>
+              <div className="text-xs text-slate-300 mt-1 font-medium">On-Device Sampling</div>
             </div>
-            <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 backdrop-blur">
+            <div className="p-4 rounded-xl bg-agri-900/60 border border-agri-800/80">
               <div className="text-agri-400 font-bold text-2xl font-mono">6 Classes</div>
-              <div className="text-xs text-slate-400 mt-1">Groundnut Pathology</div>
+              <div className="text-xs text-slate-300 mt-1 font-medium">Groundnut Pathology</div>
             </div>
-            <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 backdrop-blur">
+            <div className="p-4 rounded-xl bg-agri-900/60 border border-agri-800/80">
               <div className="text-agri-400 font-bold text-2xl font-mono">3 Tiers</div>
-              <div className="text-xs text-slate-400 mt-1">Organic • Chemical • Cultural</div>
+              <div className="text-xs text-slate-300 mt-1 font-medium">Organic • Chemical • Cultural</div>
             </div>
-            <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 backdrop-blur">
-              <div className="text-agri-400 font-bold text-2xl font-mono">2FA OTP</div>
-              <div className="text-xs text-slate-400 mt-1">Protected Farm Data</div>
+            <div className="p-4 rounded-xl bg-agri-900/60 border border-agri-800/80">
+              <div className="text-agri-400 font-bold text-2xl font-mono">2FA Auth</div>
+              <div className="text-xs text-slate-300 mt-1 font-medium">Verified Farm Records</div>
             </div>
           </div>
         </div>
@@ -265,8 +263,8 @@ export const LandingPage: React.FC = () => {
 
       {/* Action Banner */}
       <section className="py-16 sm:py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="bg-gradient-to-tr from-agri-900 to-agri-800 rounded-3xl p-8 sm:p-12 text-white shadow-xl space-y-6">
-          <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center mx-auto text-agri-300">
+        <div className="bg-agri-950 border border-agri-900 rounded-3xl p-8 sm:p-12 text-white shadow-xl space-y-6">
+          <div className="w-14 h-14 rounded-2xl bg-agri-900 border border-agri-800 flex items-center justify-center mx-auto text-agri-300">
             <Sprout className="w-8 h-8" />
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
@@ -278,13 +276,13 @@ export const LandingPage: React.FC = () => {
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to={isAuthenticated ? '/scan' : '/auth?mode=register'}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white text-agri-950 font-bold hover:bg-slate-100 shadow-md transition-colors touch-target"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-agri-500 hover:bg-agri-400 text-slate-950 font-bold shadow-md transition-colors touch-target"
             >
               Get Started Now
             </Link>
             <Link
               to="/auth"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-agri-700/60 text-white font-medium hover:bg-agri-700 border border-agri-600/60 transition-colors touch-target"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-agri-900 text-white font-medium hover:bg-agri-800 border border-agri-700 transition-colors touch-target"
             >
               Registered User Sign In
             </Link>

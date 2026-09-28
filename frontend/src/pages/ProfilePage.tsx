@@ -7,10 +7,10 @@ import {
   ShieldCheck,
   Calendar,
   LogOut,
-  Cpu,
-  Database,
+  MapPin,
+  Clock,
   Layers,
-  Sparkles,
+  CheckCircle2,
   Wifi,
   HardDrive,
 } from 'lucide-react';
@@ -123,53 +123,53 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
 
-        {/* System Diagnostics & Model Engine Info */}
+        {/* Field Station Operations */}
         <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-slate-900">System Architecture & Model Engine</h3>
-            <p className="text-xs text-slate-500">
-              Verified runtime telemetry matching Backend Implementation Specification
+            <h3 className="text-lg font-bold text-slate-900">Field Station & Agronomic Operations</h3>
+            <p className="text-xs text-slate-600">
+              Active terminal configuration, regional crop specialization, and phytosanitary protocol status
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
               <div className="flex items-center space-x-2 text-agri-800 font-bold text-xs">
-                <Cpu className="w-4 h-4 text-agri-600" />
-                <span>Deep Learning Vision Classifier</span>
+                <MapPin className="w-4 h-4 text-agri-600" />
+                <span>Regional Crop Specialization</span>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                PyTorch ConvNeXt-Tiny trained against 6 groundnut classes. Sub-second CPU latency target satisfied.
+              <p className="text-xs text-slate-700 leading-relaxed">
+                Groundnut (*Arachis hypogaea*) pathology suite with 6-class fungal and chlorotic lesion taxonomy.
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
               <div className="flex items-center space-x-2 text-agri-800 font-bold text-xs">
                 <Layers className="w-4 h-4 text-agri-600" />
-                <span>Two-Layer Localization Overlay</span>
+                <span>Lesion Localization Pipeline</span>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Layer 1 HSV green-dominance foliage isolation + Layer 2 hue-distance lesion attention overlay.
+              <p className="text-xs text-slate-700 leading-relaxed">
+                Dual-layer HSV green-dominance foliage isolation with hue-distance lesion boundary detection.
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
               <div className="flex items-center space-x-2 text-agri-800 font-bold text-xs">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>Confidence Calibration (τ = 0.55)</span>
+                <span>Confidence Floor Protocol</span>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Strict rejection floor flags ambiguous or non-pathological leaves, protecting against false pesticide alarm triggers.
+              <p className="text-xs text-slate-700 leading-relaxed">
+                Strict rejection floor (τ = 0.55) flags ambiguous or non-pathological leaves to prevent false chemical spraying.
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
               <div className="flex items-center space-x-2 text-agri-800 font-bold text-xs">
                 <HardDrive className="w-4 h-4 text-agri-600" />
-                <span>Media & History Storage</span>
+                <span>Record Retention & Data Governance</span>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Hierarchical AWS S3 storage with presigned URLs, soft deletion (deleted_at), and transactional compensation.
+              <p className="text-xs text-slate-700 leading-relaxed">
+                Farm diagnosis history is saved only upon intentional operator confirmation, with cloud media archival.
               </p>
             </div>
           </div>
