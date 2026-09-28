@@ -45,9 +45,6 @@ export const Navbar: React.FC = () => {
             <div>
               <div className="flex items-center space-x-1.5">
                 <span className="font-bold text-lg text-slate-900 tracking-tight">Plant-Aid</span>
-                <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-agri-100 text-agri-800 border border-agri-200">
-                  Field Vision
-                </span>
               </div>
               <p className="text-[11px] text-slate-600 font-medium hidden sm:block">Groundnut Pathology Suite</p>
             </div>
