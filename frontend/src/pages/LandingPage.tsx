@@ -8,8 +8,6 @@ import {
   ArrowRight,
   CheckCircle2,
   BookOpen,
-  Sprout,
-  Activity,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -233,35 +231,6 @@ export const LandingPage: React.FC = () => {
                 <p className="text-xs text-slate-600 leading-relaxed">{disease.description}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Action Banner Floating Card */}
-      <section className="py-12 sm:py-16 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="bg-white/95 backdrop-blur-sm border border-slate-200/90 rounded-3xl p-8 sm:p-12 text-slate-900 shadow-sm space-y-6">
-          <div className="w-14 h-14 rounded-2xl bg-agri-50 border border-agri-200/80 flex items-center justify-center mx-auto text-agri-700">
-            <Sprout className="w-8 h-8" />
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-serif font-extrabold tracking-tight text-slate-900">
-            Protect Your Groundnut Crop Today
-          </h2>
-          <p className="text-slate-600 text-sm sm:text-base max-w-xl mx-auto font-normal">
-            Experience sub-second foliage diagnosis directly in your field browser. No complex hardware required.
-          </p>
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              to={isAuthenticated ? '/scan' : '/auth?mode=register'}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-agri-700 hover:bg-agri-800 text-white font-bold shadow-sm transition-colors touch-target"
-            >
-              Get Started Now
-            </Link>
-            <Link
-              to="/auth"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white text-slate-700 font-semibold hover:bg-slate-50 border border-slate-300 shadow-sm transition-colors touch-target"
-            >
-              Registered User Sign In
-            </Link>
           </div>
         </div>
       </section>
