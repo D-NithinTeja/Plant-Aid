@@ -90,10 +90,6 @@ export const LandingPage: React.FC = () => {
             Real-Time Plant Disease Identification & Treatment Advisory
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed font-normal">
-            Equipping farmers, agronomists, and field extension workers with instant foliage scanning, two-layer lesion localization, and validated organic, chemical, and cultural remedies.
-          </p>
-
           {/* Action CTAs */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
@@ -112,26 +108,6 @@ export const LandingPage: React.FC = () => {
               <BookOpen className="w-5 h-5 text-agri-700" />
               <span>Browse Pathology Catalog</span>
             </Link>
-          </div>
-
-          {/* Trust badges */}
-          <div className="pt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left max-w-3xl mx-auto">
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
-              <div className="text-agri-800 font-bold text-xl font-mono">&lt; 1.5s</div>
-              <div className="text-[11px] text-slate-500 mt-1 font-medium">On-Device Sampling</div>
-            </div>
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
-              <div className="text-agri-800 font-bold text-xl font-mono">6 Classes</div>
-              <div className="text-[11px] text-slate-500 mt-1 font-medium">Groundnut Pathology</div>
-            </div>
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
-              <div className="text-agri-800 font-bold text-xl font-mono">3 Tiers</div>
-              <div className="text-[11px] text-slate-500 mt-1 font-medium">Organic • Chemical • Cultural</div>
-            </div>
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
-              <div className="text-agri-800 font-bold text-xl font-mono">2FA Auth</div>
-              <div className="text-[11px] text-slate-500 mt-1 font-medium">Verified Farm Records</div>
-            </div>
           </div>
         </div>
       </section>

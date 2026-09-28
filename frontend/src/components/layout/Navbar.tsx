@@ -10,32 +10,14 @@ import {
   LogOut,
   Menu,
   X,
-  WifiOff,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
-
-  // Ping backend API status
-  useEffect(() => {
-    const checkApi = async () => {
-      try {
-        await api.get('/');
-        setBackendOnline(true);
-      } catch {
-        setBackendOnline(false);
-      }
-    };
-    checkApi();
-    const interval = setInterval(checkApi, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleLogout = () => {
     logout();
@@ -95,32 +77,6 @@ export const Navbar: React.FC = () => {
 
           {/* Right Header Section */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* Backend connectivity indicator */}
-            <div
-              className={`flex items-center space-x-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${
-                backendOnline === true
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                  : backendOnline === false
-                  ? 'bg-rose-50 text-rose-700 border border-rose-200/60'
-                  : 'bg-slate-100 text-slate-500'
-              }`}
-              title={backendOnline ? 'FastAPI Backend Online' : 'FastAPI Backend Unreachable'}
-            >
-              {backendOnline === true ? (
-                <>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="font-mono">API Live</span>
-                </>
-              ) : backendOnline === false ? (
-                <>
-                  <WifiOff className="w-3.5 h-3.5 text-rose-500" />
-                  <span className="font-mono">API Offline</span>
-                </>
-              ) : (
-                <span>Checking...</span>
-              )}
-            </div>
-
             {/* Auth Buttons */}
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
