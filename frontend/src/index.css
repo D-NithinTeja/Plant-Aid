@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans antialiased min-h-screen selection:bg-agri-200 selection:text-agri-950;
+  }
+}
+
+/* Custom smooth transitions and touch target utilities */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Pulsing radar effect for active camera scan */
+@keyframes radar-scan {
+  0% {
+    top: 0%;
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0.2;
+  }
+}
+
+.animate-radar {
+  animation: radar-scan 2.5s ease-in-out infinite alternate;
+}
