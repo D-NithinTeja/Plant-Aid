@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
+import { BotanicalBackground } from './components/layout/BotanicalBackground';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { LandingPage } from './pages/LandingPage';
 import { AuthPage } from './pages/AuthPage';
@@ -16,9 +17,10 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <div className="flex flex-col min-h-screen bg-slate-50 text-slate-900 font-sans">
+        <div className="flex flex-col min-h-screen bg-[#edf4ed] text-slate-900 font-sans relative selection:bg-agri-200 selection:text-agri-950">
+          <BotanicalBackground />
           <Navbar />
-          <main className="flex-1">
+          <main className="flex-1 relative z-10">
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />

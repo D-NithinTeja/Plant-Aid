@@ -274,7 +274,7 @@ export const ScanPage: React.FC = () => {
   const isConfirmedInfection = currentResult && !currentResult.is_healthy_or_uncertain && !isHealthy;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 py-6 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-transparent text-slate-900 py-6 px-4 sm:px-6 lg:px-8">
       {/* Hidden Offscreen Canvas for preprocessing */}
       <canvas ref={canvasRef} className="hidden" />
 

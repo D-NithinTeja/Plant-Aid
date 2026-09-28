@@ -77,7 +77,7 @@ export const LandingPage: React.FC = () => {
   ];
 
   return (
-    <div className="bg-slate-50 min-h-screen">
+    <div className="bg-transparent min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-agri-950 text-white pt-16 pb-24 px-4 sm:px-6 lg:px-8 border-b border-agri-900">
         <div className="relative max-w-5xl mx-auto text-center space-y-6">
