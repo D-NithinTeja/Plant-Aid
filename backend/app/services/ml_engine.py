@@ -200,7 +200,18 @@ class MLEngine:
             heatmap = np.zeros((h, w), dtype=np.float32)
             if leaf_mask is not None and np.any(leaf_mask > 0):
                 heatmap[leaf_mask > 0] = 0.15
-            return heatmap, None
+            heatmap_8u = (np.clip(heatmap, 0.0, 1.0) * 255).astype(np.uint8)
+            heatmap_color = cv2.applyColorMap(heatmap_8u, cv2.COLORMAP_JET)
+            heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
+            alpha = 0.4
+            blended = image_np.copy()
+            mask_idx = (leaf_mask > 0) if leaf_mask is not None else np.ones((h, w), dtype=bool)
+            blended[mask_idx] = (
+                (1 - alpha) * image_np[mask_idx] + alpha * heatmap_color[mask_idx]
+            ).astype(np.uint8)
+            success, enc = cv2.imencode(".jpg", cv2.cvtColor(blended, cv2.COLOR_RGB2BGR))
+            cam_b64 = base64.b64encode(enc.tobytes()).decode("utf-8") if success else ""
+            return heatmap, cam_b64
 
         # Compute symptom lesion saliency / attention map
         # In field photographs, leaf lesions (early/late leaf spots, rust pustules, chlorosis)
