@@ -7,12 +7,14 @@ export const BotanicalBackground: React.FC = () => {
       aria-hidden="true"
     >
       {/* Subtle soft gradient background overlay matching reference */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#f2f7f2] via-[#edf4ed] to-[#e4ede4] opacity-90" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#f2f7f2] via-[#edf4ed] to-[#e4ede4] opacity-80" />
 
-      {/* ============================================================ */}
-      {/* 1. LEFT BOTANICAL TREE (PINNED TO BOTTOM-LEFT)               */}
-      {/* ============================================================ */}
-      <div className="absolute left-0 bottom-0 w-[260px] sm:w-[340px] md:w-[420px] lg:w-[480px] h-[65vh] sm:h-[75vh] md:h-[82vh] max-h-[850px] min-h-[420px] pointer-events-none">
+      {/* Vector Botanical Background Layer with gently softened opacity */}
+      <div className="absolute inset-0 pointer-events-none opacity-75 transition-opacity duration-300">
+        {/* ============================================================ */}
+        {/* 1. LEFT BOTANICAL TREE (PINNED TO BOTTOM-LEFT)               */}
+        {/* ============================================================ */}
+        <div className="absolute left-0 bottom-0 w-[260px] sm:w-[340px] md:w-[420px] lg:w-[480px] h-[65vh] sm:h-[75vh] md:h-[82vh] max-h-[850px] min-h-[420px] pointer-events-none">
         <svg
           className="w-full h-full"
           viewBox="0 0 460 780"
@@ -382,6 +384,7 @@ export const BotanicalBackground: React.FC = () => {
             strokeLinejoin="round"
           />
         </svg>
+      </div>
       </div>
     </div>
   );
