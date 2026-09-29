@@ -10,7 +10,7 @@ export const LandingPage: React.FC = () => {
     <div className="min-h-[82vh] flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 bg-transparent">
       {/* Hero Floating Card */}
       <div className="w-full max-w-4xl mx-auto bg-white/95 backdrop-blur-sm rounded-3xl p-10 sm:p-16 shadow-sm border border-slate-200/90 text-center space-y-8">
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-tight">
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-slate-900 leading-tight">
           Real-Time Plant Disease Identification & Treatment Advisory
         </h1>
 
