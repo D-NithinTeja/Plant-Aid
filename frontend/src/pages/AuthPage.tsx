@@ -1,0 +1,434 @@
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import {
+  ShieldCheck,
+  Lock,
+  Mail,
+  User as UserIcon,
+  Phone,
+  ArrowRight,
+  AlertCircle,
+  Clock,
+  KeyRound,
+  CheckCircle2,
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { PlantAidIcon } from '../components/layout/PlantAidLogo';
+import { TwoFactorChallengeResponse } from '../types';
+
+export const AuthPage: React.FC = () => {
+  const { login, verify2FA, register, isAuthenticated } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const queryParams = new URLSearchParams(location.search);
+  const initialMode = queryParams.get('mode') === 'register' ? 'register' : 'login';
+
+  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Form Fields
+  const [name, setName] = useState('');
+  const [identifier, setIdentifier] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+
+  // 2FA Challenge State
+  const [challenge, setChallenge] = useState<TwoFactorChallengeResponse | null>(null);
+  const [otpCode, setOtpCode] = useState('');
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(300);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  // 2FA countdown timer
+  useEffect(() => {
+    if (!challenge) return;
+
+    setSecondsRemaining(challenge.expires_in || 300);
+    const timer = setInterval(() => {
+      setSecondsRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [challenge]);
+
+  const formatTimer = (secs: number) => {
+    const mins = Math.floor(secs / 60);
+    const remaining = secs % 60;
+    return `${mins}:${remaining < 10 ? '0' : ''}${remaining}`;
+  };
+
+  // Submit Login
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    if (!identifier.trim() || !password) {
+      setErrorMsg('Please enter your email or phone number and password.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const challengeRes = await login(identifier.trim(), password);
+      setChallenge(challengeRes);
+      // Auto-fill dev OTP if present for quick testing
+      if (challengeRes.otp_code_dev) {
+        setOtpCode(challengeRes.otp_code_dev);
+      }
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      setErrorMsg(typeof detail === 'string' ? detail : 'Invalid login credentials. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Submit Registration
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    if (!name.trim() || !email.trim() || !password) {
+      setErrorMsg('Name, email address, and password are required.');
+      return;
+    }
+
+    if (password.length < 8) {
+      setErrorMsg('Password must be at least 8 characters long.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await register(name.trim(), email.trim(), password, phone.trim() || null);
+      setSuccessMsg('Account registered successfully! Please sign in below.');
+      setMode('login');
+      setIdentifier(email.trim());
+      setPassword('');
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      setErrorMsg(typeof detail === 'string' ? detail : 'Failed to register account. User may already exist.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Submit 2FA Verification
+  const handleVerify2FA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!challenge) return;
+
+    if (!otpCode.trim() || otpCode.trim().length !== 6) {
+      setErrorMsg('Please enter the valid 6-digit OTP code.');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg(null);
+
+    try {
+      await verify2FA(challenge.session_id, otpCode);
+      const destination = (location.state as any)?.from?.pathname || '/dashboard';
+      navigate(destination, { replace: true });
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      setErrorMsg(typeof detail === 'string' ? detail : 'Invalid 2FA code or session expired.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-transparent">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-elevated">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <Link to="/" className="inline-flex items-center justify-center group mb-2" title="Return to Home">
+            <PlantAidIcon size={48} className="transition-transform group-hover:scale-105 shadow-sm rounded-xl" />
+          </Link>
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            {challenge ? 'Two-Factor Authentication' : mode === 'login' ? 'Sign In to Plant-Aid' : 'Create Farm Account'}
+          </h2>
+          <p className="text-xs text-slate-500 max-w-xs mx-auto">
+            {challenge
+              ? 'Enter the 6-digit security code dispatched to your registered contact.'
+              : mode === 'login'
+              ? 'Access real-time crop disease diagnosis, remedies, and field records.'
+              : 'Join agricultural professionals diagnosing groundnut foliage with AI.'}
+          </p>
+        </div>
+
+        {/* Global Notifications */}
+        {errorMsg && (
+          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start space-x-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+            <span className="leading-snug">{errorMsg}</span>
+          </div>
+        )}
+
+        {successMsg && (
+          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start space-x-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <span className="leading-snug">{successMsg}</span>
+          </div>
+        )}
+
+        {/* 2FA Challenge View */}
+        {challenge ? (
+          <form onSubmit={handleVerify2FA} className="space-y-6">
+            <div className="p-4 rounded-2xl bg-agri-50/60 border border-agri-200/80 text-center space-y-2">
+              <KeyRound className="w-8 h-8 text-agri-700 mx-auto" />
+              <div className="text-xs font-semibold text-agri-900">Active Challenge Session</div>
+              <p className="text-[11px] text-agri-700">
+                Session expires in{' '}
+                <span className="font-mono font-bold text-agri-900">{formatTimer(secondsRemaining)}</span>
+              </p>
+
+              {challenge.otp_code_dev && (
+                <div className="mt-3 pt-3 border-t border-agri-200 text-left">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-mono font-bold text-agri-800 uppercase tracking-wider">
+                      Dev OTP Code:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setOtpCode(challenge.otp_code_dev || '')}
+                      className="text-[11px] font-medium text-agri-700 hover:text-agri-900 underline"
+                    >
+                      Fill Dev Code
+                    </button>
+                  </div>
+                  <div className="text-base font-mono font-bold tracking-widest text-slate-800 bg-white px-3 py-1 rounded border border-agri-200 mt-1 text-center">
+                    {challenge.otp_code_dev}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="otp-input" className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                6-Digit Verification Code
+              </label>
+              <input
+                id="otp-input"
+                type="text"
+                maxLength={6}
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="123456"
+                className="w-full px-4 py-3 text-center font-mono text-2xl font-bold tracking-[0.3em] rounded-xl border border-slate-300 focus:ring-2 focus:ring-agri-500 focus:border-agri-500 bg-white"
+                autoFocus
+                disabled={loading || secondsRemaining === 0}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || secondsRemaining === 0 || otpCode.length !== 6}
+              className="w-full py-3.5 px-4 rounded-xl bg-agri-700 hover:bg-agri-800 text-white font-bold text-sm shadow-md transition-colors disabled:opacity-50 touch-target flex items-center justify-center space-x-2"
+            >
+              {loading ? (
+                <span>Verifying 2FA Code...</span>
+              ) : (
+                <>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Verify & Proceed to Field App</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setChallenge(null);
+                setOtpCode('');
+                setErrorMsg(null);
+              }}
+              className="w-full text-center text-xs text-slate-500 hover:text-slate-800 font-medium"
+            >
+              ← Cancel and return to sign in
+            </button>
+          </form>
+        ) : (
+          /* Normal Login / Register Tabs */
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('login');
+                  setErrorMsg(null);
+                }}
+                className={`py-2 text-xs font-bold rounded-lg transition-all ${
+                  mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('register');
+                  setErrorMsg(null);
+                }}
+                className={`py-2 text-xs font-bold rounded-lg transition-all ${
+                  mode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                Register
+              </button>
+            </div>
+
+            {mode === 'login' ? (
+              /* Login Form */
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Email Address or Phone Number
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                    <input
+                      type="text"
+                      required
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="farmer@plant-aid.org"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-agri-500 focus:border-agri-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                    <input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-agri-500 focus:border-agri-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full mt-2 py-3 px-4 rounded-xl bg-agri-700 hover:bg-agri-800 text-white font-bold text-sm shadow-md transition-colors disabled:opacity-50 touch-target flex items-center justify-center space-x-2"
+                >
+                  {loading ? (
+                    <span>Authenticating...</span>
+                  ) : (
+                    <>
+                      <span>Continue with 2FA Challenge</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+            ) : (
+              /* Register Form */
+              <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+                  <div className="relative">
+                    <UserIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Dr. Bhavana / Nithin Teja"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-agri-500 focus:border-agri-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="agronomist@farm.org"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-agri-500 focus:border-agri-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Phone Number <span className="text-slate-400 font-normal">(Optional for SMS 2FA)</span>
+                  </label>
+                  <div className="relative">
+                    <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+91 9876543210"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-agri-500 focus:border-agri-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                    <input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Min 8 characters"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-agri-500 focus:border-agri-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full mt-2 py-3 px-4 rounded-xl bg-agri-700 hover:bg-agri-800 text-white font-bold text-sm shadow-md transition-colors disabled:opacity-50 touch-target flex items-center justify-center space-x-2"
+                >
+                  {loading ? (
+                    <span>Registering Account...</span>
+                  ) : (
+                    <>
+                      <span>Create Account & Enable 2FA</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

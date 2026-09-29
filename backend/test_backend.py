@@ -106,6 +106,21 @@ class BackendTestSuite(unittest.TestCase):
         self.assertIn("s3_storage_uri", data)
         self.assertIn("remedies", data)
 
+        # Explicitly persist diagnosis to history (Implementation.md §6.2)
+        history_payload = {
+            "disease_id": str(data["disease_id"]),
+            "disease_name": data["disease_name"],
+            "confidence_score": data["confidence_score"],
+            "s3_storage_uri": data["s3_storage_uri"],
+            "bounding_box": data["bounding_box"],
+        }
+        res_history = self.client.post(
+            "/api/history",
+            json=history_payload,
+            headers=getattr(BackendTestSuite, "headers", {}),
+        )
+        self.assertEqual(res_history.status_code, 201)
+
     def test_05_disease_history(self):
         # Fetch history logs for logged-in user
         headers = getattr(BackendTestSuite, "headers", {})
