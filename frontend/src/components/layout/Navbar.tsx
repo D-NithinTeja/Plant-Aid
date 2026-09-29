@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Sprout,
   Scan,
   LayoutDashboard,
   History,
@@ -12,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { PlantAidLogo } from './PlantAidLogo';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -38,16 +38,8 @@ export const Navbar: React.FC = () => {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
-          <Link to={isAuthenticated ? '/dashboard' : '/'} className="flex items-center space-x-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-agri-800 border border-agri-700 flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105">
-              <Sprout className="w-6 h-6 stroke-[2.2]" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-1.5">
-                <span className="font-bold text-lg text-slate-900 tracking-tight">Plant-Aid</span>
-              </div>
-              <p className="text-[11px] text-slate-600 font-medium hidden sm:block">Groundnut Pathology Suite</p>
-            </div>
+          <Link to={isAuthenticated ? '/dashboard' : '/'} className="group">
+            <PlantAidLogo size="md" />
           </Link>
 
           {/* Desktop Navigation */}

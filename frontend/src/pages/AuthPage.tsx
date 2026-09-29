@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import {
-  Sprout,
   ShieldCheck,
   Lock,
   Mail,
@@ -14,6 +13,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { PlantAidIcon } from '../components/layout/PlantAidLogo';
 import { TwoFactorChallengeResponse } from '../types';
 
 export const AuthPage: React.FC = () => {
@@ -160,10 +160,8 @@ export const AuthPage: React.FC = () => {
       <div className="max-w-md w-full space-y-8 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-elevated">
         {/* Header */}
         <div className="text-center space-y-2">
-          <Link to="/" className="inline-flex items-center space-x-2">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-agri-800 to-agri-600 flex items-center justify-center text-white shadow-sm">
-              <Sprout className="w-7 h-7 stroke-[2.2]" />
-            </div>
+          <Link to="/" className="inline-flex items-center justify-center group mb-2" title="Return to Home">
+            <PlantAidIcon size={48} className="transition-transform group-hover:scale-105 shadow-sm rounded-xl" />
           </Link>
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
             {challenge ? 'Two-Factor Authentication' : mode === 'login' ? 'Sign In to Plant-Aid' : 'Create Farm Account'}
