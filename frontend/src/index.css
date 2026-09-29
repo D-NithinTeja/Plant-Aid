@@ -46,15 +46,15 @@
 @font-face {
   font-family: 'Gilroy';
   src: local('Gilroy-Heavy'), local('Gilroy Heavy'), url('/fonts/gilroy/Gilroy-Heavy.woff') format('woff');
-  font-weight: 800;
+  font-weight: 800 900;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Gilroy';
-  src: local('Gilroy-Heavy'), local('Gilroy Heavy'), url('/fonts/gilroy/Gilroy-Heavy.woff') format('woff');
-  font-weight: 900;
+  font-family: 'Dancing Script';
+  src: local('Dancing Script'), local('DancingScript'), url('/fonts/cursive/DancingScript.woff2') format('woff2');
+  font-weight: 400 700;
   font-style: normal;
   font-display: swap;
 }
