@@ -62,7 +62,7 @@ export const ProfilePage: React.FC = () => {
               <span>2FA Verified Session</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-serif font-bold text-slate-800 tracking-tight">
-              Welcome, {profile?.user_name || 'Bhavana'}
+              Welcome, {profile?.user_name || 'User Name'}
             </h1>
             <p className="text-slate-500 text-sm font-normal">
               Your session is authenticated and protected by JWT Bearer token security.
@@ -98,17 +98,17 @@ export const ProfilePage: React.FC = () => {
 
                 <div className="flex items-center justify-between pt-3">
                   <span className="text-slate-500 font-medium">Full Name:</span>
-                  <span className="font-semibold text-slate-800">{profile?.user_name || 'Bhavana'}</span>
+                  <span className="font-semibold text-slate-800">{profile?.user_name || 'User Name'}</span>
                 </div>
 
                 <div className="flex items-center justify-between pt-3">
                   <span className="text-slate-500 font-medium">Email Address:</span>
-                  <span className="font-semibold text-slate-800">{profile?.email_address || 'gbhavanasri.10@gmail.com'}</span>
+                  <span className="font-semibold text-slate-800">{profile?.email_address || 'user@plant-aid.org'}</span>
                 </div>
 
                 <div className="flex items-center justify-between pt-3">
                   <span className="text-slate-500 font-medium">Phone Number:</span>
-                  <span className="font-semibold text-slate-800">{profile?.phone_number || '+91 9048348333'}</span>
+                  <span className="font-semibold text-slate-800">{profile?.phone_number || '+91 9876543210'}</span>
                 </div>
 
                 <div className="flex items-center justify-between pt-3">
