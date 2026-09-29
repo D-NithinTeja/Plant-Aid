@@ -52,7 +52,7 @@ export const DashboardPage: React.FC = () => {
               <ShieldCheck className="w-3.5 h-3.5 text-[#2c6e3b]" />
               <span>Groundnut Agronomic Intelligence</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-serif font-extrabold tracking-tight text-slate-900">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
               Welcome back, {user?.user_name || 'Agronomist'}!
             </h1>
             <p className="text-slate-600 text-sm max-w-xl leading-relaxed font-normal">

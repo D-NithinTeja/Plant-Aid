@@ -61,7 +61,7 @@ export const ProfilePage: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-[#2c6e3b]" />
               <span>2FA Verified Session</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-slate-800 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 tracking-tight">
               Welcome, {profile?.user_name || 'User Name'}
             </h1>
             <p className="text-slate-500 text-sm font-normal">

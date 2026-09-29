@@ -84,9 +84,9 @@ export const PlantAidLogo: React.FC<PlantAidLogoProps> = ({
       <PlantAidIcon size={size} className="shrink-0 transition-transform group-hover:scale-105" />
       <div className="flex flex-col justify-center">
         <div className="flex items-baseline leading-none tracking-tight">
-          <span className="font-serif font-bold text-xl text-slate-900">Plant</span>
-          <span className="text-amber-600 font-serif font-bold text-lg mx-0.5">·</span>
-          <span className="font-serif font-bold italic text-xl text-[#b88a44]">Aid</span>
+          <span className="font-bold text-xl text-slate-900">Plant</span>
+          <span className="text-amber-600 font-bold text-lg mx-0.5">·</span>
+          <span className="font-bold italic text-xl text-[#b88a44]">Aid</span>
         </div>
         {showSubtitle && (
           <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 mt-1">
