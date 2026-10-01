@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BookOpen,
@@ -10,9 +10,8 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  Layers,
-  Sparkles,
 } from 'lucide-react';
+import api from '../services/api';
 
 interface DiseaseGuideEntry {
   slug: string;
@@ -238,6 +237,71 @@ export const DiseaseGuidePage: React.FC = () => {
     },
   ];
 
+  const [diseases, setDiseases] = useState<DiseaseGuideEntry[]>(catalogue);
+
+  useEffect(() => {
+    const fetchCatalog = async () => {
+      try {
+        const res = await api.get<any[]>('/api/diseases');
+        if (res.data && res.data.length > 0) {
+          const merged = catalogue.map((item) => {
+            const backendEntry = res.data.find(
+              (d: any) => d.id === item.slug || d.disease_name.toLowerCase() === item.name.toLowerCase()
+            );
+            if (!backendEntry || !backendEntry.remedies || backendEntry.remedies.length === 0) return item;
+
+            const organic = backendEntry.remedies
+              .filter(
+                (r: any) =>
+                  r.category.toLowerCase().includes('organic') ||
+                  r.category.toLowerCase().includes('biological')
+              )
+              .map((r: any) => ({
+                name: r.title,
+                dosage: r.description,
+                instruction: r.application_instructions || r.description,
+              }));
+
+            const chemical = backendEntry.remedies
+              .filter(
+                (r: any) =>
+                  r.category.toLowerCase().includes('chemical') ||
+                  r.category.toLowerCase().includes('fungicide')
+              )
+              .map((r: any) => ({
+                name: r.title,
+                dosage: r.description,
+                instruction: r.application_instructions || r.description,
+              }));
+
+            const cultural = backendEntry.remedies
+              .filter(
+                (r: any) =>
+                  r.category.toLowerCase().includes('cultural') ||
+                  r.category.toLowerCase().includes('preventive')
+              )
+              .map((r: any) => ({
+                name: r.title,
+                instruction: r.application_instructions || r.description,
+              }));
+
+            return {
+              ...item,
+              scientificName: backendEntry.scientific_name || item.scientificName,
+              organicRemedies: organic.length > 0 ? organic : item.organicRemedies,
+              chemicalRemedies: chemical.length > 0 ? chemical : item.chemicalRemedies,
+              culturalRemedies: cultural.length > 0 ? cultural : item.culturalRemedies,
+            };
+          });
+          setDiseases(merged);
+        }
+      } catch (err) {
+        console.warn('Using local agronomic disease catalogue', err);
+      }
+    };
+    fetchCatalog();
+  }, []);
+
   return (
     <div className="min-h-screen bg-transparent py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-8">
@@ -267,7 +331,7 @@ export const DiseaseGuidePage: React.FC = () => {
 
         {/* Accordion List */}
         <div className="space-y-4">
-          {catalogue.map((entry) => {
+          {diseases.map((entry) => {
             const isExpanded = expandedSlug === entry.slug;
             const isHealthy = entry.category === 'Healthy Baseline';
 

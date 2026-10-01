@@ -3,25 +3,19 @@ import { useLocation } from 'react-router-dom';
 import {
   Camera,
   Upload,
-  Play,
-  Pause,
   RefreshCw,
   Save,
   CheckCircle2,
   AlertTriangle,
   ShieldCheck,
   Layers,
-  Info,
-  Maximize2,
-  HelpCircle,
   ExternalLink,
   RotateCcw,
-  Sliders,
-  Check,
 } from 'lucide-react';
 import api from '../services/api';
-import { InferenceResponse, BoundingBox, Remedy } from '../types';
+import { InferenceResponse, CreateHistoryPayload } from '../types';
 import { TreatmentPlanModal } from '../components/treatment/TreatmentPlanModal';
+import { BoundingBoxOverlay } from '../components/scan/BoundingBoxOverlay';
 
 export const ScanPage: React.FC = () => {
   const location = useLocation();
@@ -34,8 +28,9 @@ export const ScanPage: React.FC = () => {
   const [cameraError, setCameraError] = useState<string | null>(null);
 
   // Scanning & Shutter workflow states
-  // Default to manual shutter for stable field inspection, with optional auto-sampling
-  const [autoSample, setAutoSample] = useState<boolean>(false);
+  // Default to continuous 1.5s auto-sampling per SRS §3.1 F.2
+  const [autoSample, setAutoSample] = useState<boolean>(true);
+  const [showHeatmap, setShowHeatmap] = useState<boolean>(true);
   const [isFrozen, setIsFrozen] = useState<boolean>(false);
   const [isInFlight, setIsInFlight] = useState<boolean>(false);
   const [lastInferenceTime, setLastInferenceTime] = useState<number | null>(null);
@@ -43,7 +38,6 @@ export const ScanPage: React.FC = () => {
   // Results
   const [currentResult, setCurrentResult] = useState<InferenceResponse | null>(null);
   const [frozenFrameDataUrl, setFrozenFrameDataUrl] = useState<string | null>(null);
-  const [lastUploadedFile, setLastUploadedFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -215,7 +209,6 @@ export const ScanPage: React.FC = () => {
       return;
     }
 
-    setLastUploadedFile(file);
     setIsInFlight(true);
     setIsSaved(false);
     setSaveMessage(null);
@@ -249,15 +242,18 @@ export const ScanPage: React.FC = () => {
 
     setIsSaving(true);
     try {
-      await api.post('/api/history', {
+      const payload: CreateHistoryPayload = {
         disease_id: currentResult.disease_name.toLowerCase().includes('healthy')
           ? 'healthy_leaf'
           : String(currentResult.disease_id),
         disease_name: currentResult.disease_name,
         confidence_score: currentResult.confidence_score,
         s3_storage_uri: currentResult.s3_storage_uri || null,
+        image_b64: (!currentResult.s3_storage_uri && frozenFrameDataUrl) ? frozenFrameDataUrl : null,
         bounding_box: currentResult.bounding_box || null,
-      });
+      };
+
+      await api.post('/api/history', payload);
 
       setIsSaved(true);
       setSaveMessage('Diagnosis logged successfully to farm history.');
@@ -330,7 +326,7 @@ export const ScanPage: React.FC = () => {
                     ref={videoRef}
                     playsInline
                     muted
-                    className={`w-full h-full object-cover ${isFrozen ? 'hidden' : 'block'}`}
+                    className={`w-full h-full object-contain ${isFrozen ? 'hidden' : 'block'}`}
                   />
 
                   {/* Frozen Frame View */}
@@ -338,7 +334,7 @@ export const ScanPage: React.FC = () => {
                     <img
                       src={frozenFrameDataUrl}
                       alt="Frozen leaf specimen"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   )}
 
@@ -351,27 +347,14 @@ export const ScanPage: React.FC = () => {
                   </div>
 
                   {/* Bounding Box / Two-layer Localization Overlay */}
-                  {currentResult?.bounding_box && (
-                    <div
-                      className={`absolute pointer-events-none transition-all duration-300 rounded-lg border-2 ${
-                        isConfirmedInfection
-                          ? 'border-red-500 bg-red-500/15 shadow-[0_0_15px_rgba(239,68,68,0.5)]'
-                          : isHealthy
-                          ? 'border-emerald-500 bg-emerald-500/15'
-                          : 'border-amber-500 bg-amber-500/15'
-                      }`}
-                      style={{
-                        left: `${currentResult.bounding_box.x_min * 100}%`,
-                        top: `${currentResult.bounding_box.y_min * 100}%`,
-                        width: `${(currentResult.bounding_box.x_max - currentResult.bounding_box.x_min) * 100}%`,
-                        height: `${(currentResult.bounding_box.y_max - currentResult.bounding_box.y_min) * 100}%`,
-                      }}
-                    >
-                      <div className="absolute -top-6 left-0 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-slate-900 text-white border border-slate-700 whitespace-nowrap shadow-sm">
-                        Lesion ROI: {(currentResult.confidence * 100).toFixed(0)}%
-                      </div>
-                    </div>
-                  )}
+                  <BoundingBoxOverlay
+                    boundingBox={currentResult?.bounding_box}
+                    confidence={currentResult?.confidence || currentResult?.confidence_score || 0}
+                    isConfirmedInfection={Boolean(isConfirmedInfection)}
+                    isHealthy={Boolean(isHealthy)}
+                    camHeatmapB64={currentResult?.cam_heatmap_b64}
+                    showHeatmap={showHeatmap}
+                  />
 
                   {/* Continuous Radar Line (Only active when auto-sampling) */}
                   {autoSample && !isFrozen && !isInFlight && (
@@ -440,23 +423,14 @@ export const ScanPage: React.FC = () => {
                         alt="Uploaded leaf"
                         className="max-h-full max-w-full object-contain rounded-2xl"
                       />
-                      {currentResult?.bounding_box && (
-                        <div
-                          className={`absolute pointer-events-none rounded-lg border-2 ${
-                            isConfirmedInfection
-                              ? 'border-red-500 bg-red-500/20'
-                              : isHealthy
-                              ? 'border-emerald-500 bg-emerald-500/20'
-                              : 'border-amber-500 bg-amber-500/20'
-                          }`}
-                          style={{
-                            left: `${currentResult.bounding_box.x_min * 100}%`,
-                            top: `${currentResult.bounding_box.y_min * 100}%`,
-                            width: `${(currentResult.bounding_box.x_max - currentResult.bounding_box.x_min) * 100}%`,
-                            height: `${(currentResult.bounding_box.y_max - currentResult.bounding_box.y_min) * 100}%`,
-                          }}
-                        />
-                      )}
+                      <BoundingBoxOverlay
+                        boundingBox={currentResult?.bounding_box}
+                        confidence={currentResult?.confidence || currentResult?.confidence_score || 0}
+                        isConfirmedInfection={Boolean(isConfirmedInfection)}
+                        isHealthy={Boolean(isHealthy)}
+                        camHeatmapB64={currentResult?.cam_heatmap_b64}
+                        showHeatmap={showHeatmap}
+                      />
                     </div>
                   ) : (
                     <label className="cursor-pointer flex flex-col items-center space-y-3 p-8 border-2 border-dashed border-slate-300 rounded-3xl hover:border-agri-500 hover:bg-agri-50/50 transition-all">
@@ -503,22 +477,36 @@ export const ScanPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* Auto-Sample Stream Toggle */}
-                <div className="flex items-center space-x-2 self-end sm:self-center text-xs text-slate-700">
-                  <span className="font-medium">Auto-Sample Stream (1.5s):</span>
+                {/* Auto-Sample Stream & Attention Heatmap Toggles */}
+                <div className="flex flex-wrap items-center gap-3 self-end sm:self-center text-xs text-slate-700">
                   <button
-                    onClick={() => {
-                      if (isFrozen) setIsFrozen(false);
-                      setAutoSample(!autoSample);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg font-bold border transition-colors ${
-                      autoSample
-                        ? 'bg-agri-100 text-agri-900 border-agri-300'
+                    onClick={() => setShowHeatmap(!showHeatmap)}
+                    className={`px-3 py-1.5 rounded-lg font-bold border transition-colors flex items-center space-x-1.5 ${
+                      showHeatmap
+                        ? 'bg-amber-100 text-amber-900 border-amber-300'
                         : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
                     }`}
+                    title="Toggle Layer 2 attention saliency map"
                   >
-                    {autoSample ? 'Active' : 'Off (Manual)'}
+                    <span>Heatmap: {showHeatmap ? 'ON' : 'OFF'}</span>
                   </button>
+
+                  <div className="flex items-center space-x-1.5">
+                    <span className="font-medium">1.5s Stream:</span>
+                    <button
+                      onClick={() => {
+                        if (isFrozen) setIsFrozen(false);
+                        setAutoSample(!autoSample);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg font-bold border transition-colors ${
+                        autoSample
+                          ? 'bg-agri-100 text-agri-900 border-agri-300'
+                          : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
+                      }`}
+                    >
+                      {autoSample ? 'Active' : 'Off (Manual)'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

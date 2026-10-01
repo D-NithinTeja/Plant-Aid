@@ -10,9 +10,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Scan,
-  AlertCircle,
-  CheckCircle2,
-  Sparkles,
 } from 'lucide-react';
 import api from '../services/api';
 import { HistoryLog, PaginatedHistoryResponse, Remedy } from '../types';
@@ -39,15 +36,15 @@ export const HistoryPage: React.FC = () => {
   const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
-      let url = `/api/history?page=${page}&size=9`;
+      let url = `/api/history?page=${page}&limit=9`;
       if (diseaseFilter !== 'all') {
         url += `&disease_id=${diseaseFilter}`;
       }
 
       const res = await api.get<PaginatedHistoryResponse>(url);
       setHistoryItems(res.data.items || []);
-      setTotalCount(res.data.total_count || 0);
-      setTotalPages(res.data.pages || 1);
+      setTotalCount(res.data.total ?? res.data.total_count ?? 0);
+      setTotalPages(res.data.total_pages ?? res.data.pages ?? 1);
     } catch (err) {
       console.error('Failed to load history items', err);
     } finally {

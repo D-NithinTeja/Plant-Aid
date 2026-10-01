@@ -7,7 +7,6 @@ import {
   BookOpen,
   ArrowRight,
   ShieldCheck,
-  Cpu,
   Calendar,
   Layers,
   Activity,
@@ -26,9 +25,9 @@ export const DashboardPage: React.FC = () => {
   useEffect(() => {
     const fetchRecentHistory = async () => {
       try {
-        const res = await api.get<PaginatedHistoryResponse>('/api/history?page=1&size=4');
+        const res = await api.get<PaginatedHistoryResponse>('/api/history?page=1&limit=4');
         setHistoryItems(res.data.items || []);
-        setTotalCount(res.data.total_count || 0);
+        setTotalCount(res.data.total ?? res.data.total_count ?? 0);
       } catch (err) {
         console.error('Failed to load recent history logs', err);
       } finally {
@@ -52,7 +51,7 @@ export const DashboardPage: React.FC = () => {
               <ShieldCheck className="w-3.5 h-3.5 text-[#2c6e3b]" />
               <span>Groundnut Agronomic Intelligence</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-serif font-extrabold tracking-tight text-slate-900">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
               Welcome back, {user?.user_name || 'Agronomist'}!
             </h1>
             <p className="text-slate-600 text-sm max-w-xl leading-relaxed font-normal">

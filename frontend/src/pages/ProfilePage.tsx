@@ -18,29 +18,17 @@ export const ProfilePage: React.FC = () => {
   const { user: initialUser, logout } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<User | null>(initialUser);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [rawToken, setRawToken] = useState<string>('');
+  const [rawToken] = useState<string>(() => {
+    return localStorage.getItem('plant_aid_token') || localStorage.getItem('token') || '';
+  });
 
   useEffect(() => {
-    // Read JWT bearer token
-    const token = localStorage.getItem('plant_aid_token') || localStorage.getItem('token') || '';
-    if (token) {
-      setRawToken(token);
-    } else {
-      // Mock demonstration token matching reference
-      setRawToken(
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLXBsYW50LWFpZCIsIm5hbWUiOiJCaGF2YW5hIiwiZXhwIjoxNzg5NTg5NjM2fQ.1JCAGF2YW5hIiwiaW1haWxfYWtcmVzcyI6ImdiaGF2YW5hc3JpLnBsJEwQGdtYWlsLmNvbSIsImlhdCI6MTc4OTU4OTYwMH0'
-      );
-    }
-
     const fetchMe = async () => {
       try {
         const res = await api.get<User>('/api/auth/me');
         setProfile(res.data);
       } catch (err) {
-        console.error('Failed to load user profile', err);
-      } finally {
-        setLoading(false);
+        console.warn('Using local authenticated profile state', err);
       }
     };
     fetchMe();
@@ -51,18 +39,21 @@ export const ProfilePage: React.FC = () => {
     navigate('/auth');
   };
 
+  const displayName = profile?.user_name || initialUser?.user_name || 'Farmer';
+  const displayEmail = profile?.email_address || initialUser?.email_address || 'Registered Operator';
+
   return (
     <div className="min-h-screen bg-transparent py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-8">
-        {/* Top Floating Card: Welcome & Session Status (Matching Reference Image) */}
+        {/* Top Floating Card: Welcome & Session Status */}
         <div className="bg-white rounded-3xl border border-slate-200/90 p-8 sm:p-10 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="space-y-3">
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#edf6ee] border border-[#d2e8d3] text-[#2c6e3b] text-xs font-semibold">
               <span className="w-2 h-2 rounded-full bg-[#2c6e3b]" />
               <span>2FA Verified Session</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-slate-800 tracking-tight">
-              Welcome, {profile?.user_name || 'Bhavana'}
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-800 tracking-tight">
+              Welcome, {displayName}
             </h1>
             <p className="text-slate-500 text-sm font-normal">
               Your session is authenticated and protected by JWT Bearer token security.
@@ -78,7 +69,7 @@ export const ProfilePage: React.FC = () => {
           </button>
         </div>
 
-        {/* Side-by-Side Floating Cards (Matching Reference Image) */}
+        {/* Side-by-Side Floating Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Card 1: Farmer Profile & Account Details */}
           <div className="bg-white rounded-3xl border border-slate-200/90 p-8 shadow-sm space-y-6 flex flex-col justify-between">
@@ -92,23 +83,25 @@ export const ProfilePage: React.FC = () => {
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-slate-500 font-medium">User ID:</span>
                   <span className="font-mono text-xs font-bold text-slate-800">
-                    {profile?.id ? `e7c7c928-25f2-4cd6-b93d-${String(profile.id).padStart(12, '0')}` : 'e7c7c928-25f2-4cd6-b93d-a42e8b65abc8'}
+                    {profile?.id || initialUser?.id || 'N/A'}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between pt-3">
                   <span className="text-slate-500 font-medium">Full Name:</span>
-                  <span className="font-semibold text-slate-800">{profile?.user_name || 'Bhavana'}</span>
+                  <span className="font-semibold text-slate-800">{displayName}</span>
                 </div>
 
                 <div className="flex items-center justify-between pt-3">
                   <span className="text-slate-500 font-medium">Email Address:</span>
-                  <span className="font-semibold text-slate-800">{profile?.email_address || 'gbhavanasri.10@gmail.com'}</span>
+                  <span className="font-semibold text-slate-800">{displayEmail}</span>
                 </div>
 
                 <div className="flex items-center justify-between pt-3">
                   <span className="text-slate-500 font-medium">Phone Number:</span>
-                  <span className="font-semibold text-slate-800">{profile?.phone_number || '+91 9048348333'}</span>
+                  <span className="font-semibold text-slate-800">
+                    {profile?.phone_number || initialUser?.phone_number || 'Not registered'}
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between pt-3">
@@ -121,12 +114,18 @@ export const ProfilePage: React.FC = () => {
 
                 <div className="flex items-center justify-between pt-3">
                   <span className="text-slate-500 font-medium">Account Status:</span>
-                  <span className="font-semibold text-slate-800">{profile?.account_status || 'Active'}</span>
+                  <span className="font-semibold text-slate-800">
+                    {profile?.account_status || 'Active'}
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between pt-3">
                   <span className="text-slate-500 font-medium">Member Since:</span>
-                  <span className="font-semibold text-slate-800">8/31/2026</span>
+                  <span className="font-semibold text-slate-800">
+                    {profile?.created_at
+                      ? new Date(profile.created_at).toLocaleDateString()
+                      : 'Active'}
+                  </span>
                 </div>
               </div>
             </div>

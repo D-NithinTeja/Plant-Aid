@@ -282,3 +282,35 @@ def test_history_log_rejects_unknown_disease_reference(auth_user):
     )
     assert res.status_code == 422
     assert "not_a_real_disease" in res.json()["detail"]
+
+
+def test_history_log_with_image_b64_and_pagination_size(auth_user):
+    headers, _ = auth_user
+    # 1x1 transparent PNG data uri
+    sample_b64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+
+    res = client.post(
+        "/api/history",
+        json={
+            "disease_id": "early_leaf_spot",
+            "confidence_score": 0.95,
+            "image_b64": sample_b64,
+        },
+        headers=headers,
+    )
+    assert res.status_code == 201
+    data = res.json()
+    assert "log_id" in data
+
+    # Verify pagination supports ?size= and computed fields total_count and pages
+    paginated_res = client.get("/api/history?page=1&size=5", headers=headers)
+    assert paginated_res.status_code == 200
+    pdata = paginated_res.json()
+    assert "total" in pdata
+    assert "total_count" in pdata
+    assert pdata["total"] == pdata["total_count"]
+    assert "limit" in pdata
+    assert "size" in pdata
+    assert pdata["size"] == 5
+    assert "total_pages" in pdata
+    assert "pages" in pdata

@@ -2,7 +2,7 @@ import datetime
 import uuid
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field
 
 
 # --- User & Auth Schemas ---
@@ -139,7 +139,8 @@ class HistoryLogCreate(BaseModel):
     disease_id: str
     disease_name: str | None = None
     confidence_score: float = Field(..., ge=0.0, le=1.0)
-    s3_storage_uri: str
+    s3_storage_uri: str | None = None
+    image_b64: str | None = None
     bounding_box: BoundingBoxSchema | None = None
 
 
@@ -170,3 +171,18 @@ class PaginatedHistoryResponse(BaseModel):
     page: int
     limit: int
     total_pages: int
+
+    @computed_field
+    @property
+    def total_count(self) -> int:
+        return self.total
+
+    @computed_field
+    @property
+    def pages(self) -> int:
+        return self.total_pages
+
+    @computed_field
+    @property
+    def size(self) -> int:
+        return self.limit

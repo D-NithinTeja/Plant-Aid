@@ -145,7 +145,7 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
                       >
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-bold text-emerald-950">
-                            {remedy.treatment_name}
+                            {remedy.title || remedy.treatment_name || 'Organic Bio-Control'}
                           </h4>
                           {remedy.dosage && (
                             <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">
@@ -153,9 +153,17 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-emerald-900 leading-relaxed">
-                          {remedy.application_instructions}
-                        </p>
+                        {remedy.description && (
+                          <p className="text-xs text-emerald-950/80 leading-relaxed">
+                            {remedy.description}
+                          </p>
+                        )}
+                        {remedy.application_instructions && (
+                          <p className="text-xs text-emerald-900 leading-relaxed bg-white/60 p-2.5 rounded-xl border border-emerald-100">
+                            <span className="font-semibold text-emerald-950">Application: </span>
+                            {remedy.application_instructions}
+                          </p>
+                        )}
                       </div>
                     ))
                   ) : (
@@ -179,7 +187,7 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
                       >
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-bold text-agri-950">
-                            {remedy.treatment_name}
+                            {remedy.title || remedy.treatment_name || 'Chemical Fungicide Treatment'}
                           </h4>
                           {remedy.dosage && (
                             <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-agri-100 text-agri-800 font-semibold">
@@ -187,9 +195,17 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-agri-900 leading-relaxed">
-                          {remedy.application_instructions}
-                        </p>
+                        {remedy.description && (
+                          <p className="text-xs text-agri-950/80 leading-relaxed">
+                            {remedy.description}
+                          </p>
+                        )}
+                        {remedy.application_instructions && (
+                          <p className="text-xs text-agri-900 leading-relaxed bg-white/60 p-2.5 rounded-xl border border-agri-100">
+                            <span className="font-semibold text-agri-950">Application: </span>
+                            {remedy.application_instructions}
+                          </p>
+                        )}
                       </div>
                     ))
                   ) : (
@@ -213,7 +229,7 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
                       >
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-bold text-soil-950">
-                            {remedy.treatment_name}
+                            {remedy.title || remedy.treatment_name || 'Cultural & Preventive Practice'}
                           </h4>
                           {remedy.dosage && (
                             <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-soil-100 text-soil-800 font-semibold">
@@ -221,9 +237,17 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-soil-900 leading-relaxed">
-                          {remedy.application_instructions}
-                        </p>
+                        {remedy.description && (
+                          <p className="text-xs text-soil-950/80 leading-relaxed">
+                            {remedy.description}
+                          </p>
+                        )}
+                        {remedy.application_instructions && (
+                          <p className="text-xs text-soil-900 leading-relaxed bg-white/60 p-2.5 rounded-xl border border-soil-100">
+                            <span className="font-semibold text-soil-950">Application: </span>
+                            {remedy.application_instructions}
+                          </p>
+                        )}
                       </div>
                     ))
                   ) : (

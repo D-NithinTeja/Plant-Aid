@@ -35,13 +35,16 @@ export interface Remedy {
   id: number;
   disease_id: string;
   category: 'Organic' | 'Chemical' | 'Preventive' | string;
-  treatment_name: string;
-  application_instructions: string;
+  title: string;
+  description: string;
+  application_instructions?: string | null;
+  remedy_type?: string;
+  treatment_name?: string;
   dosage?: string | null;
 }
 
 export interface InferenceResponse {
-  disease_id: number;
+  disease_id: number | string;
   disease_name: string;
   plant_species: string;
   scientific_name?: string | null;
@@ -71,10 +74,22 @@ export interface HistoryLog {
 
 export interface PaginatedHistoryResponse {
   items: HistoryLog[];
+  total: number;
   total_count: number;
   page: number;
+  limit: number;
   size: number;
+  total_pages: number;
   pages: number;
+}
+
+export interface CreateHistoryPayload {
+  disease_id: string;
+  disease_name?: string;
+  confidence_score: number;
+  s3_storage_uri?: string | null;
+  image_b64?: string | null;
+  bounding_box?: BoundingBox | null;
 }
 
 export interface DiseaseInfo {
