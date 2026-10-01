@@ -2,7 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Gilroy Font Family Definitions */
+@font-face {
+  font-family: 'Gilroy';
+  src: local('Gilroy-Light'), local('Gilroy Light'), url('/fonts/gilroy/Gilroy-Light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gilroy';
+  src: local('Gilroy-Regular'), local('Gilroy Regular'), local('Gilroy'), url('/fonts/gilroy/Gilroy-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gilroy';
+  src: local('Gilroy-Medium'), local('Gilroy Medium'), url('/fonts/gilroy/Gilroy-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gilroy';
+  src: local('Gilroy-Bold'), local('Gilroy Bold'), url('/fonts/gilroy/Gilroy-Bold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gilroy';
+  src: local('Gilroy-Bold'), local('Gilroy Bold'), url('/fonts/gilroy/Gilroy-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gilroy';
+  src: local('Gilroy-Heavy'), local('Gilroy Heavy'), url('/fonts/gilroy/Gilroy-Heavy.woff') format('woff');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gilroy';
+  src: local('Gilroy-Heavy'), local('Gilroy Heavy'), url('/fonts/gilroy/Gilroy-Heavy.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
+  html, body {
+    font-family: 'Gilroy', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
   body {
     @apply bg-[#edf4ed] text-slate-900 font-sans antialiased min-h-screen selection:bg-agri-200 selection:text-agri-950;
   }
