@@ -5,7 +5,9 @@ from app.config import settings
 
 raw_url = settings.DATABASE_URL
 if raw_url.startswith("postgres://"):
-    raw_url = raw_url.replace("postgres://", "postgresql://", 1)
+    raw_url = raw_url.replace("postgres://", "postgresql+psycopg2://", 1)
+elif raw_url.startswith("postgresql://"):
+    raw_url = raw_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 connect_args = {}
 engine_kwargs = {}
