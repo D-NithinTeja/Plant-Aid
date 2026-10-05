@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 # Add backend directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from app.config import settings
 from app.database import Base, engine
 from app.main import app
 
@@ -16,6 +17,7 @@ from app.main import app
 class BackendTestSuite(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        settings.APP_DEBUG = True
         Base.metadata.create_all(bind=engine)
         cls.client = TestClient(app)
 

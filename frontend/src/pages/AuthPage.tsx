@@ -100,10 +100,7 @@ export const AuthPage: React.FC = () => {
       const challengeRes = await login(identifier.trim(), password);
       setChallenge(challengeRes);
       setResendCooldown(60);
-      // Auto-fill dev OTP if present for quick testing
-      if (challengeRes.otp_code_dev) {
-        setOtpCode(challengeRes.otp_code_dev);
-      }
+      setOtpCode('');
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       setErrorMsg(typeof detail === 'string' ? detail : 'Invalid login credentials. Please try again.');
@@ -136,13 +133,10 @@ export const AuthPage: React.FC = () => {
           session_id: regUser.session_id,
           expires_in: 300,
           message: `Verification code sent to ${email.trim()}. Please enter your 6-digit code to activate your account.`,
-          otp_code_dev: regUser.otp_code_dev,
         });
         setSecondsRemaining(300);
         setResendCooldown(60);
-        if (regUser.otp_code_dev) {
-          setOtpCode(regUser.otp_code_dev);
-        }
+        setOtpCode('');
         setSuccessMsg(`Account created! A 6-digit verification code was sent to ${email.trim()}.`);
       } else {
         setSuccessMsg('Account registered successfully! Please sign in below.');
@@ -169,10 +163,7 @@ export const AuthPage: React.FC = () => {
       setSuccessMsg(res.message || 'A fresh verification code has been dispatched to your email.');
       setSecondsRemaining(res.expires_in || 300);
       setResendCooldown(60);
-      if (res.otp_code_dev) {
-        setOtpCode(res.otp_code_dev);
-        setChallenge((prev) => (prev ? { ...prev, otp_code_dev: res.otp_code_dev } : null));
-      }
+      setOtpCode('');
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       setErrorMsg(typeof detail === 'string' ? detail : 'Failed to resend code. Please try again.');
@@ -251,26 +242,6 @@ export const AuthPage: React.FC = () => {
                 Session expires in{' '}
                 <span className="font-mono font-bold text-agri-900">{formatTimer(secondsRemaining)}</span>
               </p>
-
-              {challenge.otp_code_dev && (
-                <div className="mt-3 pt-3 border-t border-agri-200 text-left">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-mono font-bold text-agri-800 uppercase tracking-wider">
-                      Dev OTP Code:
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setOtpCode(challenge.otp_code_dev || '')}
-                      className="text-[11px] font-medium text-agri-700 hover:text-agri-900 underline"
-                    >
-                      Fill Dev Code
-                    </button>
-                  </div>
-                  <div className="text-base font-mono font-bold tracking-widest text-slate-800 bg-white px-3 py-1 rounded border border-agri-200 mt-1 text-center">
-                    {challenge.otp_code_dev}
-                  </div>
-                </div>
-              )}
             </div>
 
             <div>
