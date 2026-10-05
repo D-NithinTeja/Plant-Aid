@@ -9,13 +9,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Handle ZeroGPU environment if active
 try:
     import spaces
-    from spaces import zero
-    zero.startup()
 except Exception:
     spaces = None
 
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.openapi.utils import get_openapi
 import gradio as gr
 from PIL import Image
+
 from app.main import app as fastapi_app
 from scripts.download_model import ensure_model
 
@@ -62,9 +64,8 @@ with gr.Blocks(title="Plant-Aid Production Backend & API") as demo:
     gr.Markdown(
         "Real-Time Groundnut Foliage Pathology Identification & Treatment Recommendation API.\n\n"
         "- **Interactive API Docs (Swagger)**: [/docs](/docs)\n"
-        "- **Alternative Docs (ReDoc)**: [/redoc](/redoc)\n"
         "- **Health Check**: [/health](/health)\n"
-        "- **Active Infrastructure**: Hugging Face Spaces (Gradio / ZeroGPU • PyTorch • Neon PostgreSQL • Neon S3)\n"
+        "- **Active Infrastructure**: Hugging Face Spaces (ZeroGPU / 16 GB RAM • PyTorch • Neon PostgreSQL • Neon S3)\n"
     )
     with gr.Tab("Quick Diagnostic Test"):
         gr.Markdown("Upload a plant leaf photo below to test model inference and Grad-CAM lesion heatmap generation:")
@@ -81,8 +82,33 @@ with gr.Blocks(title="Plant-Aid Production Backend & API") as demo:
         dummy_btn = gr.Button(visible=False)
         dummy_btn.click(fn=_noop)
 
-app = gr.mount_gradio_app(fastapi_app, demo, path="/")
+# Mount all FastAPI routes onto demo.app
+demo.app.include_router(fastapi_app.router)
+
+# Mount CORS middleware to allow Vercel and localhost requests
+demo.app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount Swagger UI and OpenAPI documentation
+@demo.app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(openapi_url="/openapi.json", title="Plant-Aid Production API")
+
+@demo.app.get("/openapi.json", include_in_schema=False)
+async def get_open_api_endpoint():
+    return get_openapi(
+        title="Plant-Aid Production API",
+        version="1.0.0",
+        routes=demo.app.routes,
+    )
+
+# Re-expose app symbol for ASGI runners
+app = demo.app
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "7860")))
+    demo.launch(server_name="0.0.0.0", server_port=int(os.getenv("PORT", "7860")))
