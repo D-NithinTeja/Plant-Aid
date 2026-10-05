@@ -8,12 +8,9 @@ import {
   ArrowUpRight,
   ShieldCheck,
   History,
-  Leaf,
-  Zap,
   GraduationCap,
   Users,
   Award,
-  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Badge } from '../components/ui/Badge';
@@ -88,39 +85,6 @@ export const LandingPage: React.FC = () => {
                 <BookOpen className="w-5 h-5 text-agri-700" />
                 <span>Browse Disease Guide</span>
               </Link>
-            </div>
-
-            {/* Trust Indicators / Quick Metrics */}
-            <div className="pt-6 border-t border-white/60 grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-left max-w-3xl mx-auto">
-              <div className="glass-frost-subtle flex items-center space-x-3 p-3.5 rounded-2xl">
-                <div className="w-9 h-9 rounded-xl glass-frost-pill text-emerald-700 flex items-center justify-center shrink-0">
-                  <Zap className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Real-Time Scan</div>
-                  <div className="text-[11px] text-slate-600">Live camera frame inference</div>
-                </div>
-              </div>
-
-              <div className="glass-frost-subtle flex items-center space-x-3 p-3.5 rounded-2xl">
-                <div className="w-9 h-9 rounded-xl glass-frost-pill text-emerald-700 flex items-center justify-center shrink-0">
-                  <Leaf className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Groundnut Classes</div>
-                  <div className="text-[11px] text-slate-600">Early/late spot, rust, chlorosis</div>
-                </div>
-              </div>
-
-              <div className="glass-frost-subtle flex items-center space-x-3 p-3.5 rounded-2xl">
-                <div className="w-9 h-9 rounded-xl glass-frost-pill text-emerald-700 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Multi-Tier Remedies</div>
-                  <div className="text-[11px] text-slate-600">Organic, chemical, cultural</div>
-                </div>
-              </div>
             </div>
           </div>
         </motion.div>
