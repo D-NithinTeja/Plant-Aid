@@ -10,6 +10,7 @@ from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.database import Base, engine
 from app.limiter import limiter
+from app.routers.admin import router as admin_router
 from app.routers.auth import router as auth_router
 from app.routers.history import router as history_router
 from app.routers.inference import router as inference_router
@@ -45,12 +46,14 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 
 # Register Canonical Routers (displayed in Swagger UI under /api)
 app.include_router(auth_router, prefix="/api/auth")
+app.include_router(admin_router, prefix="/api")
 app.include_router(remedy_router, prefix="/api")
 app.include_router(history_router, prefix="/api/history")
 app.include_router(inference_router, prefix="/api/inference")
 
 # Backwards-compatibility aliases (hidden from Swagger UI)
 app.include_router(auth_router, prefix="/auth", include_in_schema=False)
+app.include_router(admin_router, include_in_schema=False)
 app.include_router(remedy_router, include_in_schema=False)
 app.include_router(history_router, prefix="/history", include_in_schema=False)
 app.include_router(inference_router, prefix="/inference", include_in_schema=False)

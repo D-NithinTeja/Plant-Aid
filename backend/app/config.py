@@ -15,7 +15,9 @@ class Settings(BaseSettings):
     MAX_OTP_ATTEMPTS: int = 5  # 5 failed attempts cap per Implementation.md §2.2
 
     # Database
-    DATABASE_URL: str = "sqlite:///./plant_aid.db"
+    DATABASE_URL: str = (
+        f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plant_aid.db').replace(os.sep, '/')}"
+    )
 
     # AWS S3 Settings
     AWS_ACCESS_KEY_ID: str = ""

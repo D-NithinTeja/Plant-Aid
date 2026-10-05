@@ -51,6 +51,7 @@ class TokenResponse(BaseModel):
     user_id: int
     user_name: str
     email_address: str
+    role: str = "user"
 
 
 class UserResponse(BaseModel):
@@ -58,9 +59,10 @@ class UserResponse(BaseModel):
     user_name: str
     email_address: str
     phone_number: str | None = None
+    role: str = "user"
     is_2fa_enabled: bool
     account_status: str
-    created_at: datetime.datetime
+    created_at: datetime.datetime | None = None
     session_id: str | None = Field(
         None, description="Active challenge session id for verification"
     )
@@ -196,3 +198,55 @@ class PaginatedHistoryResponse(BaseModel):
     @property
     def size(self) -> int:
         return self.limit
+
+
+# --- Admin & Governance Schemas ---
+class UserRoleUpdate(BaseModel):
+    role: str = Field(..., pattern="^(user|admin)$")
+
+
+class UserStatusUpdate(BaseModel):
+    account_status: str = Field(..., pattern="^(ACTIVE|SUSPENDED|PENDING_VERIFICATION)$")
+
+
+class AdminUserItem(UserResponse):
+    history_count: int = 0
+
+
+class AdminPaginatedUsersResponse(BaseModel):
+    items: list[AdminUserItem]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+
+
+class AdminHistoryItem(HistoryLogResponse):
+    user_name: str
+    email_address: str
+
+
+class AdminPaginatedHistoryResponse(BaseModel):
+    items: list[AdminHistoryItem]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+
+
+class RemedyCreate(BaseModel):
+    disease_id: str = Field(..., min_length=1, max_length=50)
+    remedy_type: str = Field(..., min_length=2, max_length=50)
+    title: str = Field(..., min_length=2, max_length=200)
+    description: str = Field(..., min_length=5)
+    application_instructions: str | None = None
+    category: str = Field(..., min_length=2, max_length=100)
+
+
+class RemedyUpdate(BaseModel):
+    remedy_type: str | None = None
+    title: str | None = None
+    description: str | None = None
+    application_instructions: str | None = None
+    category: str | None = None
+

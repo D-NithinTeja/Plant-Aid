@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Scan,
   LayoutDashboard,
   History,
   BookOpen,
@@ -9,12 +8,13 @@ import {
   LogOut,
   Menu,
   X,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { PlantAidLogo } from './PlantAidLogo';
 
 export const Navbar: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,24 +26,24 @@ export const Navbar: React.FC = () => {
 
   const navLinks = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, requiresAuth: true },
-    { name: 'Live Scan', path: '/scan', icon: Scan, requiresAuth: true },
     { name: 'History', path: '/history', icon: History, requiresAuth: true },
     { name: 'Disease Guide', path: '/guide', icon: BookOpen, requiresAuth: false },
+    ...(isAdmin ? [{ name: 'Admin Console', path: '/admin', icon: ShieldCheck, requiresAuth: true }] : []),
   ];
 
   const visibleLinks = navLinks.filter((link) => !link.requiresAuth || isAuthenticated);
 
   return (
     <header className="sticky top-0 z-40 bg-[#edf4ed]/80 backdrop-blur-md border-b border-slate-300/40">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 gap-4">
           {/* Brand Logo */}
-          <Link to={isAuthenticated ? '/dashboard' : '/'} className="group">
+          <Link to={isAuthenticated ? '/dashboard' : '/'} className="group shrink-0">
             <PlantAidLogo size="md" />
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
+          <nav className="hidden md:flex items-center space-x-0.5 lg:space-x-1 shrink-0">
             {visibleLinks.map((link) => {
               const Icon = link.icon;
               const isActive = location.pathname === link.path;
@@ -51,21 +51,21 @@ export const Navbar: React.FC = () => {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center space-x-1.5 lg:space-x-2 px-2.5 lg:px-3.5 py-2 rounded-lg text-xs lg:text-sm font-medium whitespace-nowrap transition-colors ${
                     isActive
                       ? 'bg-agri-50 text-agri-800 font-semibold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-agri-700' : 'text-slate-400'}`} />
-                  <span>{link.name}</span>
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-agri-700' : 'text-slate-400'}`} />
+                  <span className="whitespace-nowrap">{link.name}</span>
                 </Link>
               );
             })}
           </nav>
 
           {/* Right Header Section */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-3 shrink-0">
             {/* Auth Buttons */}
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">

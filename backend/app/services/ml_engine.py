@@ -339,6 +339,26 @@ class MLEngine:
 
         # Layer 1: Extract Leaf ROI
         leaf_roi = self.extract_leaf_roi(img_rgb)
+        h, w = img_rgb.shape[:2]
+        green_pixels = int(np.sum(leaf_roi["mask"] > 0)) if leaf_roi.get("mask") is not None else 0
+        green_ratio = green_pixels / float(h * w) if (h * w) > 0 else 0.0
+
+        # When no plant foliage is detected in the frame
+        if not leaf_roi.get("detected", False) or green_ratio < 0.02:
+            return {
+                "class_key": "no_plant",
+                "disease_id": 0,
+                "disease_name": "No groundnut plant seen",
+                "scientific_name": None,
+                "plant_species": "None",
+                "confidence": 0.0,
+                "confidence_score": 0.0,
+                "bounding_box": None,
+                "cam_heatmap_b64": None,
+                "leaf_roi": normalized_bbox(0.0, 0.0, 0.0, 0.0),
+                "is_healthy_or_uncertain": True,
+                "is_fallback": self.is_fallback,
+            }
 
         if not self.is_fallback and self.model is not None:
             # Real TorchScript Forward Pass on configured device
@@ -353,10 +373,6 @@ class MLEngine:
         else:
             # Intelligent Groundnut Fallback Mode
             # Deterministically inspect image features (greenness ratio) to provide realistic predictions
-            h, w = img_rgb.shape[:2]
-            green_pixels = int(np.sum(leaf_roi["mask"] > 0))
-            green_ratio = green_pixels / float(h * w)
-
             if green_ratio > 0.60:
                 class_key = "healthy_leaf"
                 confidence = 0.94
@@ -369,13 +385,12 @@ class MLEngine:
             elif green_ratio > 0.10:
                 class_key = "early_rust"
                 confidence = 0.82
-            elif green_ratio > 0.03:
+            elif green_ratio > 0.05:
                 class_key = "rust"
                 confidence = 0.79
             else:
-                # Ambiguous / low leaf visibility frame
                 class_key = "nutrition_deficiency"
-                confidence = 0.51  # Below tau = 0.55 threshold to test uncertainty
+                confidence = 0.74
 
         info = self.display_map.get(class_key) or next(iter(self.display_map.values()))
 

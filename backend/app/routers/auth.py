@@ -118,6 +118,12 @@ def login(
             detail="Invalid email/phone or password",
         )
 
+    if user.account_status == "SUSPENDED":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is suspended. Please contact system administrator.",
+        )
+
     # Generate 6-digit OTP and opaque session_id
     otp_code = generate_otp_code(6)
     session_id = str(uuid.uuid4())
@@ -243,7 +249,8 @@ def verify_2fa(req: TwoFactorVerifyRequest, db: Session = Depends(get_db)):
         )
 
     # Verification successful: clear challenge state and activate user
-    user.account_status = "ACTIVE"
+    if user.account_status == "PENDING_VERIFICATION":
+        user.account_status = "ACTIVE"
     user.active_session_id = None
     user.active_2fa_otp = None
     user.otp_expiry_time = None
@@ -253,7 +260,7 @@ def verify_2fa(req: TwoFactorVerifyRequest, db: Session = Depends(get_db)):
 
     # Generate JWT Access Token (HS256, 60 minutes)
     access_token = create_access_token(
-        data={"sub": str(user.id), "email": user.email_address}
+        data={"sub": str(user.id), "email": user.email_address, "role": user.role}
     )
     expires_in_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
 
@@ -264,6 +271,7 @@ def verify_2fa(req: TwoFactorVerifyRequest, db: Session = Depends(get_db)):
         user_id=user.id,
         user_name=user.user_name,
         email_address=user.email_address,
+        role=user.role,
     )
 
 

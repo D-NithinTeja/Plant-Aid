@@ -6,7 +6,6 @@ import {
   Sprout,
   FlaskConical,
   ShieldCheck,
-  Scan,
   AlertCircle,
   CheckCircle2,
   Search,
@@ -16,11 +15,14 @@ import {
   Droplets,
   ChevronRight,
   Sparkles,
+  LayoutGrid,
+  SplitSquareVertical,
 } from 'lucide-react';
 import { Surface } from '../components/ui/Surface';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
+import ExpandableProfileCard from '../components/watermelon/original';
 
 interface DiseaseGuideEntry {
   slug: string;
@@ -368,6 +370,7 @@ export const DiseaseGuidePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeSlug, setActiveSlug] = useState<string>('early_leaf_spot');
+  const [viewMode, setViewMode] = useState<'cards' | 'console'>('cards');
 
   const categories = [
     'All',
@@ -433,13 +436,6 @@ export const DiseaseGuidePage: React.FC = () => {
                 Farmer-tested visual symptoms, photorealistic specimen photos, natural bio-fungicides, chemical dosages, and soil care.
               </p>
             </div>
-
-            <Button asChild size="default" className="self-start md:self-center shadow-md">
-              <Link to="/scan" className="flex items-center space-x-2">
-                <Scan className="w-4 h-4" />
-                <span>Scan Leaf with Camera</span>
-              </Link>
-            </Button>
           </div>
 
           {/* Search & Category Filter Strip */}
@@ -463,28 +459,172 @@ export const DiseaseGuidePage: React.FC = () => {
               )}
             </div>
 
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-              {categories.map((cat) => (
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all touch-target ${
+                      selectedCategory === cat
+                        ? 'bg-agri-800 text-white shadow-xs'
+                        : 'bg-white/60 text-slate-700 hover:bg-white/90 border border-emerald-950/5'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* View Switcher: Interactive Cards vs Split Console */}
+              <div className="flex items-center p-1 rounded-xl bg-slate-950/5 border border-emerald-950/10 shrink-0">
                 <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all touch-target ${
-                    selectedCategory === cat
-                      ? 'bg-agri-800 text-white shadow-xs'
-                      : 'bg-white/60 text-slate-700 hover:bg-white/90 border border-emerald-950/5'
+                  type="button"
+                  onClick={() => setViewMode('cards')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === 'cards'
+                      ? 'bg-white text-agri-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
+                  title="Expandable card gallery"
                 >
-                  {cat}
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span>Cards</span>
                 </button>
-              ))}
+                <button
+                  type="button"
+                  onClick={() => setViewMode('console')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === 'console'
+                      ? 'bg-white text-agri-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Master-detail split console"
+                >
+                  <SplitSquareVertical className="w-3.5 h-3.5" />
+                  <span>Split View</span>
+                </button>
+              </div>
             </div>
           </div>
         </Surface>
 
-        {/* Master-Detail Interactive Directory (Zero Floating Card Soup) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left: Disease Navigation Rail */}
-          <div className="lg:col-span-4 space-y-2">
+        {filteredCatalogue.length === 0 ? (
+          <Surface className="py-16 text-center space-y-3">
+            <Search className="w-10 h-10 text-slate-400 mx-auto" />
+            <h3 className="text-base font-bold text-slate-900">No Matching Diseases</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Try searching for a different symptom, remedy, or switch category filters.
+            </p>
+          </Surface>
+        ) : viewMode === 'cards' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCatalogue.map((disease) => (
+              <ExpandableProfileCard
+                key={disease.slug}
+                id={`guide-card-${disease.slug}`}
+                imageSrc={disease.image}
+                title={disease.name}
+                subtitle={`${disease.localName} • ${disease.scientificName}`}
+                badge={
+                  <Badge variant={disease.badgeVariant} className="shadow-xs backdrop-blur-md">
+                    {disease.severity}
+                  </Badge>
+                }
+                content={
+                  <div className="space-y-5">
+                    {/* Quick Identification */}
+                    <div className="p-4 rounded-2xl bg-emerald-950/5 border border-emerald-950/10 space-y-2">
+                      <div className="text-xs font-extrabold uppercase tracking-wider text-agri-800">
+                        Quick Identification
+                      </div>
+                      <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                        {disease.quickCheck}
+                      </p>
+                      <div className="pt-1 text-[11px] font-semibold text-emerald-800 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
+                        <span>Action: {disease.whenToAct}</span>
+                      </div>
+                    </div>
+
+                    {/* Diagnostic Symptoms */}
+                    <div>
+                      <h4 className="text-slate-900 font-bold text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <Eye className="w-3.5 h-3.5 text-agri-700" />
+                        <span>Diagnostic Symptoms</span>
+                      </h4>
+                      <ul className="space-y-1.5">
+                        {disease.symptoms.map((s, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-xs text-slate-600">
+                            <span className="w-1.5 h-1.5 rounded-full bg-agri-600 shrink-0 mt-1.5" />
+                            <span>{s}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Bio-Organic Remedies */}
+                    {disease.organicRemedies.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-slate-900 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                          <Sprout className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Bio-Organic Treatment</span>
+                        </h4>
+                        {disease.organicRemedies.map((r, idx) => (
+                          <div key={idx} className="p-3 rounded-xl bg-white/70 border border-emerald-950/10 space-y-1">
+                            <div className="text-xs font-bold text-slate-900">{r.name}</div>
+                            <div className="text-[11px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
+                              Dosage: {r.dosage}
+                            </div>
+                            <p className="text-[11px] text-slate-600">{r.instruction}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Chemical Shield */}
+                    {disease.chemicalRemedies.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-slate-900 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                          <FlaskConical className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Protective Chemical Shield</span>
+                        </h4>
+                        {disease.chemicalRemedies.map((r, idx) => (
+                          <div key={idx} className="p-3 rounded-xl bg-white/70 border border-emerald-950/10 space-y-1">
+                            <div className="text-xs font-bold text-slate-900">{r.name}</div>
+                            <div className="text-[11px] text-blue-800 font-semibold bg-blue-50 px-2 py-0.5 rounded-md inline-block">
+                              Dosage: {r.dosage}
+                            </div>
+                            <p className="text-[11px] text-slate-600">{r.instruction}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Cultural & Soil Care */}
+                    {disease.culturalRemedies.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-slate-900 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-agri-700" />
+                          <span>Field & Soil Management</span>
+                        </h4>
+                        {disease.culturalRemedies.map((r, idx) => (
+                          <div key={idx} className="p-3 rounded-xl bg-white/70 border border-emerald-950/10 space-y-1">
+                            <div className="text-xs font-bold text-slate-900">{r.name}</div>
+                            <p className="text-[11px] text-slate-600">{r.instruction}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                }
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Left: Disease Navigation Rail */}
+            <div className="lg:col-span-4 space-y-2">
             <div className="text-xs font-bold uppercase tracking-wider text-agri-950/70 px-2 pb-1">
               Pathology Classes ({filteredCatalogue.length})
             </div>
@@ -710,6 +850,7 @@ export const DiseaseGuidePage: React.FC = () => {
             </AnimatePresence>
           </div>
         </div>
+        )}
       </div>
     </motion.div>
   );

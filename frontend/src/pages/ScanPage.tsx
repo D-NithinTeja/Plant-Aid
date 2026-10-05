@@ -271,12 +271,25 @@ export const ScanPage: React.FC = () => {
     }
   };
 
+  const isNoPlant = Boolean(
+    currentResult &&
+      (currentResult.disease_id === 0 ||
+        currentResult.disease_id === 'no_plant' ||
+        currentResult.disease_name?.toLowerCase().includes('no groundnut plant') ||
+        currentResult.disease_name?.toLowerCase().includes('no plant'))
+  );
+
   const isHealthy =
-    currentResult?.is_healthy_or_uncertain &&
-    (currentResult?.disease_name?.toLowerCase().includes('healthy') ||
-      currentResult?.disease_id === 'healthy_leaf');
-  const isUncertain = currentResult?.is_healthy_or_uncertain && !isHealthy;
-  const isConfirmedInfection = currentResult && !currentResult.is_healthy_or_uncertain && !isHealthy;
+    !isNoPlant &&
+    Boolean(
+      currentResult?.is_healthy_or_uncertain &&
+        (currentResult?.disease_name?.toLowerCase().includes('healthy') ||
+          currentResult?.disease_id === 'healthy_leaf')
+    );
+  const isUncertain = Boolean(currentResult && !isNoPlant && currentResult?.is_healthy_or_uncertain && !isHealthy);
+  const isConfirmedInfection = Boolean(
+    currentResult && !isNoPlant && !currentResult.is_healthy_or_uncertain && !isHealthy
+  );
 
   return (
     <motion.div
@@ -295,7 +308,7 @@ export const ScanPage: React.FC = () => {
             <div className="space-y-1">
               <div className="flex items-center space-x-2 text-agri-800 text-xs font-semibold">
                 <ShieldCheck className="w-4 h-4 text-agri-600" />
-                <span>Field Diagnostic Console &bull; Groundnut Pathology</span>
+                <span>Groundnut Health Scanner</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 Live Foliage Scanner
@@ -367,18 +380,13 @@ export const ScanPage: React.FC = () => {
 
                   {/* Bounding Box / Two-layer Localization Overlay */}
                   <BoundingBoxOverlay
-                    boundingBox={currentResult?.bounding_box}
+                    boundingBox={isNoPlant ? null : currentResult?.bounding_box}
                     confidence={currentResult?.confidence || currentResult?.confidence_score || 0}
                     isConfirmedInfection={Boolean(isConfirmedInfection)}
                     isHealthy={Boolean(isHealthy)}
-                    camHeatmapB64={currentResult?.cam_heatmap_b64}
-                    showHeatmap={showHeatmap && isFrozen}
+                    camHeatmapB64={isNoPlant ? null : currentResult?.cam_heatmap_b64}
+                    showHeatmap={showHeatmap && isFrozen && !isNoPlant}
                   />
-
-                  {/* Continuous Radar Line (Only active when auto-sampling) */}
-                  {autoSample && !isFrozen && !isInFlight && (
-                    <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-agri-400 to-transparent animate-radar pointer-events-none" />
-                  )}
 
                   {/* Top Status Pill Bar */}
                   <div className="absolute top-4 left-4 pointer-events-none flex items-center space-x-2">
@@ -497,12 +505,12 @@ export const ScanPage: React.FC = () => {
                         className="max-h-full max-w-full object-contain rounded-2xl"
                       />
                       <BoundingBoxOverlay
-                        boundingBox={currentResult?.bounding_box}
+                        boundingBox={isNoPlant ? null : currentResult?.bounding_box}
                         confidence={currentResult?.confidence || currentResult?.confidence_score || 0}
                         isConfirmedInfection={Boolean(isConfirmedInfection)}
                         isHealthy={Boolean(isHealthy)}
-                        camHeatmapB64={currentResult?.cam_heatmap_b64}
-                        showHeatmap={showHeatmap}
+                        camHeatmapB64={isNoPlant ? null : currentResult?.cam_heatmap_b64}
+                        showHeatmap={showHeatmap && !isNoPlant}
                       />
                     </div>
                   ) : (
@@ -544,127 +552,169 @@ export const ScanPage: React.FC = () => {
               <div className="flex items-center justify-between border-b border-emerald-950/10 pb-4">
                 <div className="space-y-0.5">
                   <h2 className="text-base font-bold text-slate-900">Diagnostic Reading</h2>
-                  <p className="text-[11px] text-slate-500">Calibrated against τ = 0.55 confidence floor</p>
+                  <p className="text-[11px] text-slate-500">Real-time disease detection</p>
                 </div>
 
                 {currentResult && (
                   <Badge
-                    variant={isHealthy ? 'optimal' : isConfirmedInfection ? 'destructive' : 'warning'}
+                    variant={
+                      isNoPlant
+                        ? 'secondary'
+                        : isHealthy
+                        ? 'optimal'
+                        : isConfirmedInfection
+                        ? 'destructive'
+                        : 'warning'
+                    }
                   >
-                    {isHealthy ? 'Healthy Leaf' : isConfirmedInfection ? 'Pathology Detected' : 'Uncertain (τ < 0.55)'}
+                    {isNoPlant
+                      ? 'No Plant Detected'
+                      : isHealthy
+                      ? 'Healthy Leaf'
+                      : isConfirmedInfection
+                      ? 'Condition Detected'
+                      : 'Low Confidence'}
                   </Badge>
                 )}
               </div>
 
               {currentResult ? (
                 <div className="space-y-6">
-                  {/* Primary Disease Title */}
-                  <div className="space-y-1">
-                    <div className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">
-                      Identified Condition
-                    </div>
-                    <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                      {currentResult.disease_name}
-                    </div>
-                    {currentResult.scientific_name && (
-                      <div className="text-xs italic text-agri-800 font-mono">
-                        {currentResult.scientific_name}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Confidence Meter */}
-                  <div className="space-y-2 bg-white/60 p-4 rounded-xl border border-emerald-950/5">
-                    <div className="flex items-center justify-between text-xs font-semibold">
-                      <span className="text-slate-700">Model Confidence</span>
-                      <span className="font-mono text-agri-800 text-sm font-bold">
-                        {(currentResult.confidence_score * 100).toFixed(1)}%
-                      </span>
-                    </div>
-
-                    <div className="w-full h-3 bg-slate-200/80 rounded-full overflow-hidden relative">
-                      {/* Threshold Marker at 55% */}
-                      <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-slate-600 z-10"
-                        style={{ left: '55%' }}
-                        title="Calibration Threshold (τ = 0.55)"
-                      />
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          currentResult.confidence_score >= 0.55 ? 'bg-agri-600' : 'bg-amber-500'
-                        }`}
-                        style={{ width: `${Math.min(100, currentResult.confidence_score * 100)}%` }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono pt-1">
-                      <span>0%</span>
-                      <span className="text-slate-700 font-semibold">τ = 0.55 floor</span>
-                      <span>100%</span>
-                    </div>
-                  </div>
-
-                  {/* Calibration Advice Notice */}
-                  {isUncertain && (
-                    <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start space-x-2.5">
-                      <AlertTriangle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+                  {isNoPlant ? (
+                    /* No Plant Detected State */
+                    <div className="space-y-4">
                       <div className="space-y-1">
-                        <div className="font-bold">Low-Confidence Reading (&lt; 55%)</div>
-                        <p className="text-[11px] leading-relaxed text-amber-950">
-                          Hold your device steady, verify bright outdoor illumination, and frame the leaf in the center crosshairs before deciding on chemical intervention.
+                        <div className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">
+                          Detection Status
+                        </div>
+                        <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                          No groundnut plant seen
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed pt-1">
+                          No groundnut leaf foliage was detected in the frame. Point your camera directly at groundnut leaves with clear lighting to analyze health.
                         </p>
                       </div>
+
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-700 text-xs flex items-start space-x-3">
+                        <Camera className="w-5 h-5 text-emerald-700 flex-shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <div className="font-bold text-slate-800">Framing Advice</div>
+                          <p className="text-[11px] leading-relaxed text-slate-500">
+                            Hold the camera 15–30 cm from the foliage and ensure the groundnut leaf fills the center of the camera view.
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  ) : (
+                    <>
+                      {/* Primary Disease Title */}
+                      <div className="space-y-1">
+                        <div className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">
+                          Identified Condition
+                        </div>
+                        <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                          {currentResult.disease_name}
+                        </div>
+                        {currentResult.scientific_name && (
+                          <div className="text-xs italic text-agri-800 font-mono">
+                            {currentResult.scientific_name}
+                          </div>
+                        )}
+                      </div>
 
-                  {/* Action Buttons: Save & View Remedies */}
-                  <div className="space-y-3 pt-2">
-                    <Button
-                      onClick={handleSaveDiagnosis}
-                      disabled={isSaving || isSaved}
-                      variant={isSaved ? 'default' : 'default'}
-                      size="lg"
-                      className={`w-full font-bold shadow-md ${
-                        isSaved ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-agri-700 hover:bg-agri-800'
-                      }`}
-                    >
-                      {isSaving ? (
-                        <span>Logging Record...</span>
-                      ) : isSaved ? (
-                        <>
-                          <CheckCircle2 className="w-5 h-5 text-white" />
-                          <span>Diagnosis Logged to History</span>
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-5 h-5" />
-                          <span>Save Diagnosis to History</span>
-                        </>
+                      {/* Confidence Meter */}
+                      <div className="space-y-2 bg-white/60 p-4 rounded-xl border border-emerald-950/5">
+                        <div className="flex items-center justify-between text-xs font-semibold">
+                          <span className="text-slate-700">Confidence</span>
+                          <span className="font-mono text-agri-800 text-sm font-bold">
+                            {(currentResult.confidence_score * 100).toFixed(1)}%
+                          </span>
+                        </div>
+
+                        <div className="w-full h-3 bg-slate-200/80 rounded-full overflow-hidden relative">
+                          {/* Threshold Marker at 55% */}
+                          <div
+                            className="absolute top-0 bottom-0 w-0.5 bg-slate-600 z-10"
+                            style={{ left: '55%' }}
+                            title="Confidence Threshold (55%)"
+                          />
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              currentResult.confidence_score >= 0.55 ? 'bg-agri-600' : 'bg-amber-500'
+                            }`}
+                            style={{ width: `${Math.min(100, currentResult.confidence_score * 100)}%` }}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono pt-1">
+                          <span>0%</span>
+                          <span className="text-slate-700 font-semibold">55% threshold</span>
+                          <span>100%</span>
+                        </div>
+                      </div>
+
+                      {/* Calibration Advice Notice */}
+                      {isUncertain && (
+                        <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start space-x-2.5">
+                          <AlertTriangle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <div className="font-bold">Low-Confidence Reading (&lt; 55%)</div>
+                            <p className="text-[11px] leading-relaxed text-amber-950">
+                              Hold your device steady, verify bright outdoor illumination, and frame the leaf in the center before deciding on treatment.
+                            </p>
+                          </div>
+                        </div>
                       )}
-                    </Button>
 
-                    {saveMessage && (
-                      <p
-                        className={`text-center text-xs font-semibold ${
-                          isSaved ? 'text-emerald-800' : 'text-rose-700'
-                        }`}
-                      >
-                        {saveMessage}
-                      </p>
-                    )}
+                      {/* Action Buttons: Save & View Remedies */}
+                      <div className="space-y-3 pt-2">
+                        <Button
+                          onClick={handleSaveDiagnosis}
+                          disabled={isSaving || isSaved}
+                          size="lg"
+                          className={`w-full font-bold shadow-md ${
+                            isSaved ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-agri-700 hover:bg-agri-800'
+                          }`}
+                        >
+                          {isSaving ? (
+                            <span>Logging Record...</span>
+                          ) : isSaved ? (
+                            <>
+                              <CheckCircle2 className="w-5 h-5 text-white" />
+                              <span>Diagnosis Logged to History</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-5 h-5" />
+                              <span>Save Diagnosis to History</span>
+                            </>
+                          )}
+                        </Button>
 
-                    <Button
-                      onClick={() => setModalOpen(true)}
-                      variant="outline"
-                      className="w-full text-xs font-semibold"
-                    >
-                      <Layers className="w-4 h-4 text-agri-700" />
-                      <span>
-                        {isHealthy ? 'View Foliage Maintenance Tips' : 'Inspect Organic & Chemical Remedies'}
-                      </span>
-                      <ExternalLink className="w-3.5 h-3.5 ml-1 text-slate-500" />
-                    </Button>
-                  </div>
+                        {saveMessage && (
+                          <p
+                            className={`text-center text-xs font-semibold ${
+                              isSaved ? 'text-emerald-800' : 'text-rose-700'
+                            }`}
+                          >
+                            {saveMessage}
+                          </p>
+                        )}
+
+                        <Button
+                          onClick={() => setModalOpen(true)}
+                          variant="outline"
+                          className="w-full text-xs font-semibold"
+                        >
+                          <Layers className="w-4 h-4 text-agri-700" />
+                          <span>
+                            {isHealthy ? 'View Foliage Maintenance Tips' : 'Inspect Organic & Chemical Remedies'}
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 ml-1 text-slate-500" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 /* Empty Waiting State */

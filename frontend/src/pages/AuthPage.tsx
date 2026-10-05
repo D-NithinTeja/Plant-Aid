@@ -234,7 +234,7 @@ export const AuthPage: React.FC = () => {
 
         {/* 2FA Challenge View */}
         {challenge ? (
-          <form onSubmit={handleVerify2FA} className="space-y-6">
+          <form onSubmit={handleVerify2FA} className="space-y-6" autoComplete="off">
             <div className="p-4 rounded-2xl bg-agri-50/60 border border-agri-200/80 text-center space-y-2">
               <KeyRound className="w-8 h-8 text-agri-700 mx-auto" />
               <div className="text-xs font-semibold text-agri-900">Active Challenge Session</div>
@@ -245,18 +245,28 @@ export const AuthPage: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="otp-input" className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+              <label htmlFor={`otp-code-${challenge.session_id}`} className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                 6-Digit Verification Code
               </label>
               <input
-                id="otp-input"
+                id={`otp-code-${challenge.session_id}`}
+                name={`otp_code_${challenge.session_id}`}
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 maxLength={6}
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                 placeholder="123456"
                 className="w-full px-4 py-3 text-center font-mono text-2xl font-bold tracking-[0.3em] rounded-xl border border-slate-300 focus:ring-2 focus:ring-agri-500 focus:border-agri-500 bg-white"
                 autoFocus
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-form-type="other"
                 disabled={loading || secondsRemaining === 0}
               />
               <div className="flex items-center justify-between text-xs text-slate-500 mt-2 px-0.5">

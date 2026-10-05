@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   loading: boolean;
   login: (identifier: string, password: string) => Promise<TwoFactorChallengeResponse>;
   verify2FA: (sessionId: string, otpCode: string) => Promise<TokenResponse>;
@@ -76,8 +77,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       otp_code: otpCode.trim(),
     });
 
-    const { access_token, user_id, user_name, email_address } = res.data;
-    const userData: User = { id: user_id, user_name, email_address };
+    const { access_token, user_id, user_name, email_address, role } = res.data;
+    const userData: User = { id: user_id, user_name, email_address, role: role || 'user' };
 
     setToken(access_token);
     setUser(userData);
@@ -107,12 +108,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('plant_aid_user');
   };
 
+  const isAdmin = user?.role === 'admin';
+
   return (
     <AuthContext.Provider
       value={{
         user,
         token,
         isAuthenticated: !!token,
+        isAdmin,
         loading,
         login,
         verify2FA,

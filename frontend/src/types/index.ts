@@ -3,9 +3,10 @@ export interface User {
   user_name: string;
   email_address: string;
   phone_number?: string | null;
+  role?: 'user' | 'admin' | string;
   is_2fa_enabled?: boolean;
   account_status?: string;
-  created_at?: string;
+  created_at?: string | null;
   session_id?: string | null;
   otp_code_dev?: string | null;
 }
@@ -26,6 +27,7 @@ export interface TokenResponse {
   user_id: number;
   user_name: string;
   email_address: string;
+  role?: string;
 }
 
 export interface BoundingBox {
@@ -106,3 +108,38 @@ export interface DiseaseInfo {
   symptoms?: string[];
   remedies?: Remedy[];
 }
+
+export interface AdminUserItem extends User {
+  history_count: number;
+}
+
+export interface AdminPaginatedUsersResponse {
+  items: AdminUserItem[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export interface AdminHistoryItem extends HistoryLog {
+  user_name: string;
+  email_address: string;
+}
+
+export interface AdminPaginatedHistoryResponse {
+  items: AdminHistoryItem[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export interface RemedyMutationPayload {
+  disease_id: string;
+  remedy_type: string;
+  title: string;
+  description: string;
+  application_instructions?: string;
+  category: string;
+}
+
