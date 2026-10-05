@@ -9,9 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Handle ZeroGPU environment if active
 try:
     import spaces
-    from spaces import zero
-    zero.startup()
-except Exception:
+except ImportError:
     spaces = None
 
 import gradio as gr
@@ -83,6 +81,13 @@ with gr.Blocks(title="Plant-Aid Production Backend & API") as demo:
 
 # Mount Gradio UI onto FastAPI root
 app = gr.mount_gradio_app(fastapi_app, demo, path="/")
+
+if spaces is not None:
+    try:
+        from spaces import zero
+        zero.startup()
+    except Exception as e:
+        print(f"[WARN] ZeroGPU startup call: {e}")
 
 if __name__ == "__main__":
     import uvicorn
