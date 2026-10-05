@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   BookOpen,
   Sprout,
@@ -8,15 +9,18 @@ import {
   Scan,
   AlertCircle,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
   Search,
   Eye,
   Info,
   X,
   Droplets,
-  HelpCircle,
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react';
+import { Surface } from '../components/ui/Surface';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
 
 interface DiseaseGuideEntry {
   slug: string;
@@ -25,7 +29,7 @@ interface DiseaseGuideEntry {
   scientificName: string;
   category: 'Fungal Spot' | 'Fungal Rust' | 'Soil & Nutrition' | 'Healthy Foliage';
   severity: 'High Spread' | 'Moderate Spread' | 'Early Stage' | 'Nutritional' | 'Healthy & Optimal';
-  severityColor: string;
+  badgeVariant: 'warning' | 'destructive' | 'info' | 'optimal' | 'default';
   image: string;
   simpleSummary: string;
   quickCheck: string;
@@ -55,7 +59,7 @@ const CATALOGUE: DiseaseGuideEntry[] = [
     scientificName: 'Cercospora arachidicola',
     category: 'Fungal Spot',
     severity: 'Moderate Spread',
-    severityColor: 'bg-amber-100 text-amber-800 border-amber-300',
+    badgeVariant: 'warning',
     image: '/images/diseases/early_leaf_spot.jpg',
     simpleSummary:
       'Dark brown spots with bright yellow rings around them. Usually appears early in the crop cycle (3 to 4 weeks after sowing) on lower leaves.',
@@ -115,7 +119,7 @@ const CATALOGUE: DiseaseGuideEntry[] = [
     scientificName: 'Phaeoisariopsis personata',
     category: 'Fungal Spot',
     severity: 'High Spread',
-    severityColor: 'bg-rose-100 text-rose-800 border-rose-300',
+    badgeVariant: 'destructive',
     image: '/images/diseases/late_leaf_spot.jpg',
     simpleSummary:
       'Dark brown or almost black spots with no yellow rings. Appears later in the season (50 to 60 days after sowing) and causes heavy leaf shedding.',
@@ -169,7 +173,7 @@ const CATALOGUE: DiseaseGuideEntry[] = [
     scientificName: 'Puccinia arachidis Speg.',
     category: 'Fungal Rust',
     severity: 'High Spread',
-    severityColor: 'bg-orange-100 text-orange-900 border-orange-300',
+    badgeVariant: 'destructive',
     image: '/images/diseases/rust.jpg',
     simpleSummary:
       'Orange-brown powdery blisters on the underside of leaves. Leaves curl, dry up, and look scorched or burnt, but remain attached to the stem.',
@@ -223,7 +227,7 @@ const CATALOGUE: DiseaseGuideEntry[] = [
     scientificName: 'Puccinia arachidis (Initial Stage)',
     category: 'Fungal Rust',
     severity: 'Early Stage',
-    severityColor: 'bg-yellow-100 text-yellow-900 border-yellow-300',
+    badgeVariant: 'warning',
     image: '/images/diseases/early_rust.jpg',
     simpleSummary:
       'The very first stage of rust disease. A few tiny pin-sized orange dots start appearing on the lower leaves. Catching it here makes treatment quick and affordable.',
@@ -270,7 +274,7 @@ const CATALOGUE: DiseaseGuideEntry[] = [
     scientificName: 'Abiotic Micronutrient Stress',
     category: 'Soil & Nutrition',
     severity: 'Nutritional',
-    severityColor: 'bg-sky-100 text-sky-900 border-sky-300',
+    badgeVariant: 'info',
     image: '/images/diseases/nutrition_deficiency.jpg',
     simpleSummary:
       'Leaves turn pale yellow between the leaf veins while the veins stay green. This is caused by soil nutrients (iron or zinc), not by a fungus or insect.',
@@ -324,7 +328,7 @@ const CATALOGUE: DiseaseGuideEntry[] = [
     scientificName: 'Arachis hypogaea L.',
     category: 'Healthy Foliage',
     severity: 'Healthy & Optimal',
-    severityColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+    badgeVariant: 'optimal',
     image: '/images/diseases/healthy_leaf.jpg',
     simpleSummary:
       'Deep, rich green leaves with clean surfaces and strong stems. Zero spots, yellowing rings, or rust blisters. This is your target benchmark.',
@@ -360,24 +364,10 @@ const CATALOGUE: DiseaseGuideEntry[] = [
   },
 ];
 
-type ActiveTab = 'symptoms' | 'organic' | 'chemical' | 'cultural';
-
 export const DiseaseGuidePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [expandedSlug, setExpandedSlug] = useState<string>('early_leaf_spot');
-  const [activeTabs, setActiveTabs] = useState<Record<string, ActiveTab>>({
-    early_leaf_spot: 'symptoms',
-    late_leaf_spot: 'symptoms',
-    rust: 'symptoms',
-    early_rust: 'symptoms',
-    nutrition_deficiency: 'symptoms',
-    healthy_leaf: 'symptoms',
-  });
-
-  const setCardTab = (slug: string, tab: ActiveTab) => {
-    setActiveTabs((prev) => ({ ...prev, [slug]: tab }));
-  };
+  const [activeSlug, setActiveSlug] = useState<string>('early_leaf_spot');
 
   const categories = [
     'All',
@@ -394,73 +384,74 @@ export const DiseaseGuidePage: React.FC = () => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return matchesCategory;
 
-    const matchesQuery =
-      item.name.toLowerCase().includes(query) ||
-      item.localName.toLowerCase().includes(query) ||
-      item.scientificName.toLowerCase().includes(query) ||
-      item.simpleSummary.toLowerCase().includes(query) ||
-      item.quickCheck.toLowerCase().includes(query) ||
-      item.symptoms.some((s) => s.toLowerCase().includes(query)) ||
-      item.organicRemedies.some(
-        (r) =>
-          r.name.toLowerCase().includes(query) ||
-          r.instruction.toLowerCase().includes(query)
-      ) ||
-      item.chemicalRemedies.some(
-        (r) =>
-          r.name.toLowerCase().includes(query) ||
-          r.instruction.toLowerCase().includes(query)
-      ) ||
-      item.culturalRemedies.some(
-        (r) =>
-          r.name.toLowerCase().includes(query) ||
-          r.instruction.toLowerCase().includes(query)
-      );
-
-    return matchesCategory && matchesQuery;
+    return (
+      matchesCategory &&
+      (item.name.toLowerCase().includes(query) ||
+        item.localName.toLowerCase().includes(query) ||
+        item.scientificName.toLowerCase().includes(query) ||
+        item.simpleSummary.toLowerCase().includes(query) ||
+        item.quickCheck.toLowerCase().includes(query) ||
+        item.symptoms.some((s) => s.toLowerCase().includes(query)) ||
+        item.organicRemedies.some(
+          (r) =>
+            r.name.toLowerCase().includes(query) ||
+            r.instruction.toLowerCase().includes(query)
+        ) ||
+        item.chemicalRemedies.some(
+          (r) =>
+            r.name.toLowerCase().includes(query) ||
+            r.instruction.toLowerCase().includes(query)
+        ))
+    );
   });
 
+  const activeDisease =
+    CATALOGUE.find((d) => d.slug === activeSlug) ||
+    filteredCatalogue[0] ||
+    CATALOGUE[0];
+
   return (
-    <div className="min-h-screen bg-transparent py-8 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Hero Header */}
-        <div className="bg-white rounded-3xl border border-slate-200/90 p-8 sm:p-10 shadow-sm">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-3 max-w-2xl">
-              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-agri-50 border border-agri-200 text-agri-800 text-xs font-semibold">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="min-h-screen bg-transparent py-8 px-4 sm:px-6 lg:px-8 font-sans"
+    >
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Unified Editorial Console Header */}
+        <Surface className="p-6 sm:p-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-emerald-950/10">
+            <div className="space-y-1.5 max-w-2xl">
+              <div className="flex items-center space-x-2 text-agri-800 text-xs font-semibold">
                 <BookOpen className="w-4 h-4 text-agri-600" />
-                <span>Field Practical Guide for Farmers</span>
+                <span>Field Diagnostics Reference</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                Groundnut Disease & Care Guide
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Groundnut Pathology & Treatment Guide
               </h1>
-              <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                Simple visual signs, high-definition leaf photos, organic remedies, safe chemical spray dosages, and field prevention practices.
+              <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                Farmer-tested visual symptoms, photorealistic specimen photos, natural bio-fungicides, chemical dosages, and soil care.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <Link
-                to="/scan"
-                className="inline-flex items-center justify-center space-x-2.5 px-6 py-3.5 rounded-2xl bg-agri-700 hover:bg-agri-800 text-white font-bold text-sm shadow-md transition-all hover:scale-[1.02] touch-target"
-              >
-                <Scan className="w-5 h-5" />
-                <span>Scan a Leaf Now</span>
+            <Button asChild size="default" className="self-start md:self-center shadow-md">
+              <Link to="/scan" className="flex items-center space-x-2">
+                <Scan className="w-4 h-4" />
+                <span>Scan Leaf with Camera</span>
               </Link>
-            </div>
+            </Button>
           </div>
 
-          {/* Search & Filter Bar */}
-          <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
-            {/* Search Box */}
-            <div className="relative w-full md:w-96">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          {/* Search & Category Filter Strip */}
+          <div className="pt-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search disease, symptoms, or spray (e.g. yellow ring, mancozeb)..."
-                className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-agri-500 focus:bg-white transition-all"
+                placeholder="Search symptom or remedy (e.g. yellow halo, mancozeb)..."
+                className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-emerald-950/10 bg-white/60 text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-agri-600 focus:bg-white transition-all"
               />
               {searchQuery && (
                 <button
@@ -472,16 +463,15 @@ export const DiseaseGuidePage: React.FC = () => {
               )}
             </div>
 
-            {/* Category Filter Pills */}
-            <div className="flex items-center space-x-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all touch-target ${
                     selectedCategory === cat
-                      ? 'bg-agri-800 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-agri-800 text-white shadow-xs'
+                      : 'bg-white/60 text-slate-700 hover:bg-white/90 border border-emerald-950/5'
                   }`}
                 >
                   {cat}
@@ -489,344 +479,239 @@ export const DiseaseGuidePage: React.FC = () => {
               ))}
             </div>
           </div>
-        </div>
+        </Surface>
 
-        {/* Results Counter if Filtered */}
-        {(searchQuery || selectedCategory !== 'All') && (
-          <div className="flex items-center justify-between text-xs text-slate-500 px-2">
-            <span>
-              Showing {filteredCatalogue.length} of {CATALOGUE.length} disease classes
-            </span>
-            {(searchQuery || selectedCategory !== 'All') && (
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedCategory('All');
-                }}
-                className="text-agri-700 hover:underline font-semibold"
-              >
-                Reset filters
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Empty State */}
-        {filteredCatalogue.length === 0 && (
-          <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4 shadow-sm">
-            <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
-              <HelpCircle className="w-7 h-7" />
+        {/* Master-Detail Interactive Directory (Zero Floating Card Soup) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left: Disease Navigation Rail */}
+          <div className="lg:col-span-4 space-y-2">
+            <div className="text-xs font-bold uppercase tracking-wider text-agri-950/70 px-2 pb-1">
+              Pathology Classes ({filteredCatalogue.length})
             </div>
-            <h3 className="text-lg font-bold text-slate-800">No matching crop diseases found</h3>
-            <p className="text-xs text-slate-500 max-w-md mx-auto">
-              We couldn't find any symptoms or remedies matching &ldquo;{searchQuery}&rdquo;. Try searching for general terms like &ldquo;spot&rdquo;, &ldquo;rust&rdquo;, or &ldquo;spray&rdquo;.
-            </p>
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedCategory('All');
-              }}
-              className="px-5 py-2.5 rounded-xl bg-agri-700 text-white font-semibold text-xs hover:bg-agri-800 transition-colors"
-            >
-              Show All Diseases
-            </button>
-          </div>
-        )}
 
-        {/* Catalogue Cards Grid */}
-        <div className="space-y-6">
-          {filteredCatalogue.map((entry) => {
-            const isExpanded = expandedSlug === entry.slug;
-            const isHealthy = entry.slug === 'healthy_leaf';
-            const currentTab = activeTabs[entry.slug] || 'symptoms';
+            <div className="space-y-2">
+              {filteredCatalogue.map((disease) => {
+                const isSelected = activeDisease.slug === disease.slug;
 
-            return (
-              <div
-                key={entry.slug}
-                className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md"
-              >
-                {/* Header Banner & Visual Card */}
-                <div className="p-6 sm:p-8">
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
-                    {/* Left: Disease Photo with Zoom & Badge */}
-                    <div className="lg:col-span-4 flex flex-col space-y-3">
-                      <div className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-slate-100 border border-slate-200 group shadow-sm">
+                return (
+                  <motion.button
+                    key={disease.slug}
+                    onClick={() => setActiveSlug(disease.slug)}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    className={`w-full text-left p-3.5 rounded-2xl transition-all duration-200 flex items-center justify-between gap-3 ${
+                      isSelected
+                        ? 'bg-white/90 shadow-[0_4px_20px_rgba(20,83,45,0.08)] border-2 border-agri-600/40'
+                        : 'bg-white/50 hover:bg-white/70 border border-white/60 shadow-xs'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3 min-w-0">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 border border-emerald-950/10">
                         <img
-                          src={entry.image}
-                          alt={entry.name}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          loading="lazy"
+                          src={disease.image}
+                          alt={disease.name}
+                          className="w-full h-full object-cover"
                         />
-                        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-                          <span
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border backdrop-blur-md shadow-sm ${entry.severityColor}`}
-                          >
-                            {entry.severity}
-                          </span>
-                        </div>
                       </div>
-
-                      <div className="flex items-center justify-between text-[11px] text-slate-500 px-1 font-medium">
-                        <span>Class Key: <code className="font-mono font-bold text-slate-700">{entry.slug}</code></span>
-                        <span>{entry.category}</span>
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-900 text-sm truncate">
+                          {disease.name}
+                        </div>
+                        <div className="text-[11px] text-slate-500 truncate">
+                          {disease.localName}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Right: Key Facts, Quick Check, and Action */}
-                    <div className="lg:col-span-8 flex flex-col justify-between space-y-4">
-                      <div>
-                        {/* Title & Scientific Name */}
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="space-y-0.5">
-                            <div className="flex items-center space-x-2">
-                              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                                {entry.name}
-                              </h2>
-                              <span className="text-xs font-semibold text-agri-700 bg-agri-50 px-2.5 py-0.5 rounded-md border border-agri-200">
-                                {entry.localName}
-                              </span>
-                            </div>
-                            <p className="text-xs italic text-slate-500 font-mono">
-                              {entry.scientificName}
-                            </p>
-                          </div>
+                    <Badge variant={disease.badgeVariant} className="flex-shrink-0 text-[10px]">
+                      {disease.severity}
+                    </Badge>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
 
-                          <Link
-                            to="/scan"
-                            className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-agri-50 hover:text-agri-800 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors"
-                          >
-                            <Scan className="w-3.5 h-3.5" />
-                            <span>Verify in Camera</span>
-                          </Link>
-                        </div>
+          {/* Right: Active Disease Console Surface */}
+          <div className="lg:col-span-8">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeDisease.slug}
+                initial={{ opacity: 0, x: 8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <Surface className="overflow-hidden">
+                  {/* Specimen Hero Banner */}
+                  <div className="relative aspect-[16/9] sm:aspect-[21/9] max-h-72 w-full overflow-hidden bg-slate-900">
+                    <img
+                      src={activeDisease.image}
+                      alt={activeDisease.name}
+                      className="w-full h-full object-cover opacity-95 hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/30" />
 
-                        {/* Plain Language Summary */}
-                        <p className="text-slate-700 text-sm leading-relaxed mt-3">
-                          {entry.simpleSummary}
-                        </p>
+                    <div className="absolute top-4 left-4 flex gap-2">
+                      <Badge variant={activeDisease.badgeVariant} className="backdrop-blur-md">
+                        {activeDisease.severity}
+                      </Badge>
+                      <Badge variant="outline" className="bg-slate-900/60 text-white border-white/30 backdrop-blur-md">
+                        {activeDisease.category}
+                      </Badge>
+                    </div>
 
-                        {/* Quick Check Box */}
-                        <div className="mt-4 p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex items-start space-x-2.5">
-                          <Eye className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
-                          <div className="text-xs text-amber-900">
-                            <span className="font-bold">🔍 Quick Field Check: </span>
-                            {entry.quickCheck}
-                          </div>
-                        </div>
-
-                        {/* Best Time to Act */}
-                        <div className="mt-2.5 flex items-center space-x-2 text-xs text-slate-500">
-                          <Info className="w-3.5 h-3.5 text-slate-400" />
-                          <span>
-                            <strong className="text-slate-700">When to Act:</strong> {entry.whenToAct}
-                          </span>
-                        </div>
+                    <div className="absolute bottom-4 left-4 right-4 text-white">
+                      <div className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                        {activeDisease.name}
                       </div>
-
-                      {/* Expand / Collapse Button */}
-                      <div className="pt-2">
-                        <button
-                          onClick={() => setExpandedSlug(isExpanded ? '' : entry.slug)}
-                          className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold text-agri-800 bg-agri-50 hover:bg-agri-100 border border-agri-200 transition-all touch-target"
-                        >
-                          <span>{isExpanded ? 'Hide Remedies & Treatment' : 'View Symptoms & Remedies'}</span>
-                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </button>
+                      <div className="text-xs text-emerald-200/90 font-mono italic mt-0.5">
+                        {activeDisease.scientificName} &bull; {activeDisease.localName}
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Expanded Section: Interactive Tabs (Symptoms, Organic, Chemical, Prevention) */}
-                {isExpanded && (
-                  <div className="border-t border-slate-200 bg-slate-50/70 p-6 sm:p-8 space-y-6">
-                    {/* Navigation Tabs */}
-                    <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
-                      <button
-                        onClick={() => setCardTab(entry.slug, 'symptoms')}
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                          currentTab === 'symptoms'
-                            ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                        }`}
-                      >
-                        <AlertCircle className="w-4 h-4 text-amber-600" />
-                        <span>Symptoms & Visual Signs ({entry.symptoms.length})</span>
-                      </button>
-
-                      <button
-                        onClick={() => setCardTab(entry.slug, 'organic')}
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                          currentTab === 'organic'
-                            ? 'bg-white text-emerald-800 shadow-sm border border-emerald-200'
-                            : 'text-slate-600 hover:text-emerald-800 hover:bg-white/60'
-                        }`}
-                      >
-                        <Sprout className="w-4 h-4 text-emerald-600" />
-                        <span>Organic & Natural ({entry.organicRemedies.length})</span>
-                      </button>
-
-                      <button
-                        onClick={() => setCardTab(entry.slug, 'chemical')}
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                          currentTab === 'chemical'
-                            ? 'bg-white text-agri-800 shadow-sm border border-agri-200'
-                            : 'text-slate-600 hover:text-agri-800 hover:bg-white/60'
-                        }`}
-                      >
-                        <FlaskConical className="w-4 h-4 text-agri-600" />
-                        <span>Chemical Spray ({entry.chemicalRemedies.length})</span>
-                      </button>
-
-                      <button
-                        onClick={() => setCardTab(entry.slug, 'cultural')}
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                          currentTab === 'cultural'
-                            ? 'bg-white text-slate-800 shadow-sm border border-slate-200'
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                        }`}
-                      >
-                        <ShieldCheck className="w-4 h-4 text-soil-700" />
-                        <span>Field Care & Prevention ({entry.culturalRemedies.length})</span>
-                      </button>
+                  {/* Disease Content & Interactive Remediation Tabs */}
+                  <div className="p-6 sm:p-8 space-y-6">
+                    {/* Quick Identification Banner */}
+                    <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/70 flex items-start space-x-3">
+                      <Eye className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-1 text-xs text-amber-950">
+                        <div className="font-bold">Quick Field Identification:</div>
+                        <p className="leading-relaxed">{activeDisease.quickCheck}</p>
+                      </div>
                     </div>
 
-                    {/* Tab 1: Symptoms */}
-                    {currentTab === 'symptoms' && (
-                      <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 space-y-4">
-                        <div className="flex items-center space-x-2 text-slate-800 font-bold text-sm">
-                          <AlertCircle className="w-4 h-4 text-amber-600" />
-                          <span>Checklist: What to look for in the field</span>
-                        </div>
+                    {/* Plain Language Summary */}
+                    <div className="space-y-1.5">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-agri-950/70">
+                        Overview & Timing
+                      </h3>
+                      <p className="text-slate-700 text-sm leading-relaxed">
+                        {activeDisease.simpleSummary}
+                      </p>
+                      <div className="flex items-center space-x-2 text-xs text-slate-500 pt-1">
+                        <Info className="w-3.5 h-3.5 text-agri-600" />
+                        <span><strong>When to Act:</strong> {activeDisease.whenToAct}</span>
+                      </div>
+                    </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                          {entry.symptoms.map((symptom, idx) => (
+                    {/* Integrated Radix Tabs for Actionable Protocols */}
+                    <Tabs defaultValue="symptoms" className="w-full pt-2">
+                      <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1.5 bg-emerald-950/5 rounded-xl">
+                        <TabsTrigger value="symptoms" className="flex-1 min-w-[120px]">
+                          <AlertCircle className="w-3.5 h-3.5 mr-1.5 text-amber-600" />
+                          <span>Symptoms ({activeDisease.symptoms.length})</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="organic" className="flex-1 min-w-[120px]">
+                          <Sprout className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
+                          <span>Organic Care</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="chemical" className="flex-1 min-w-[120px]">
+                          <FlaskConical className="w-3.5 h-3.5 mr-1.5 text-agri-600" />
+                          <span>Chemical Spray</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="cultural" className="flex-1 min-w-[120px]">
+                          <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-soil-700" />
+                          <span>Prevention</span>
+                        </TabsTrigger>
+                      </TabsList>
+
+                      {/* Tab 1: Symptoms Checklist */}
+                      <TabsContent value="symptoms" className="space-y-3 pt-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {activeDisease.symptoms.map((symptom, idx) => (
                             <div
                               key={idx}
-                              className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 flex items-start space-x-3 text-xs text-slate-800"
+                              className="p-3.5 rounded-xl bg-white/60 border border-emerald-950/5 flex items-start space-x-3 text-xs text-slate-800"
                             >
-                              <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold flex-shrink-0 text-[11px]">
+                              <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold flex-shrink-0 text-[10px]">
                                 {idx + 1}
                               </span>
                               <span className="leading-relaxed">{symptom}</span>
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
+                      </TabsContent>
 
-                    {/* Tab 2: Organic Remedies */}
-                    {currentTab === 'organic' && (
-                      <div className="bg-white rounded-2xl border border-emerald-200/90 p-5 sm:p-6 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2 text-emerald-900 font-bold text-sm">
-                            <Sprout className="w-4 h-4 text-emerald-600" />
-                            <span>Natural & Bio-Fungicide Recommendations</span>
+                      {/* Tab 2: Organic Remedies */}
+                      <TabsContent value="organic" className="space-y-3 pt-2">
+                        {activeDisease.organicRemedies.map((remedy, idx) => (
+                          <div
+                            key={idx}
+                            className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200/60 space-y-2 text-xs"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                              <h4 className="font-bold text-emerald-950 text-sm">
+                                {remedy.name}
+                              </h4>
+                              <span className="inline-flex items-center space-x-1 font-mono font-bold text-emerald-800 bg-white/80 px-2.5 py-0.5 rounded-lg border border-emerald-200 text-[11px] self-start sm:self-auto">
+                                <Droplets className="w-3 h-3 text-emerald-600" />
+                                <span>Dosage: {remedy.dosage}</span>
+                              </span>
+                            </div>
+                            <p className="text-emerald-900 leading-relaxed pt-1">
+                              {remedy.instruction}
+                            </p>
                           </div>
-                          <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                            Safe for Soil & Bees
-                          </span>
-                        </div>
+                        ))}
+                      </TabsContent>
 
-                        <div className="space-y-3 pt-1">
-                          {entry.organicRemedies.map((remedy, idx) => (
+                      {/* Tab 3: Chemical Remedies */}
+                      <TabsContent value="chemical" className="space-y-3 pt-2">
+                        {activeDisease.chemicalRemedies.length > 0 ? (
+                          activeDisease.chemicalRemedies.map((remedy, idx) => (
                             <div
                               key={idx}
-                              className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200/80 space-y-2 text-xs"
+                              className="p-4 rounded-xl bg-agri-50/50 border border-agri-200/60 space-y-2 text-xs"
                             >
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                                <h4 className="font-bold text-emerald-950 text-sm">
+                                <h4 className="font-bold text-agri-950 text-sm">
                                   {remedy.name}
                                 </h4>
-                                <span className="inline-flex items-center space-x-1 font-mono font-bold text-emerald-800 bg-white px-2.5 py-0.5 rounded-lg border border-emerald-200 text-[11px]">
-                                  <Droplets className="w-3 h-3 text-emerald-600" />
+                                <span className="inline-flex items-center space-x-1 font-mono font-bold text-agri-800 bg-white/80 px-2.5 py-0.5 rounded-lg border border-agri-200 text-[11px] self-start sm:self-auto">
+                                  <Droplets className="w-3 h-3 text-agri-600" />
                                   <span>Dosage: {remedy.dosage}</span>
                                 </span>
                               </div>
-                              <p className="text-emerald-900 leading-relaxed pt-1">
+                              <p className="text-agri-900 leading-relaxed pt-1">
                                 {remedy.instruction}
                               </p>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Tab 3: Chemical Remedies */}
-                    {currentTab === 'chemical' && (
-                      <div className="bg-white rounded-2xl border border-agri-200/90 p-5 sm:p-6 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2 text-agri-950 font-bold text-sm">
-                            <FlaskConical className="w-4 h-4 text-agri-700" />
-                            <span>Chemical Fungicide Dosages (When Severe)</span>
-                          </div>
-                          <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                            Wear Gloves & Mask When Spraying
-                          </span>
-                        </div>
-
-                        {entry.chemicalRemedies.length > 0 ? (
-                          <div className="space-y-3 pt-1">
-                            {entry.chemicalRemedies.map((remedy, idx) => (
-                              <div
-                                key={idx}
-                                className="p-4 rounded-xl bg-agri-50/50 border border-agri-200/80 space-y-2 text-xs"
-                              >
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                                  <h4 className="font-bold text-agri-950 text-sm">
-                                    {remedy.name}
-                                  </h4>
-                                  <span className="inline-flex items-center space-x-1 font-mono font-bold text-agri-800 bg-white px-2.5 py-0.5 rounded-lg border border-agri-200 text-[11px]">
-                                    <Droplets className="w-3 h-3 text-agri-600" />
-                                    <span>Dosage: {remedy.dosage}</span>
-                                  </span>
-                                </div>
-                                <p className="text-agri-900 leading-relaxed pt-1">
-                                  {remedy.instruction}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
+                          ))
                         ) : (
-                          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 italic">
-                            No synthetic chemicals required for healthy foliage baseline. Keep up good watering and nutrition.
+                          <div className="p-4 rounded-xl bg-white/50 border border-emerald-950/5 text-xs text-slate-600 italic">
+                            No synthetic chemicals required for healthy foliage baseline.
                           </div>
                         )}
-                      </div>
-                    )}
+                      </TabsContent>
 
-                    {/* Tab 4: Cultural & Field Prevention */}
-                    {currentTab === 'cultural' && (
-                      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 space-y-4">
-                        <div className="flex items-center space-x-2 text-slate-900 font-bold text-sm">
-                          <ShieldCheck className="w-4 h-4 text-soil-700" />
-                          <span>Field Management & Prevention Tips</span>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                          {entry.culturalRemedies.map((remedy, idx) => (
+                      {/* Tab 4: Cultural & Prevention */}
+                      <TabsContent value="cultural" className="space-y-3 pt-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {activeDisease.culturalRemedies.map((remedy, idx) => (
                             <div
                               key={idx}
-                              className="p-4 rounded-xl bg-soil-50/50 border border-soil-200/70 space-y-1.5 text-xs"
+                              className="p-4 rounded-xl bg-white/60 border border-emerald-950/5 space-y-1.5 text-xs"
                             >
-                              <div className="font-bold text-soil-950 text-sm flex items-center space-x-2">
-                                <span className="w-2 h-2 rounded-full bg-soil-700" />
+                              <div className="font-bold text-slate-900 text-sm flex items-center space-x-2">
+                                <span className="w-2 h-2 rounded-full bg-agri-600" />
                                 <span>{remedy.name}</span>
                               </div>
-                              <p className="text-soil-900 leading-relaxed">{remedy.instruction}</p>
+                              <p className="text-slate-600 leading-relaxed">{remedy.instruction}</p>
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
+                      </TabsContent>
+                    </Tabs>
                   </div>
-                )}
-              </div>
-            );
-          })}
+                </Surface>
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
