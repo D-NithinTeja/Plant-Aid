@@ -82,11 +82,18 @@ with gr.Blocks(title="Plant-Aid Production Backend & API") as demo:
         dummy_btn = gr.Button(visible=False)
         dummy_btn.click(fn=_noop)
 
-# Mount all FastAPI routes onto demo.app
-demo.app.include_router(fastapi_app.router)
+# Launch native Gradio server and mount full FastAPI routes
+server_app, local_url, share_url = demo.launch(
+    server_name="0.0.0.0",
+    server_port=int(os.getenv("PORT", "7860")),
+    prevent_thread_lock=True,
+)
 
-# Mount CORS middleware to allow Vercel and localhost requests
-demo.app.add_middleware(
+# Mount all FastAPI API routes onto the live ASGI application
+server_app.include_router(fastapi_app.router)
+
+# Mount CORS middleware to allow Vercel and frontend requests
+server_app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
@@ -95,20 +102,19 @@ demo.app.add_middleware(
 )
 
 # Mount Swagger UI and OpenAPI documentation
-@demo.app.get("/docs", include_in_schema=False)
+@server_app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
     return get_swagger_ui_html(openapi_url="/openapi.json", title="Plant-Aid Production API")
 
-@demo.app.get("/openapi.json", include_in_schema=False)
+@server_app.get("/openapi.json", include_in_schema=False)
 async def get_open_api_endpoint():
     return get_openapi(
         title="Plant-Aid Production API",
         version="1.0.0",
-        routes=demo.app.routes,
+        routes=server_app.routes,
     )
 
-# Re-expose app symbol for ASGI runners
-app = demo.app
+app = server_app
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=int(os.getenv("PORT", "7860")))
+    demo.block_thread()
