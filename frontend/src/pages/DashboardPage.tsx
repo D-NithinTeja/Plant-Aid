@@ -100,10 +100,6 @@ export const DashboardPage: React.FC = () => {
                   </span>
                   <span>Scanner Ready</span>
                 </div>
-                <Badge variant="optimal" className="text-[11px]">
-                  <Sparkles className="w-3 h-3 text-emerald-700" />
-                  <span>Capstone Academic Project</span>
-                </Badge>
               </div>
 
               {/* Title of Project */}

@@ -60,10 +60,6 @@ export const LandingPage: React.FC = () => {
           <div className="glass-frost p-8 sm:p-14 lg:p-16 text-center space-y-8 relative overflow-hidden rounded-[32px]">
             {/* Headline & Description */}
             <div className="space-y-4 max-w-3xl mx-auto">
-              <div className="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold bg-emerald-50/90 border border-emerald-200/80 text-emerald-800 backdrop-blur-md shadow-xs">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Plant-Aid • Academic Capstone Project</span>
-              </div>
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-slate-900 leading-[1.12]">
                 Plant-Aid: Real-Time Plant Disease Identification &amp; Treatment Recommendation System
               </h1>
