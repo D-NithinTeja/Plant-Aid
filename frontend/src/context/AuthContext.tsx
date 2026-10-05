@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   login: (identifier: string, password: string) => Promise<TwoFactorChallengeResponse>;
   verify2FA: (sessionId: string, otpCode: string) => Promise<TokenResponse>;
+  resendOTP: (sessionId: string) => Promise<TwoFactorChallengeResponse>;
   register: (name: string, email: string, password: string, phone?: string | null) => Promise<User>;
   logout: () => void;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
@@ -60,6 +61,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return res.data;
   };
 
+  // Resend 2FA verification OTP
+  const resendOTP = async (sessionId: string): Promise<TwoFactorChallengeResponse> => {
+    const res = await api.post<TwoFactorChallengeResponse>('/api/auth/resend-otp', {
+      session_id: sessionId,
+    });
+    return res.data;
+  };
+
   // Complete 2FA challenge with OTP code
   const verify2FA = async (sessionId: string, otpCode: string): Promise<TokenResponse> => {
     const res = await api.post<TokenResponse>('/api/auth/verify-2fa', {
@@ -107,6 +116,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         loading,
         login,
         verify2FA,
+        resendOTP,
         register,
         logout,
         setUser,

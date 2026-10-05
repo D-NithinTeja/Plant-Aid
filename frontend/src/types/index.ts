@@ -6,7 +6,11 @@ export interface User {
   is_2fa_enabled?: boolean;
   account_status?: string;
   created_at?: string;
+  session_id?: string | null;
+  otp_code_dev?: string | null;
 }
+
+export type RegisterResponse = User;
 
 export interface TwoFactorChallengeResponse {
   session_id: string;

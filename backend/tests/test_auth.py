@@ -197,3 +197,87 @@ def test_api_prefix_aliasing():
         },
     )
     assert res.status_code == 201
+
+
+def test_registration_initiates_challenge_and_activates_user():
+    """Registration creates pending user and issues challenge; verify-2fa activates user."""
+    payload = {
+        "user_name": "Activation Tester",
+        "email_address": "activate@testauth.com",
+        "password": "ActivatePassword123!",
+    }
+    reg_res = client.post("/auth/register", json=payload)
+    assert reg_res.status_code == 201
+    reg_data = reg_res.json()
+    assert reg_data["account_status"] == "PENDING_VERIFICATION"
+    assert "session_id" in reg_data
+    session_id = reg_data["session_id"]
+    otp_code = reg_data["otp_code_dev"]
+
+    # Verify challenge
+    verify_res = client.post(
+        "/auth/verify-2fa",
+        json={"session_id": session_id, "otp_code": otp_code},
+    )
+    assert verify_res.status_code == 200
+    token = verify_res.json()["access_token"]
+
+    # Check active status via /auth/me
+    me_res = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert me_res.status_code == 200
+    assert me_res.json()["account_status"] == "ACTIVE"
+
+
+def test_resend_otp_flow_and_rate_limit():
+    """User can resend OTP up to MAX_OTP_RESENDS (3), after which 429 is returned."""
+    # Register user
+    reg_res = client.post(
+        "/auth/register",
+        json={
+            "user_name": "Resend Tester",
+            "email_address": "resend@testauth.com",
+            "password": "ResendPassword123!",
+        },
+    )
+    assert reg_res.status_code == 201
+    session_id = reg_res.json()["session_id"]
+    initial_otp = reg_res.json()["otp_code_dev"]
+
+    # Resend 1
+    res1 = client.post("/auth/resend-otp", json={"session_id": session_id})
+    assert res1.status_code == 200
+    otp1 = res1.json()["otp_code_dev"]
+
+    # Resend 2
+    res2 = client.post("/auth/resend-otp", json={"session_id": session_id})
+    assert res2.status_code == 200
+    otp2 = res2.json()["otp_code_dev"]
+
+    # Resend 3
+    res3 = client.post("/auth/resend-otp", json={"session_id": session_id})
+    assert res3.status_code == 200
+    otp3 = res3.json()["otp_code_dev"]
+
+    # Resend 4: Exceeds limit -> 429
+    res4 = client.post("/auth/resend-otp", json={"session_id": session_id})
+    assert res4.status_code == 429
+    assert "Maximum OTP resend limit reached" in res4.json()["detail"]
+
+    # The latest OTP (otp3) should still successfully verify
+    verify_res = client.post(
+        "/auth/verify-2fa",
+        json={"session_id": session_id, "otp_code": otp3},
+    )
+    assert verify_res.status_code == 200
+    assert "access_token" in verify_res.json()
+
+
+def test_resend_otp_invalid_session():
+    """Resend with unknown session_id returns 401."""
+    res = client.post(
+        "/auth/resend-otp",
+        json={"session_id": "nonexistent-session-uuid"},
+    )
+    assert res.status_code == 401
+    assert "Invalid or expired challenge session" in res.json()["detail"]
+

@@ -10,6 +10,7 @@ from app.database import get_db
 from app.limiter import limiter
 from app.models import User
 from app.schemas import (
+    ResendOTPRequest,
     TokenResponse,
     TwoFactorChallengeResponse,
     TwoFactorVerifyRequest,
@@ -35,7 +36,7 @@ router = APIRouter(tags=["Authentication & 2FA"])
     "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
 )
 def register_user(user_in: UserRegister, db: Session = Depends(get_db)):
-    """Registers a new user account with bcrypt password hashing."""
+    """Registers a new user account with bcrypt password hashing and dispatches email verification OTP."""
     # Check duplicate email or phone
     query = db.query(User).filter(User.email_address == user_in.email_address)
     if user_in.phone_number:
@@ -53,18 +54,43 @@ def register_user(user_in: UserRegister, db: Session = Depends(get_db)):
             detail="A user with this email address or phone number already exists",
         )
 
+    # Generate 6-digit verification OTP and challenge session
+    otp_code = generate_otp_code(6)
+    session_id = str(uuid.uuid4())
+    expiry = get_now_utc() + datetime.timedelta(minutes=settings.OTP_EXPIRE_MINUTES)
+
     new_user = User(
         user_name=user_in.user_name,
         email_address=user_in.email_address,
         phone_number=user_in.phone_number,
         password_hash=hash_password(user_in.password),
         is_2fa_enabled=True,
-        account_status="ACTIVE",
+        account_status="PENDING_VERIFICATION",
+        active_session_id=session_id,
+        active_2fa_otp=otp_code,
+        otp_expiry_time=expiry,
+        failed_otp_attempts=0,
+        otp_resend_count=0,
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return new_user
+
+    # Dispatch verification code via email
+    delivered = otp_service.send_otp(
+        destination=new_user.email_address, otp_code=otp_code
+    )
+    if not delivered and not (settings.APP_DEBUG or settings.OTP_ALLOW_CONSOLE_FALLBACK):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to send verification code email. Please check your email configuration.",
+        )
+
+    resp = UserResponse.model_validate(new_user)
+    resp.session_id = session_id
+    if settings.APP_DEBUG:
+        resp.otp_code_dev = otp_code
+    return resp
 
 
 @router.post("/login", response_model=TwoFactorChallengeResponse)
@@ -101,21 +127,69 @@ def login(
     user.active_2fa_otp = otp_code
     user.otp_expiry_time = expiry
     user.failed_otp_attempts = 0
+    user.otp_resend_count = 0
     db.commit()
 
-    # Dispatch OTP via configured provider (Console / Twilio / SendGrid)
+    # Dispatch OTP via configured provider (SMTP / Resend / Console)
     target_destination = (
         user.phone_number
         if (identifier == user.phone_number and user.phone_number)
         else user.email_address
     )
-    otp_service.send_otp(destination=target_destination, otp_code=otp_code)
+    delivered = otp_service.send_otp(destination=target_destination, otp_code=otp_code)
+    if not delivered and not (settings.APP_DEBUG or settings.OTP_ALLOW_CONSOLE_FALLBACK):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to send verification code email. Please check your email configuration.",
+        )
 
     return TwoFactorChallengeResponse(
         session_id=session_id,
         expires_in=settings.OTP_EXPIRE_MINUTES * 60,
         message="2FA verification challenge initiated. Please verify with the 6-digit code sent to your registered contact.",
         otp_code_dev=otp_code if settings.APP_DEBUG else None,
+    )
+
+
+@router.post("/resend-otp", response_model=TwoFactorChallengeResponse)
+def resend_otp(req: ResendOTPRequest, db: Session = Depends(get_db)):
+    """Issues a fresh 6-digit OTP code for an active verification challenge session with rate limiting."""
+    user = db.query(User).filter(User.active_session_id == req.session_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired challenge session. Please restart login or registration.",
+        )
+
+    # Rate limit: Max resends per session
+    if user.otp_resend_count >= settings.MAX_OTP_RESENDS:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Maximum OTP resend limit reached ({settings.MAX_OTP_RESENDS} attempts). Please log in or register again.",
+        )
+
+    # Generate fresh OTP code and extend TTL
+    new_otp = generate_otp_code(6)
+    expiry = get_now_utc() + datetime.timedelta(minutes=settings.OTP_EXPIRE_MINUTES)
+    user.active_2fa_otp = new_otp
+    user.otp_expiry_time = expiry
+    user.failed_otp_attempts = 0
+    user.otp_resend_count += 1
+    db.commit()
+
+    target_destination = user.email_address
+    delivered = otp_service.send_otp(destination=target_destination, otp_code=new_otp)
+    if not delivered and not (settings.APP_DEBUG or settings.OTP_ALLOW_CONSOLE_FALLBACK):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to dispatch verification email. Please try again later.",
+        )
+
+    return TwoFactorChallengeResponse(
+        session_id=user.active_session_id,
+        expires_in=settings.OTP_EXPIRE_MINUTES * 60,
+        message=f"A fresh verification code has been dispatched to {target_destination}.",
+        otp_code_dev=new_otp if settings.APP_DEBUG else None,
     )
 
 
@@ -168,11 +242,13 @@ def verify_2fa(req: TwoFactorVerifyRequest, db: Session = Depends(get_db)):
             detail=f"Invalid 2FA OTP code. {remaining_attempts} attempt(s) remaining before session lockout.",
         )
 
-    # Verification successful: clear challenge state
+    # Verification successful: clear challenge state and activate user
+    user.account_status = "ACTIVE"
     user.active_session_id = None
     user.active_2fa_otp = None
     user.otp_expiry_time = None
     user.failed_otp_attempts = 0
+    user.otp_resend_count = 0
     db.commit()
 
     # Generate JWT Access Token (HS256, 60 minutes)

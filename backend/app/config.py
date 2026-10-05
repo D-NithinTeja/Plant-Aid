@@ -31,8 +31,26 @@ class Settings(BaseSettings):
         os.path.dirname(os.path.dirname(__file__)), "uploads"
     )
 
-    # 2FA OTP Provider (console | twilio | sendgrid)
-    OTP_PROVIDER: str = "console"
+    # 2FA OTP Provider (smtp | resend | console | twilio | sendgrid)
+    OTP_PROVIDER: str = "smtp"
+    OTP_ALLOW_CONSOLE_FALLBACK: bool = True
+    MAX_OTP_RESENDS: int = 3
+
+    # SMTP Configuration (Gmail App Password, Brevo, AWS SES, custom relay)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_USE_STARTTLS: bool = True
+    SMTP_FROM_EMAIL: str = "noreply@plant-aid.org"
+    SMTP_FROM_NAME: str = "Plant-Aid Security"
+    SMTP_TIMEOUT_SECONDS: int = 10
+
+    # Resend Configuration
+    RESEND_API_KEY: str = ""
+    RESEND_FROM_EMAIL: str = "onboarding@resend.dev"
+
+    # Legacy / Alternative Providers
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_PHONE_NUMBER: str = ""

@@ -8,7 +8,6 @@ import {
   Phone,
   ArrowRight,
   AlertCircle,
-  Clock,
   KeyRound,
   CheckCircle2,
 } from 'lucide-react';
@@ -17,7 +16,7 @@ import { PlantAidIcon } from '../components/layout/PlantAidLogo';
 import { TwoFactorChallengeResponse } from '../types';
 
 export const AuthPage: React.FC = () => {
-  const { login, verify2FA, register, isAuthenticated } = useAuth();
+  const { login, verify2FA, resendOTP, register, isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -26,6 +25,8 @@ export const AuthPage: React.FC = () => {
 
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState<number>(60);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -66,6 +67,17 @@ export const AuthPage: React.FC = () => {
     return () => clearInterval(timer);
   }, [challenge]);
 
+  // Resend cooldown timer
+  useEffect(() => {
+    if (!challenge || resendCooldown <= 0) return;
+
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [challenge, resendCooldown]);
+
   const formatTimer = (secs: number) => {
     const mins = Math.floor(secs / 60);
     const remaining = secs % 60;
@@ -87,6 +99,7 @@ export const AuthPage: React.FC = () => {
     try {
       const challengeRes = await login(identifier.trim(), password);
       setChallenge(challengeRes);
+      setResendCooldown(60);
       // Auto-fill dev OTP if present for quick testing
       if (challengeRes.otp_code_dev) {
         setOtpCode(challengeRes.otp_code_dev);
@@ -117,16 +130,54 @@ export const AuthPage: React.FC = () => {
 
     setLoading(true);
     try {
-      await register(name.trim(), email.trim(), password, phone.trim() || null);
-      setSuccessMsg('Account registered successfully! Please sign in below.');
-      setMode('login');
-      setIdentifier(email.trim());
-      setPassword('');
+      const regUser = await register(name.trim(), email.trim(), password, phone.trim() || null);
+      if (regUser.session_id) {
+        setChallenge({
+          session_id: regUser.session_id,
+          expires_in: 300,
+          message: `Verification code sent to ${email.trim()}. Please enter your 6-digit code to activate your account.`,
+          otp_code_dev: regUser.otp_code_dev,
+        });
+        setSecondsRemaining(300);
+        setResendCooldown(60);
+        if (regUser.otp_code_dev) {
+          setOtpCode(regUser.otp_code_dev);
+        }
+        setSuccessMsg(`Account created! A 6-digit verification code was sent to ${email.trim()}.`);
+      } else {
+        setSuccessMsg('Account registered successfully! Please sign in below.');
+        setMode('login');
+        setIdentifier(email.trim());
+        setPassword('');
+      }
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       setErrorMsg(typeof detail === 'string' ? detail : 'Failed to register account. User may already exist.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Resend 2FA OTP
+  const handleResendOTP = async () => {
+    if (!challenge || resendCooldown > 0 || resendLoading) return;
+
+    setResendLoading(true);
+    setErrorMsg(null);
+    try {
+      const res = await resendOTP(challenge.session_id);
+      setSuccessMsg(res.message || 'A fresh verification code has been dispatched to your email.');
+      setSecondsRemaining(res.expires_in || 300);
+      setResendCooldown(60);
+      if (res.otp_code_dev) {
+        setOtpCode(res.otp_code_dev);
+        setChallenge((prev) => (prev ? { ...prev, otp_code_dev: res.otp_code_dev } : null));
+      }
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      setErrorMsg(typeof detail === 'string' ? detail : 'Failed to resend code. Please try again.');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -237,6 +288,21 @@ export const AuthPage: React.FC = () => {
                 autoFocus
                 disabled={loading || secondsRemaining === 0}
               />
+              <div className="flex items-center justify-between text-xs text-slate-500 mt-2 px-0.5">
+                <span>Didn't receive the email?</span>
+                <button
+                  type="button"
+                  onClick={handleResendOTP}
+                  disabled={resendCooldown > 0 || resendLoading}
+                  className="font-semibold text-agri-700 hover:text-agri-900 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  {resendLoading
+                    ? 'Sending...'
+                    : resendCooldown > 0
+                    ? `Resend in ${resendCooldown}s`
+                    : 'Resend Code'}
+                </button>
+              </div>
             </div>
 
             <button

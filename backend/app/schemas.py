@@ -36,8 +36,12 @@ class TwoFactorChallengeResponse(BaseModel):
 
 
 class TwoFactorVerifyRequest(BaseModel):
-    session_id: str = Field(..., description="Opaque challenge session id issued by /auth/login")
+    session_id: str = Field(..., description="Opaque challenge session id issued by /auth/login or /auth/register")
     otp_code: str = Field(..., min_length=6, max_length=6)
+
+
+class ResendOTPRequest(BaseModel):
+    session_id: str = Field(..., description="Active challenge session id")
 
 
 class TokenResponse(BaseModel):
@@ -57,6 +61,12 @@ class UserResponse(BaseModel):
     is_2fa_enabled: bool
     account_status: str
     created_at: datetime.datetime
+    session_id: str | None = Field(
+        None, description="Active challenge session id for verification"
+    )
+    otp_code_dev: str | None = Field(
+        None, description="DEBUG ONLY OTP echo for automated testing"
+    )
 
     model_config = ConfigDict(from_attributes=True)
 
