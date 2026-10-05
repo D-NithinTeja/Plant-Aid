@@ -6,9 +6,11 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   loading: boolean;
   login: (identifier: string, password: string) => Promise<TwoFactorChallengeResponse>;
   verify2FA: (sessionId: string, otpCode: string) => Promise<TokenResponse>;
+  resendOTP: (sessionId: string) => Promise<TwoFactorChallengeResponse>;
   register: (name: string, email: string, password: string, phone?: string | null) => Promise<User>;
   logout: () => void;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
@@ -60,6 +62,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return res.data;
   };
 
+  // Resend 2FA verification OTP
+  const resendOTP = async (sessionId: string): Promise<TwoFactorChallengeResponse> => {
+    const res = await api.post<TwoFactorChallengeResponse>('/api/auth/resend-otp', {
+      session_id: sessionId,
+    });
+    return res.data;
+  };
+
   // Complete 2FA challenge with OTP code
   const verify2FA = async (sessionId: string, otpCode: string): Promise<TokenResponse> => {
     const res = await api.post<TokenResponse>('/api/auth/verify-2fa', {
@@ -67,8 +77,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       otp_code: otpCode.trim(),
     });
 
-    const { access_token, user_id, user_name, email_address } = res.data;
-    const userData: User = { id: user_id, user_name, email_address };
+    const { access_token, user_id, user_name, email_address, role } = res.data;
+    const userData: User = { id: user_id, user_name, email_address, role: role || 'user' };
 
     setToken(access_token);
     setUser(userData);
@@ -98,15 +108,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('plant_aid_user');
   };
 
+  const isAdmin = user?.role === 'admin';
+
   return (
     <AuthContext.Provider
       value={{
         user,
         token,
         isAuthenticated: !!token,
+        isAdmin,
         loading,
         login,
         verify2FA,
+        resendOTP,
         register,
         logout,
         setUser,

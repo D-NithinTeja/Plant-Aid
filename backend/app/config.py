@@ -15,7 +15,9 @@ class Settings(BaseSettings):
     MAX_OTP_ATTEMPTS: int = 5  # 5 failed attempts cap per Implementation.md §2.2
 
     # Database
-    DATABASE_URL: str = "sqlite:///./plant_aid.db"
+    DATABASE_URL: str = (
+        f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plant_aid.db').replace(os.sep, '/')}"
+    )
 
     # AWS S3 Settings
     AWS_ACCESS_KEY_ID: str = ""
@@ -31,8 +33,26 @@ class Settings(BaseSettings):
         os.path.dirname(os.path.dirname(__file__)), "uploads"
     )
 
-    # 2FA OTP Provider (console | twilio | sendgrid)
-    OTP_PROVIDER: str = "console"
+    # 2FA OTP Provider (smtp | resend | console | twilio | sendgrid)
+    OTP_PROVIDER: str = "smtp"
+    OTP_ALLOW_CONSOLE_FALLBACK: bool = True
+    MAX_OTP_RESENDS: int = 3
+
+    # SMTP Configuration (Gmail App Password, Brevo, AWS SES, custom relay)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_USE_STARTTLS: bool = True
+    SMTP_FROM_EMAIL: str = "noreply@plant-aid.org"
+    SMTP_FROM_NAME: str = "Plant-Aid Security"
+    SMTP_TIMEOUT_SECONDS: int = 10
+
+    # Resend Configuration
+    RESEND_API_KEY: str = ""
+    RESEND_FROM_EMAIL: str = "onboarding@resend.dev"
+
+    # Legacy / Alternative Providers
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_PHONE_NUMBER: str = ""
@@ -53,7 +73,15 @@ class Settings(BaseSettings):
     RATE_LIMIT_INFERENCE: str = "60/minute"
     RATE_LIMIT_LOGIN: str = "10/minute"
 
-    model_config = SettingsConfigDict(env_prefix="PLANT_AID_", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=(
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),
+            ".env",
+        ),
+        env_file_encoding="utf-8",
+        env_prefix="PLANT_AID_",
+        extra="ignore",
+    )
 
 
 settings = Settings()

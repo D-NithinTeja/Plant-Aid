@@ -36,7 +36,9 @@ class User(Base):
     otp_expiry_time = Column(DateTime, nullable=True)
     active_session_id = Column(String(64), unique=True, index=True, nullable=True)
     failed_otp_attempts = Column(Integer, default=0, nullable=False)
-    account_status = Column(String(20), default="ACTIVE")
+    otp_resend_count = Column(Integer, default=0, nullable=False)
+    account_status = Column(String(20), default="PENDING_VERIFICATION")
+    role = Column(String(20), default="user", nullable=False)
     created_at = Column(DateTime, default=utcnow)
 
     history_logs = relationship(
