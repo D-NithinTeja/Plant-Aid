@@ -9,12 +9,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Handle ZeroGPU environment if active
 try:
     import spaces
+    from spaces import zero
+    zero.startup()
 except Exception:
     spaces = None
 
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.openapi.utils import get_openapi
 import gradio as gr
 from PIL import Image
 
@@ -82,39 +81,9 @@ with gr.Blocks(title="Plant-Aid Production Backend & API") as demo:
         dummy_btn = gr.Button(visible=False)
         dummy_btn.click(fn=_noop)
 
-# Launch native Gradio server and mount full FastAPI routes
-server_app, local_url, share_url = demo.launch(
-    server_name="0.0.0.0",
-    server_port=int(os.getenv("PORT", "7860")),
-    prevent_thread_lock=True,
-)
-
-# Mount all FastAPI API routes onto the live ASGI application
-server_app.include_router(fastapi_app.router)
-
-# Mount CORS middleware to allow Vercel and frontend requests
-server_app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Mount Swagger UI and OpenAPI documentation
-@server_app.get("/docs", include_in_schema=False)
-async def custom_swagger_ui_html():
-    return get_swagger_ui_html(openapi_url="/openapi.json", title="Plant-Aid Production API")
-
-@server_app.get("/openapi.json", include_in_schema=False)
-async def get_open_api_endpoint():
-    return get_openapi(
-        title="Plant-Aid Production API",
-        version="1.0.0",
-        routes=server_app.routes,
-    )
-
-app = server_app
+# Mount Gradio UI onto FastAPI root
+app = gr.mount_gradio_app(fastapi_app, demo, path="/")
 
 if __name__ == "__main__":
-    demo.block_thread()
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "7860")))
