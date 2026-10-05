@@ -50,3 +50,4 @@ desktop.ini
 
 # Local scratch space (agent tracks, tickets, throwaway scripts)
 .scratch/
+.neon

@@ -1,6 +1,18 @@
 import os
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _resolve_model_path() -> str:
+    ml_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ml")
+    primary = os.path.join(ml_dir, "convnext_tiny_groundnut.ts")
+    if os.path.exists(primary):
+        return primary
+    artifact = os.path.join(ml_dir, "artifacts", "convnext_tiny_groundnut.ts")
+    if os.path.exists(artifact):
+        return artifact
+    return primary
 
 
 class Settings(BaseSettings):
@@ -14,16 +26,31 @@ class Settings(BaseSettings):
     OTP_EXPIRE_MINUTES: int = 5  # 5-min TTL per Implementation.md §2.2
     MAX_OTP_ATTEMPTS: int = 5  # 5 failed attempts cap per Implementation.md §2.2
 
-    # Database
-    DATABASE_URL: str = (
-        f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plant_aid.db').replace(os.sep, '/')}"
+    # Database (supports SQLite default and Neon / Postgres)
+    DATABASE_URL: str = Field(
+        default=f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'plant_aid.db').replace(os.sep, '/')}",
+        validation_alias=AliasChoices("PLANT_AID_DATABASE_URL", "DATABASE_URL"),
     )
 
-    # AWS S3 Settings
-    AWS_ACCESS_KEY_ID: str = ""
-    AWS_SECRET_ACCESS_KEY: str = ""
-    AWS_REGION: str = "us-east-1"
-    S3_BUCKET_NAME: str = "plant-aid-media-bucket"
+    # AWS / Neon S3 Object Storage Settings
+    AWS_ACCESS_KEY_ID: str = Field(
+        "", validation_alias=AliasChoices("PLANT_AID_AWS_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID")
+    )
+    AWS_SECRET_ACCESS_KEY: str = Field(
+        "", validation_alias=AliasChoices("PLANT_AID_AWS_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY")
+    )
+    AWS_REGION: str = Field(
+        "us-east-2", validation_alias=AliasChoices("PLANT_AID_AWS_REGION", "AWS_REGION")
+    )
+    AWS_ENDPOINT_URL: str = Field(
+        "",
+        validation_alias=AliasChoices(
+            "PLANT_AID_AWS_ENDPOINT_URL", "AWS_ENDPOINT_URL_S3", "AWS_ENDPOINT_URL"
+        ),
+    )
+    S3_BUCKET_NAME: str = Field(
+        "uploads", validation_alias=AliasChoices("PLANT_AID_S3_BUCKET_NAME", "S3_BUCKET_NAME")
+    )
     S3_PRESIGNED_EXPIRATION_SECONDS: int = (
         900  # 15 minutes TTL per Implementation.md §6.2
     )
@@ -59,11 +86,17 @@ class Settings(BaseSettings):
     SENDGRID_API_KEY: str = ""
     SENDGRID_FROM_EMAIL: str = "no-reply@plant-aid.org"
 
+    # CORS Configuration
+    CORS_ORIGINS: str = Field(
+        "*", validation_alias=AliasChoices("PLANT_AID_CORS_ORIGINS", "CORS_ORIGINS")
+    )
+
     # ML Engine Settings
     ML_DEVICE: str = "auto"  # "auto" (cuda if available else cpu) | "cuda" | "cpu"
     ML_CONFIDENCE_THRESHOLD: float = 0.55  # Tau = 0.55 per Implementation.md §4.2
-    ML_MODEL_PATH: str = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "ml", "convnext_tiny_groundnut.ts"
+    ML_MODEL_PATH: str = Field(
+        default_factory=_resolve_model_path,
+        validation_alias=AliasChoices("PLANT_AID_ML_MODEL_PATH", "ML_MODEL_PATH"),
     )
     ML_LABELS_PATH: str = os.path.join(
         os.path.dirname(os.path.dirname(__file__)), "ml", "labels.json"
@@ -75,11 +108,14 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=(
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"),
             os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),
             ".env",
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env.local"),
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env.local"),
+            ".env.local",
         ),
         env_file_encoding="utf-8",
-        env_prefix="PLANT_AID_",
         extra="ignore",
     )
 

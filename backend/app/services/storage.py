@@ -25,12 +25,14 @@ class StorageService:
         self.s3_client = None
         if self.use_s3:
             try:
-                self.s3_client = boto3.client(
-                    "s3",
-                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                    region_name=settings.AWS_REGION,
-                )
+                client_kwargs = {
+                    "aws_access_key_id": settings.AWS_ACCESS_KEY_ID,
+                    "aws_secret_access_key": settings.AWS_SECRET_ACCESS_KEY,
+                    "region_name": settings.AWS_REGION or "us-east-2",
+                }
+                if getattr(settings, "AWS_ENDPOINT_URL", None):
+                    client_kwargs["endpoint_url"] = settings.AWS_ENDPOINT_URL
+                self.s3_client = boto3.client("s3", **client_kwargs)
             except Exception as e:
                 logger.warning(f"S3 client initialization failed, falling back to local storage: {e}")
                 self.use_s3 = False
@@ -59,14 +61,14 @@ class StorageService:
 
         if self.use_s3 and self.s3_client:
             try:
-                self.s3_client.put_object(
-                    Bucket=settings.S3_BUCKET_NAME,
-                    Key=object_key,
-                    Body=image_bytes,
-                    ContentType=mime_type,
-                    # SSE-S3 at rest for every stored frame (Implementation.md §7, store D4)
-                    ServerSideEncryption="AES256",
-                )
+                put_kwargs = {
+                    "Bucket": settings.S3_BUCKET_NAME,
+                    "Key": object_key,
+                    "Body": image_bytes,
+                    "ContentType": mime_type,
+                    "ServerSideEncryption": "AES256",
+                }
+                self.s3_client.put_object(**put_kwargs)
                 return f"s3://{settings.S3_BUCKET_NAME}/{object_key}"
             except (BotoCoreError, ClientError) as e:
                 logger.error(f"S3 upload failed for {object_key}, falling back to disk: {e}")

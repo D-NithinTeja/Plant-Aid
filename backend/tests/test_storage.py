@@ -17,7 +17,8 @@ client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
-def setup_db():
+def setup_db(monkeypatch):
+    monkeypatch.setattr(storage_service, "use_s3", False)
     Base.metadata.create_all(bind=engine)
     yield
 
