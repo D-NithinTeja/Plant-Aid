@@ -8,10 +8,12 @@ import {
   ArrowUpRight,
   ShieldCheck,
   History,
-  Leaf,
-  Zap,
+  GraduationCap,
+  Users,
+  Award,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Badge } from '../components/ui/Badge';
 
 export const LandingPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
@@ -33,7 +35,7 @@ export const LandingPage: React.FC = () => {
       y: 0,
       transition: {
         duration: 0.45,
-        ease: [0.16, 1, 0.3, 1],
+        ease: [0.16, 1, 0.3, 1] as const,
       },
     },
   };
@@ -55,8 +57,8 @@ export const LandingPage: React.FC = () => {
           <div className="glass-frost p-8 sm:p-14 lg:p-16 text-center space-y-8 relative overflow-hidden rounded-[32px]">
             {/* Headline & Description */}
             <div className="space-y-4 max-w-3xl mx-auto">
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.12]">
-                Groundnut Plant Disease Diagnosis & Treatment Advisory
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-slate-900 leading-[1.12]">
+                Plant-Aid: Real-Time Plant Disease Identification &amp; Treatment Recommendation System
               </h1>
               <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
                 Diagnose crop pathogens in real-time with high-accuracy computer vision.
@@ -83,39 +85,6 @@ export const LandingPage: React.FC = () => {
                 <BookOpen className="w-5 h-5 text-agri-700" />
                 <span>Browse Disease Guide</span>
               </Link>
-            </div>
-
-            {/* Trust Indicators / Quick Metrics */}
-            <div className="pt-6 border-t border-white/60 grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-left max-w-3xl mx-auto">
-              <div className="glass-frost-subtle flex items-center space-x-3 p-3.5 rounded-2xl">
-                <div className="w-9 h-9 rounded-xl glass-frost-pill text-emerald-700 flex items-center justify-center shrink-0">
-                  <Zap className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Real-Time Scan</div>
-                  <div className="text-[11px] text-slate-600">Live camera frame inference</div>
-                </div>
-              </div>
-
-              <div className="glass-frost-subtle flex items-center space-x-3 p-3.5 rounded-2xl">
-                <div className="w-9 h-9 rounded-xl glass-frost-pill text-emerald-700 flex items-center justify-center shrink-0">
-                  <Leaf className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Groundnut Classes</div>
-                  <div className="text-[11px] text-slate-600">Early/late spot, rust, chlorosis</div>
-                </div>
-              </div>
-
-              <div className="glass-frost-subtle flex items-center space-x-3 p-3.5 rounded-2xl">
-                <div className="w-9 h-9 rounded-xl glass-frost-pill text-emerald-700 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Multi-Tier Remedies</div>
-                  <div className="text-[11px] text-slate-600">Organic, chemical, cultural</div>
-                </div>
-              </div>
             </div>
           </div>
         </motion.div>
@@ -201,7 +170,157 @@ export const LandingPage: React.FC = () => {
             </Link>
           </div>
         </motion.div>
+
+        {/* Project Authors & Academic Supervision Section */}
+        <motion.div variants={itemVariants} className="relative">
+          <div className="glass-frost p-6 sm:p-8 rounded-[32px] space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-emerald-950/10 pb-4 gap-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-xl glass-frost-pill text-emerald-800 flex items-center justify-center shadow-xs">
+                  <Users className="w-4 h-4 text-emerald-700" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900 tracking-tight uppercase font-sans">
+                    Project Team &amp; Academic Supervision
+                  </h2>
+                  <p className="text-[11px] text-slate-500">
+                    Engineering Contributors &amp; Course Faculty Mentorship
+                  </p>
+                </div>
+              </div>
+              <Badge variant="outline" className="self-start sm:self-auto text-[11px] bg-white/70">
+                Department of Information Technology
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              {/* Team Members Column */}
+              <div className="lg:col-span-8 space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-agri-900/70 flex items-center space-x-1.5">
+                  <span>Team Members</span>
+                  <span className="text-[10px] text-slate-400 font-normal">(Students)</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Member 1: Donthula Nithin Teja */}
+                  <div className="p-4 rounded-2xl bg-white/75 border border-emerald-950/10 shadow-xs hover:border-emerald-500/30 transition-all backdrop-blur-md flex flex-col justify-between space-y-3">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-600 to-agri-800 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 select-none">
+                        NT
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-900 truncate" title="Donthula Nithin Teja">
+                          Donthula Nithin Teja
+                        </div>
+                        <div className="text-[10px] text-slate-500">Student Developer</div>
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Roll No</span>
+                      <Badge variant="outline" className="font-mono text-xs font-bold text-emerald-900 bg-emerald-50/70 border-emerald-300/80">
+                        241IT028
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Member 2: Ghanta Bhavana Sri Sai */}
+                  <div className="p-4 rounded-2xl bg-white/75 border border-emerald-950/10 shadow-xs hover:border-emerald-500/30 transition-all backdrop-blur-md flex flex-col justify-between space-y-3">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-600 to-emerald-800 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 select-none">
+                        BS
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-900 truncate" title="Ghanta Bhavana Sri Sai">
+                          Ghanta Bhavana Sri Sai
+                        </div>
+                        <div className="text-[10px] text-slate-500">Student Developer</div>
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Roll No</span>
+                      <Badge variant="outline" className="font-mono text-xs font-bold text-emerald-900 bg-emerald-50/70 border-emerald-300/80">
+                        242IT029
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Member 3: Yash Roshan */}
+                  <div className="p-4 rounded-2xl bg-white/75 border border-emerald-950/10 shadow-xs hover:border-emerald-500/30 transition-all backdrop-blur-md flex flex-col justify-between space-y-3">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-600 to-teal-800 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 select-none">
+                        YR
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-900 truncate" title="Yash Roshan">
+                          Yash Roshan
+                        </div>
+                        <div className="text-[10px] text-slate-500">Student Developer</div>
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Roll No</span>
+                      <Badge variant="outline" className="font-mono text-xs font-bold text-emerald-900 bg-emerald-50/70 border-emerald-300/80">
+                        241IT083
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Course Instructor Column */}
+              <div className="lg:col-span-4 space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-agri-900/70 flex items-center space-x-1.5">
+                  <span>Course Instructor</span>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/90 to-white/80 border border-emerald-200/80 shadow-xs hover:border-emerald-400/50 transition-all backdrop-blur-md flex flex-col justify-between space-y-3 h-[calc(100%-1.75rem)]">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                      <GraduationCap className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-extrabold text-slate-900 truncate">
+                        Prof. Jaidhar C. D.
+                      </div>
+                      <div className="text-[11px] font-medium text-emerald-800">
+                        Course Faculty &amp; Project Mentor
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-emerald-100/80 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Supervision</span>
+                    <Badge variant="optimal" className="text-[11px] font-semibold">
+                      <Award className="w-3 h-3 text-emerald-700 mr-0.5" />
+                      <span>Academic Guide</span>
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Bottom Left Corner Copyright Claim */}
+        <div className="pt-2 pb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-500 gap-2">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-white/70 backdrop-blur-md border border-emerald-950/10 shadow-xs text-slate-600 font-medium select-none">
+            <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
+            <span>&copy; {new Date().getFullYear()} Plant-Aid. All rights reserved.</span>
+          </div>
+
+          <div className="text-[11px] text-slate-400 font-medium pl-1 sm:pl-0">
+            Groundnut Foliar Diagnostic &amp; Treatment Advisory System
+          </div>
+        </div>
       </motion.div>
+
+      {/* Persistent Bottom-Left Corner Copyright Claim Tag */}
+      <div className="fixed bottom-4 left-4 sm:left-6 z-40 pointer-events-none">
+        <div className="glass-frost px-3.5 py-1.5 rounded-full border border-white/80 shadow-md text-[11px] text-slate-700 backdrop-blur-xl font-medium select-none pointer-events-auto flex items-center space-x-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+          <span>&copy; {new Date().getFullYear()} Plant-Aid. All rights reserved.</span>
+        </div>
+      </div>
     </div>
   );
 };

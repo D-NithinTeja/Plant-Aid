@@ -777,7 +777,7 @@ export const AdminPage: React.FC = () => {
                           <div className="space-y-2">
                             <div className="flex items-start justify-between gap-2">
                               <Badge
-                                variant={isOrganic ? 'optimal' : isChemical ? 'critical' : 'warning'}
+                                variant={isOrganic ? 'optimal' : isChemical ? 'destructive' : 'warning'}
                                 className="text-[11px]"
                               >
                                 {remedy.category}

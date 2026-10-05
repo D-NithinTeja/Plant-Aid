@@ -86,7 +86,6 @@ export const ProfilePage: React.FC = () => {
                 </p>
               </div>
             </div>
-
             <Button
               variant="outline"
               onClick={handleLogout}
