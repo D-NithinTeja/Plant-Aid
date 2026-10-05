@@ -1,5 +1,6 @@
 import datetime
 import json
+import uuid
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -52,6 +53,24 @@ def create_history_log_item(
 
     disease_name = payload.disease_name or disease_obj.disease_name
 
+    # Import base64 decoding helper
+    from app.routers.inference import _decode_base64_image
+
+    s3_storage_uri = payload.s3_storage_uri
+    if not s3_storage_uri and payload.image_b64:
+        image_bytes, mime_type = _decode_base64_image(payload.image_b64)
+        if image_bytes:
+            frame_id = str(uuid.uuid4())
+            s3_storage_uri = storage_service.upload_image(
+                image_bytes=image_bytes,
+                mime_type=mime_type,
+                user_id=current_user.id,
+                frame_id=frame_id,
+            )
+    if not s3_storage_uri:
+        # Fallback storage URI if neither is provided
+        s3_storage_uri = f"s3://plant-aid-storage/frames/{current_user.id}/{uuid.uuid4()}.jpg"
+
     bbox_json = (
         json.dumps(payload.bounding_box.model_dump())
         if payload.bounding_box
@@ -64,7 +83,7 @@ def create_history_log_item(
         disease_id=disease_obj.id,
         disease_name=disease_name,
         confidence_score=payload.confidence_score,
-        s3_storage_uri=payload.s3_storage_uri,
+        s3_storage_uri=s3_storage_uri,
         bounding_box_json=bbox_json,
         diagnosis_timestamp=now,
     )
@@ -75,7 +94,8 @@ def create_history_log_item(
     except Exception:
         db.rollback()
         # Compensation rollback: delete newly uploaded media if database transaction fails
-        storage_service.delete_object(payload.s3_storage_uri)
+        if s3_storage_uri:
+            storage_service.delete_object(s3_storage_uri)
         raise HTTPException(
             status_code=500,
             detail="Failed to persist diagnosis history record. Media compensation executed.",
@@ -124,6 +144,7 @@ def _get_visible_log_or_404(db: Session, log_id: int, user_id: int) -> DiseaseHi
 def get_user_history(
     page: int = Query(1, ge=1, description="Page number (1-based)"),
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
+    size: Optional[int] = Query(None, ge=1, le=100, description="Items per page (alias for limit)"),
     disease_id: Optional[str] = Query(None, description="Filter by disease ID"),
     date_from: Optional[str] = Query(
         None, description="Filter records on or after this timestamp (ISO format)"
@@ -138,6 +159,8 @@ def get_user_history(
     Retrieves paginated diagnosis history records for the authenticated user (Task 4.4 per Implementation.md §6.2).
     Includes active, time-limited presigned URLs for image thumbnails and supports disease and date filtering.
     """
+    actual_limit = size if size is not None else limit
+
     query = db.query(DiseaseHistoryLog).filter(
         DiseaseHistoryLog.user_id == current_user.id,
         DiseaseHistoryLog.deleted_at.is_(None),
@@ -154,12 +177,12 @@ def get_user_history(
         query = query.filter(DiseaseHistoryLog.diagnosis_timestamp <= dt_to)
 
     total = query.count()
-    total_pages = (total + limit - 1) // limit if total > 0 else 1
+    total_pages = (total + actual_limit - 1) // actual_limit if total > 0 else 1
 
     records = (
         query.order_by(DiseaseHistoryLog.diagnosis_timestamp.desc())
-        .offset((page - 1) * limit)
-        .limit(limit)
+        .offset((page - 1) * actual_limit)
+        .limit(actual_limit)
         .all()
     )
 
@@ -167,7 +190,7 @@ def get_user_history(
         items=[_to_response(log) for log in records],
         total=total,
         page=page,
-        limit=limit,
+        limit=actual_limit,
         total_pages=total_pages,
     )
 

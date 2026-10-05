@@ -1,27 +1,27 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Camera,
   Upload,
-  Play,
-  Pause,
   RefreshCw,
   Save,
   CheckCircle2,
   AlertTriangle,
   ShieldCheck,
   Layers,
-  Info,
-  Maximize2,
-  HelpCircle,
   ExternalLink,
   RotateCcw,
-  Sliders,
-  Check,
+  Sparkles,
+  Eye,
 } from 'lucide-react';
 import api from '../services/api';
-import { InferenceResponse, BoundingBox, Remedy } from '../types';
+import { InferenceResponse, CreateHistoryPayload } from '../types';
 import { TreatmentPlanModal } from '../components/treatment/TreatmentPlanModal';
+import { BoundingBoxOverlay } from '../components/scan/BoundingBoxOverlay';
+import { Surface } from '../components/ui/Surface';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 
 export const ScanPage: React.FC = () => {
   const location = useLocation();
@@ -34,8 +34,9 @@ export const ScanPage: React.FC = () => {
   const [cameraError, setCameraError] = useState<string | null>(null);
 
   // Scanning & Shutter workflow states
-  // Default to manual shutter for stable field inspection, with optional auto-sampling
-  const [autoSample, setAutoSample] = useState<boolean>(false);
+  // Default to continuous 1.5s auto-sampling per SRS §3.1 F.2
+  const [autoSample, setAutoSample] = useState<boolean>(true);
+  const [showHeatmap, setShowHeatmap] = useState<boolean>(true);
   const [isFrozen, setIsFrozen] = useState<boolean>(false);
   const [isInFlight, setIsInFlight] = useState<boolean>(false);
   const [lastInferenceTime, setLastInferenceTime] = useState<number | null>(null);
@@ -43,7 +44,6 @@ export const ScanPage: React.FC = () => {
   // Results
   const [currentResult, setCurrentResult] = useState<InferenceResponse | null>(null);
   const [frozenFrameDataUrl, setFrozenFrameDataUrl] = useState<string | null>(null);
-  const [lastUploadedFile, setLastUploadedFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -51,48 +51,46 @@ export const ScanPage: React.FC = () => {
   // Modal
   const [modalOpen, setModalOpen] = useState<boolean>(false);
 
-  // Video & Canvas DOM references
+  // Video / Canvas References
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<any>(null);
 
   // Start Camera Stream
-  const startCamera = useCallback(async () => {
+  const startCameraStream = useCallback(async () => {
+    setCameraError(null);
     try {
-      setCameraError(null);
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
 
-      const constraints: MediaStreamConstraints = {
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: { ideal: facingMode },
+          facingMode: facingMode,
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
-      };
+        audio: false,
+      });
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
-
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+          setCameraActive(true);
+        };
       }
-      setCameraActive(true);
-      setIsFrozen(false);
     } catch (err: any) {
-      console.error('Camera access failed', err);
-      setCameraError(
-        'Unable to access camera. Please verify camera permissions in your browser or switch to Photo Upload mode.'
-      );
+      console.error('Camera access error:', err);
+      setCameraError('Unable to access camera. Please verify camera permissions.');
       setCameraActive(false);
     }
   }, [facingMode]);
 
   // Stop Camera Stream
-  const stopCamera = useCallback(() => {
+  const stopCameraStream = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -103,25 +101,28 @@ export const ScanPage: React.FC = () => {
     setCameraActive(false);
   }, []);
 
-  // Manage camera lifecycle based on active mode
+  // Lifecycle for Camera Mode
   useEffect(() => {
     if (mode === 'camera') {
-      startCamera();
+      startCameraStream();
     } else {
-      stopCamera();
+      stopCameraStream();
     }
 
     return () => {
-      stopCamera();
+      stopCameraStream();
+      if (scanIntervalRef.current) {
+        clearInterval(scanIntervalRef.current);
+      }
     };
-  }, [mode, startCamera, stopCamera]);
+  }, [mode, startCameraStream, stopCameraStream]);
 
-  // Flip camera between front and environment
-  const toggleFacingMode = () => {
+  // Switch between front/back camera
+  const switchCamera = () => {
     setFacingMode((prev) => (prev === 'environment' ? 'user' : 'environment'));
   };
 
-  // Perform single frame capture & inference request
+  // Frame Capture & API Inference Cycle
   const captureAndInferFrame = useCallback(
     async (freezeOnCapture: boolean = false) => {
       if (!videoRef.current || !canvasRef.current || isInFlight) {
@@ -162,7 +163,7 @@ export const ScanPage: React.FC = () => {
         });
 
         setCurrentResult(res.data);
-        setIsSaved(false); // Reset saved state for new frame
+        setIsSaved(false);
         setSaveMessage(null);
         setLastInferenceTime(Date.now() - startTime);
       } catch (err: any) {
@@ -215,7 +216,6 @@ export const ScanPage: React.FC = () => {
       return;
     }
 
-    setLastUploadedFile(file);
     setIsInFlight(true);
     setIsSaved(false);
     setSaveMessage(null);
@@ -243,86 +243,114 @@ export const ScanPage: React.FC = () => {
     }
   };
 
-  // Explicitly Save Confirmed Diagnosis to History (POST /api/history)
+  // Save Diagnosis to History
   const handleSaveDiagnosis = async () => {
     if (!currentResult) return;
 
     setIsSaving(true);
     try {
-      await api.post('/api/history', {
+      const payload: CreateHistoryPayload = {
         disease_id: currentResult.disease_name.toLowerCase().includes('healthy')
           ? 'healthy_leaf'
           : String(currentResult.disease_id),
         disease_name: currentResult.disease_name,
         confidence_score: currentResult.confidence_score,
-        s3_storage_uri: currentResult.s3_storage_uri || null,
-        bounding_box: currentResult.bounding_box || null,
-      });
+        s3_storage_uri: currentResult.cam_heatmap_b64 || undefined,
+        image_b64: frozenFrameDataUrl || undefined,
+        bounding_box: currentResult.bounding_box || undefined,
+      };
 
+      await api.post('/api/history', payload);
       setIsSaved(true);
-      setSaveMessage('Diagnosis logged successfully to farm history.');
+      setSaveMessage('Diagnosis logged to farm history record.');
     } catch (err: any) {
-      setSaveMessage('Failed to persist diagnosis record: ' + (err.response?.data?.detail || 'Server error'));
+      console.error('Failed to log diagnosis record', err);
+      setSaveMessage('Failed to save to history. Please try again.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Status computation against tau = 0.55 threshold
-  const isHealthy = currentResult?.disease_name?.toLowerCase().includes('healthy');
-  const isUncertain = currentResult?.is_healthy_or_uncertain && !isHealthy;
-  const isConfirmedInfection = currentResult && !currentResult.is_healthy_or_uncertain && !isHealthy;
+  const isNoPlant = Boolean(
+    currentResult &&
+      (currentResult.disease_id === 0 ||
+        currentResult.disease_id === 'no_plant' ||
+        currentResult.disease_name?.toLowerCase().includes('no groundnut plant') ||
+        currentResult.disease_name?.toLowerCase().includes('no plant'))
+  );
+
+  const isHealthy =
+    !isNoPlant &&
+    Boolean(
+      currentResult?.is_healthy_or_uncertain &&
+        (currentResult?.disease_name?.toLowerCase().includes('healthy') ||
+          currentResult?.disease_id === 'healthy_leaf')
+    );
+  const isUncertain = Boolean(currentResult && !isNoPlant && currentResult?.is_healthy_or_uncertain && !isHealthy);
+  const isConfirmedInfection = Boolean(
+    currentResult && !isNoPlant && !currentResult.is_healthy_or_uncertain && !isHealthy
+  );
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-900 py-6 px-4 sm:px-6 lg:px-8">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="min-h-screen bg-transparent text-slate-900 py-6 px-4 sm:px-6 lg:px-8 font-sans"
+    >
       {/* Hidden Offscreen Canvas for preprocessing */}
       <canvas ref={canvasRef} className="hidden" />
 
-      <div className="max-w-5xl mx-auto space-y-6">
-        {/* Top Header / Mode Switcher */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-          <div>
-            <div className="flex items-center space-x-2 text-agri-800 text-xs font-bold uppercase tracking-wider">
-              <ShieldCheck className="w-4 h-4 text-agri-600" />
-              <span>Field Diagnostic Suite • Groundnut Pathology</span>
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Top Header & Tactical Instrument Switcher */}
+        <Surface className="p-6 sm:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2 text-agri-800 text-xs font-semibold">
+                <ShieldCheck className="w-4 h-4 text-agri-600" />
+                <span>Groundnut Health Scanner</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Live Foliage Scanner
+              </h1>
             </div>
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Foliage Lesion Scanner</h1>
-          </div>
 
-          <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-xl border border-slate-300">
-            <button
-              onClick={() => {
-                setMode('camera');
-                setIsFrozen(false);
-              }}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                mode === 'camera'
-                  ? 'bg-agri-700 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Camera className="w-4 h-4" />
-              <span>Live Camera</span>
-            </button>
-            <button
-              onClick={() => setMode('upload')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                mode === 'upload'
-                  ? 'bg-agri-700 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Upload className="w-4 h-4" />
-              <span>Upload Photo</span>
-            </button>
+            {/* Seamless Mode Switcher Pill */}
+            <div className="inline-flex items-center bg-emerald-950/5 p-1 rounded-xl backdrop-blur-xs select-none">
+              <button
+                onClick={() => {
+                  setMode('camera');
+                  setIsFrozen(false);
+                }}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all touch-target ${
+                  mode === 'camera'
+                    ? 'bg-white text-agri-950 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Camera className="w-4 h-4 text-agri-700" />
+                <span>Live Camera</span>
+              </button>
+              <button
+                onClick={() => setMode('upload')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all touch-target ${
+                  mode === 'upload'
+                    ? 'bg-white text-agri-950 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Upload className="w-4 h-4 text-agri-700" />
+                <span>Upload Photo</span>
+              </button>
+            </div>
           </div>
-        </div>
+        </Surface>
 
-        {/* Main Work Area: Scanner Viewport (Left) + Diagnosis Panel (Right) */}
+        {/* Main Work Area: Unified Viewfinder Station (Left) + Integrated Diagnostic Panel (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Viewport (7 Cols) */}
+          {/* Left Viewfinder Station (7 Cols) - Unified Hardware Console */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="relative rounded-3xl overflow-hidden bg-slate-950 border-2 border-agri-950/80 shadow-md aspect-[4/3] flex items-center justify-center">
+            <div className="relative rounded-3xl overflow-hidden bg-slate-950 border border-emerald-950/20 shadow-xl flex flex-col aspect-[4/3]">
               {mode === 'camera' ? (
                 <>
                   {/* Active Video Stream */}
@@ -330,7 +358,7 @@ export const ScanPage: React.FC = () => {
                     ref={videoRef}
                     playsInline
                     muted
-                    className={`w-full h-full object-cover ${isFrozen ? 'hidden' : 'block'}`}
+                    className={`w-full h-full object-contain ${isFrozen ? 'hidden' : 'block'}`}
                   />
 
                   {/* Frozen Frame View */}
@@ -338,11 +366,11 @@ export const ScanPage: React.FC = () => {
                     <img
                       src={frozenFrameDataUrl}
                       alt="Frozen leaf specimen"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   )}
 
-                  {/* Tactical Viewfinder Corner Crosshairs for Leaf Framing */}
+                  {/* Tactical Corner Crosshairs for Leaf Framing */}
                   <div className="absolute inset-6 pointer-events-none border border-white/20 rounded-2xl">
                     <div className="absolute -top-1 -left-1 w-6 h-6 border-t-2 border-l-2 border-agri-400" />
                     <div className="absolute -top-1 -right-1 w-6 h-6 border-t-2 border-r-2 border-agri-400" />
@@ -351,37 +379,19 @@ export const ScanPage: React.FC = () => {
                   </div>
 
                   {/* Bounding Box / Two-layer Localization Overlay */}
-                  {currentResult?.bounding_box && (
-                    <div
-                      className={`absolute pointer-events-none transition-all duration-300 rounded-lg border-2 ${
-                        isConfirmedInfection
-                          ? 'border-red-500 bg-red-500/15 shadow-[0_0_15px_rgba(239,68,68,0.5)]'
-                          : isHealthy
-                          ? 'border-emerald-500 bg-emerald-500/15'
-                          : 'border-amber-500 bg-amber-500/15'
-                      }`}
-                      style={{
-                        left: `${currentResult.bounding_box.x_min * 100}%`,
-                        top: `${currentResult.bounding_box.y_min * 100}%`,
-                        width: `${(currentResult.bounding_box.x_max - currentResult.bounding_box.x_min) * 100}%`,
-                        height: `${(currentResult.bounding_box.y_max - currentResult.bounding_box.y_min) * 100}%`,
-                      }}
-                    >
-                      <div className="absolute -top-6 left-0 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-slate-900 text-white border border-slate-700 whitespace-nowrap shadow-sm">
-                        Lesion ROI: {(currentResult.confidence * 100).toFixed(0)}%
-                      </div>
-                    </div>
-                  )}
+                  <BoundingBoxOverlay
+                    boundingBox={isNoPlant ? null : currentResult?.bounding_box}
+                    confidence={currentResult?.confidence || currentResult?.confidence_score || 0}
+                    isConfirmedInfection={Boolean(isConfirmedInfection)}
+                    isHealthy={Boolean(isHealthy)}
+                    camHeatmapB64={isNoPlant ? null : currentResult?.cam_heatmap_b64}
+                    showHeatmap={showHeatmap && isFrozen && !isNoPlant}
+                  />
 
-                  {/* Continuous Radar Line (Only active when auto-sampling) */}
-                  {autoSample && !isFrozen && !isInFlight && (
-                    <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-agri-400 to-transparent animate-radar pointer-events-none" />
-                  )}
-
-                  {/* Camera Top Status Pill */}
+                  {/* Top Status Pill Bar */}
                   <div className="absolute top-4 left-4 pointer-events-none flex items-center space-x-2">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wide backdrop-blur border flex items-center space-x-1.5 ${
+                      className={`px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wide backdrop-blur-md border flex items-center space-x-1.5 ${
                         isInFlight
                           ? 'bg-amber-950/80 text-amber-300 border-amber-600/60'
                           : isFrozen
@@ -398,36 +408,90 @@ export const ScanPage: React.FC = () => {
                             : isFrozen
                             ? 'bg-blue-400'
                             : autoSample
-                            ? 'bg-emerald-400'
-                            : 'bg-slate-400'
+                            ? 'bg-emerald-400 animate-pulse'
+                            : 'bg-slate-500'
                         }`}
                       />
                       <span>
                         {isInFlight
-                          ? 'Analyzing Foliage...'
+                          ? 'Analyzing...'
                           : isFrozen
-                          ? 'Specimen Frozen'
+                          ? 'Frame Frozen'
                           : autoSample
-                          ? '1.5s Auto Stream'
-                          : 'Aim Camera at Leaf'}
+                          ? 'Live 1.5s Active'
+                          : 'Camera Ready'}
                       </span>
                     </span>
+
                     {lastInferenceTime && (
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-mono bg-slate-900/90 text-slate-300 border border-slate-700">
+                      <span className="hidden sm:inline-block px-2.5 py-1 rounded-full text-[11px] font-mono bg-slate-900/80 text-slate-300 border border-slate-700 backdrop-blur-md">
                         {lastInferenceTime}ms
                       </span>
                     )}
                   </div>
 
-                  {/* Camera Flip Tool in top right */}
-                  <div className="absolute top-4 right-4 pointer-events-auto">
-                    <button
-                      onClick={toggleFacingMode}
-                      className="p-2.5 rounded-xl bg-slate-900/80 text-white border border-slate-700 hover:bg-slate-800 transition-colors touch-target"
-                      title="Flip camera"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </button>
+                  {/* Switch Camera Button (Top Right) */}
+                  <button
+                    onClick={switchCamera}
+                    className="absolute top-4 right-4 p-2.5 rounded-full bg-slate-900/80 text-white border border-slate-700 hover:bg-slate-800 transition-colors backdrop-blur-md touch-target shadow-md"
+                    title="Switch camera"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+
+                  {/* Tactical Shutter Dock (Unified Floating Dock in Lower Viewport) */}
+                  <div className="absolute bottom-3 inset-x-3 bg-slate-950/85 backdrop-blur-md border border-white/10 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-lg z-30">
+                    <div className="flex items-center space-x-2">
+                      {isFrozen ? (
+                        <Button
+                          variant="glass"
+                          size="sm"
+                          onClick={handleRetake}
+                          className="bg-white/90 text-slate-900 hover:bg-white"
+                        >
+                          <RotateCcw className="w-4 h-4 text-agri-700" />
+                          <span>Resume Stream</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => captureAndInferFrame(true)}
+                          disabled={isInFlight}
+                          className="bg-agri-600 hover:bg-agri-700 text-white font-bold"
+                        >
+                          <Camera className="w-4 h-4" />
+                          <span>{isInFlight ? 'Processing...' : 'Freeze & Diagnose'}</span>
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-2 text-xs text-slate-300">
+                      <button
+                        onClick={() => setShowHeatmap(!showHeatmap)}
+                        className={`px-2.5 py-1 rounded-lg font-bold border transition-colors ${
+                          showHeatmap
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                            : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                        }`}
+                        title="Toggle Layer 2 attention saliency map (active on freeze-frame or upload)"
+                      >
+                        Heatmap: {showHeatmap ? 'ON' : 'OFF'}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (isFrozen) setIsFrozen(false);
+                          setAutoSample(!autoSample);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg font-bold border transition-colors ${
+                          autoSample
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                            : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                        }`}
+                      >
+                        1.5s Stream: {autoSample ? 'ON' : 'OFF'}
+                      </button>
+                    </div>
                   </div>
                 </>
               ) : (
@@ -440,32 +504,23 @@ export const ScanPage: React.FC = () => {
                         alt="Uploaded leaf"
                         className="max-h-full max-w-full object-contain rounded-2xl"
                       />
-                      {currentResult?.bounding_box && (
-                        <div
-                          className={`absolute pointer-events-none rounded-lg border-2 ${
-                            isConfirmedInfection
-                              ? 'border-red-500 bg-red-500/20'
-                              : isHealthy
-                              ? 'border-emerald-500 bg-emerald-500/20'
-                              : 'border-amber-500 bg-amber-500/20'
-                          }`}
-                          style={{
-                            left: `${currentResult.bounding_box.x_min * 100}%`,
-                            top: `${currentResult.bounding_box.y_min * 100}%`,
-                            width: `${(currentResult.bounding_box.x_max - currentResult.bounding_box.x_min) * 100}%`,
-                            height: `${(currentResult.bounding_box.y_max - currentResult.bounding_box.y_min) * 100}%`,
-                          }}
-                        />
-                      )}
+                      <BoundingBoxOverlay
+                        boundingBox={isNoPlant ? null : currentResult?.bounding_box}
+                        confidence={currentResult?.confidence || currentResult?.confidence_score || 0}
+                        isConfirmedInfection={Boolean(isConfirmedInfection)}
+                        isHealthy={Boolean(isHealthy)}
+                        camHeatmapB64={isNoPlant ? null : currentResult?.cam_heatmap_b64}
+                        showHeatmap={showHeatmap && !isNoPlant}
+                      />
                     </div>
                   ) : (
-                    <label className="cursor-pointer flex flex-col items-center space-y-3 p-8 border-2 border-dashed border-slate-300 rounded-3xl hover:border-agri-500 hover:bg-agri-50/50 transition-all">
-                      <div className="w-16 h-16 rounded-2xl bg-agri-50 text-agri-700 flex items-center justify-center border border-agri-200">
+                    <label className="cursor-pointer flex flex-col items-center space-y-3 p-8 border-2 border-dashed border-emerald-950/20 rounded-3xl hover:border-agri-600 hover:bg-white/40 transition-all">
+                      <div className="w-16 h-16 rounded-2xl bg-agri-100/70 text-agri-800 flex items-center justify-center border border-agri-300">
                         <Upload className="w-8 h-8" />
                       </div>
                       <div className="space-y-1">
-                        <div className="text-base font-bold text-slate-800">Upload Groundnut Foliage Photo</div>
-                        <p className="text-xs text-slate-500">JPEG or PNG magic-byte verified</p>
+                        <div className="text-base font-bold text-slate-900">Upload Groundnut Foliage Photo</div>
+                        <p className="text-xs text-slate-600">JPEG or PNG magic-byte verified</p>
                       </div>
                       <input
                         type="file"
@@ -479,50 +534,6 @@ export const ScanPage: React.FC = () => {
               )}
             </div>
 
-            {/* Tactical Shutter Controls (Field-first Thumb Zone Ergonomics) */}
-            {mode === 'camera' && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center space-x-3 w-full sm:w-auto">
-                  {isFrozen ? (
-                    <button
-                      onClick={handleRetake}
-                      className="w-full sm:w-auto flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm border border-slate-300 transition-colors touch-target"
-                    >
-                      <RotateCcw className="w-4 h-4 text-slate-600" />
-                      <span>Retake / Live Stream</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => captureAndInferFrame(true)}
-                      disabled={isInFlight}
-                      className="w-full sm:w-auto flex items-center justify-center space-x-3 px-6 py-3.5 rounded-xl bg-agri-700 hover:bg-agri-800 text-white font-bold text-sm shadow-md transition-all hover:scale-[1.02] touch-target"
-                    >
-                      <Camera className="w-5 h-5 text-agri-200" />
-                      <span>{isInFlight ? 'Processing Specimen...' : 'Freeze & Diagnose Specimen'}</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Auto-Sample Stream Toggle */}
-                <div className="flex items-center space-x-2 self-end sm:self-center text-xs text-slate-700">
-                  <span className="font-medium">Auto-Sample Stream (1.5s):</span>
-                  <button
-                    onClick={() => {
-                      if (isFrozen) setIsFrozen(false);
-                      setAutoSample(!autoSample);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg font-bold border transition-colors ${
-                      autoSample
-                        ? 'bg-agri-100 text-agri-900 border-agri-300'
-                        : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
-                    }`}
-                  >
-                    {autoSample ? 'Active' : 'Off (Manual)'}
-                  </button>
-                </div>
-              </div>
-            )}
-
             {cameraError && (
               <div className="p-4 rounded-2xl bg-rose-50 border border-rose-300 text-rose-900 text-xs flex items-start space-x-3">
                 <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
@@ -534,157 +545,192 @@ export const ScanPage: React.FC = () => {
             )}
           </div>
 
-          {/* Right Diagnosis Panel (5 Cols) */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-6">
+          {/* Right Diagnosis Console Surface (5 Cols) */}
+          <div className="lg:col-span-5">
+            <Surface className="p-6 sm:p-8 space-y-6">
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+              <div className="flex items-center justify-between border-b border-emerald-950/10 pb-4">
                 <div className="space-y-0.5">
                   <h2 className="text-base font-bold text-slate-900">Diagnostic Reading</h2>
-                  <p className="text-[11px] text-slate-600">Calibrated against τ = 0.55 confidence floor</p>
+                  <p className="text-[11px] text-slate-500">Real-time disease detection</p>
                 </div>
 
                 {currentResult && (
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
-                      isHealthy
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  <Badge
+                    variant={
+                      isNoPlant
+                        ? 'secondary'
+                        : isHealthy
+                        ? 'optimal'
                         : isConfirmedInfection
-                        ? 'bg-rose-50 text-rose-800 border-rose-300'
-                        : 'bg-amber-50 text-amber-900 border-amber-300'
-                    }`}
+                        ? 'destructive'
+                        : 'warning'
+                    }
                   >
-                    {isHealthy ? 'Healthy Leaf' : isConfirmedInfection ? 'Pathology Detected' : 'Uncertain (τ < 0.55)'}
-                  </span>
+                    {isNoPlant
+                      ? 'No Plant Detected'
+                      : isHealthy
+                      ? 'Healthy Leaf'
+                      : isConfirmedInfection
+                      ? 'Condition Detected'
+                      : 'Low Confidence'}
+                  </Badge>
                 )}
               </div>
 
               {currentResult ? (
                 <div className="space-y-6">
-                  {/* Primary Disease Card */}
-                  <div className="space-y-2">
-                    <div className="text-xs uppercase tracking-widest text-slate-600 font-bold">
-                      Identified Condition
-                    </div>
-                    <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                      {currentResult.disease_name}
-                    </div>
-                    {currentResult.scientific_name && (
-                      <div className="text-xs italic text-agri-800 font-mono">
-                        {currentResult.scientific_name}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Confidence Bar */}
-                  <div className="space-y-2 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                    <div className="flex items-center justify-between text-xs font-semibold">
-                      <span className="text-slate-700">Model Confidence</span>
-                      <span className="font-mono text-agri-800 text-sm font-bold">
-                        {(currentResult.confidence_score * 100).toFixed(1)}%
-                      </span>
-                    </div>
-
-                    <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden relative">
-                      {/* Threshold Marker at 55% */}
-                      <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-slate-500 z-10"
-                        style={{ left: '55%' }}
-                        title="Calibration Threshold (τ = 0.55)"
-                      />
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          currentResult.confidence_score >= 0.55 ? 'bg-agri-600' : 'bg-amber-500'
-                        }`}
-                        style={{ width: `${Math.min(100, currentResult.confidence_score * 100)}%` }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] text-slate-600 font-mono pt-1">
-                      <span>0%</span>
-                      <span className="text-slate-700 font-medium">τ = 0.55 floor</span>
-                      <span>100%</span>
-                    </div>
-                  </div>
-
-                  {/* Calibration Advice Notice */}
-                  {isUncertain && (
-                    <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start space-x-2.5">
-                      <AlertTriangle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+                  {isNoPlant ? (
+                    /* No Plant Detected State */
+                    <div className="space-y-4">
                       <div className="space-y-1">
-                        <div className="font-bold">Low-Confidence Reading (&lt; 55%)</div>
-                        <p className="text-[11px] leading-relaxed text-amber-950">
-                          Hold your device steady, verify bright outdoor illumination, and position the leaf in the center viewfinder before deciding on chemical intervention.
+                        <div className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">
+                          Detection Status
+                        </div>
+                        <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                          No groundnut plant seen
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed pt-1">
+                          No groundnut leaf foliage was detected in the frame. Point your camera directly at groundnut leaves with clear lighting to analyze health.
                         </p>
                       </div>
+
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-700 text-xs flex items-start space-x-3">
+                        <Camera className="w-5 h-5 text-emerald-700 flex-shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <div className="font-bold text-slate-800">Framing Advice</div>
+                          <p className="text-[11px] leading-relaxed text-slate-500">
+                            Hold the camera 15–30 cm from the foliage and ensure the groundnut leaf fills the center of the camera view.
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  ) : (
+                    <>
+                      {/* Primary Disease Title */}
+                      <div className="space-y-1">
+                        <div className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">
+                          Identified Condition
+                        </div>
+                        <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                          {currentResult.disease_name}
+                        </div>
+                        {currentResult.scientific_name && (
+                          <div className="text-xs italic text-agri-800 font-mono">
+                            {currentResult.scientific_name}
+                          </div>
+                        )}
+                      </div>
 
-                  {/* Action Buttons: Save & View Remedies */}
-                  <div className="space-y-3 pt-2">
-                    {/* CRITICAL PERSISTENCE BUTTON */}
-                    <button
-                      onClick={handleSaveDiagnosis}
-                      disabled={isSaving || isSaved}
-                      className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm shadow-md transition-all touch-target flex items-center justify-center space-x-2 ${
-                        isSaved
-                          ? 'bg-emerald-700 text-white cursor-default'
-                          : 'bg-agri-700 hover:bg-agri-800 text-white'
-                      }`}
-                    >
-                      {isSaving ? (
-                        <span>Logging Record...</span>
-                      ) : isSaved ? (
-                        <>
-                          <CheckCircle2 className="w-5 h-5 text-white" />
-                          <span>Diagnosis Logged to History</span>
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-5 h-5" />
-                          <span>Save Diagnosis to History</span>
-                        </>
+                      {/* Confidence Meter */}
+                      <div className="space-y-2 bg-white/60 p-4 rounded-xl border border-emerald-950/5">
+                        <div className="flex items-center justify-between text-xs font-semibold">
+                          <span className="text-slate-700">Confidence</span>
+                          <span className="font-mono text-agri-800 text-sm font-bold">
+                            {(currentResult.confidence_score * 100).toFixed(1)}%
+                          </span>
+                        </div>
+
+                        <div className="w-full h-3 bg-slate-200/80 rounded-full overflow-hidden relative">
+                          {/* Threshold Marker at 55% */}
+                          <div
+                            className="absolute top-0 bottom-0 w-0.5 bg-slate-600 z-10"
+                            style={{ left: '55%' }}
+                            title="Confidence Threshold (55%)"
+                          />
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              currentResult.confidence_score >= 0.55 ? 'bg-agri-600' : 'bg-amber-500'
+                            }`}
+                            style={{ width: `${Math.min(100, currentResult.confidence_score * 100)}%` }}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono pt-1">
+                          <span>0%</span>
+                          <span className="text-slate-700 font-semibold">55% threshold</span>
+                          <span>100%</span>
+                        </div>
+                      </div>
+
+                      {/* Calibration Advice Notice */}
+                      {isUncertain && (
+                        <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start space-x-2.5">
+                          <AlertTriangle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <div className="font-bold">Low-Confidence Reading (&lt; 55%)</div>
+                            <p className="text-[11px] leading-relaxed text-amber-950">
+                              Hold your device steady, verify bright outdoor illumination, and frame the leaf in the center before deciding on treatment.
+                            </p>
+                          </div>
+                        </div>
                       )}
-                    </button>
 
-                    {saveMessage && (
-                      <p
-                        className={`text-center text-xs font-semibold ${
-                          isSaved ? 'text-emerald-800' : 'text-rose-700'
-                        }`}
-                      >
-                        {saveMessage}
-                      </p>
-                    )}
+                      {/* Action Buttons: Save & View Remedies */}
+                      <div className="space-y-3 pt-2">
+                        <Button
+                          onClick={handleSaveDiagnosis}
+                          disabled={isSaving || isSaved}
+                          size="lg"
+                          className={`w-full font-bold shadow-md ${
+                            isSaved ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-agri-700 hover:bg-agri-800'
+                          }`}
+                        >
+                          {isSaving ? (
+                            <span>Logging Record...</span>
+                          ) : isSaved ? (
+                            <>
+                              <CheckCircle2 className="w-5 h-5 text-white" />
+                              <span>Diagnosis Logged to History</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-5 h-5" />
+                              <span>Save Diagnosis to History</span>
+                            </>
+                          )}
+                        </Button>
 
-                    {/* View Remedies Button */}
-                    <button
-                      onClick={() => setModalOpen(true)}
-                      className="w-full py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs border border-slate-300 transition-colors flex items-center justify-center space-x-2 touch-target"
-                    >
-                      <Layers className="w-4 h-4 text-agri-700" />
-                      <span>
-                        {isHealthy ? 'View Foliage Maintenance Tips' : 'Inspect Organic & Chemical Remedies'}
-                      </span>
-                      <ExternalLink className="w-3.5 h-3.5 ml-1 text-slate-500" />
-                    </button>
-                  </div>
+                        {saveMessage && (
+                          <p
+                            className={`text-center text-xs font-semibold ${
+                              isSaved ? 'text-emerald-800' : 'text-rose-700'
+                            }`}
+                          >
+                            {saveMessage}
+                          </p>
+                        )}
+
+                        <Button
+                          onClick={() => setModalOpen(true)}
+                          variant="outline"
+                          className="w-full text-xs font-semibold"
+                        >
+                          <Layers className="w-4 h-4 text-agri-700" />
+                          <span>
+                            {isHealthy ? 'View Foliage Maintenance Tips' : 'Inspect Organic & Chemical Remedies'}
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 ml-1 text-slate-500" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 /* Empty Waiting State */
                 <div className="py-16 text-center space-y-4">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center mx-auto border border-slate-300">
-                    <Camera className="w-6 h-6 animate-pulse text-agri-700" />
+                  <div className="w-12 h-12 rounded-2xl bg-white/60 text-agri-700 flex items-center justify-center mx-auto border border-emerald-950/10 shadow-xs">
+                    <Camera className="w-6 h-6 animate-pulse" />
                   </div>
                   <div className="space-y-1">
                     <div className="text-sm font-bold text-slate-900">Awaiting Foliage Specimen</div>
                     <p className="text-xs text-slate-600 max-w-xs mx-auto leading-relaxed">
-                      Frame groundnut leaves inside the corner crosshairs and tap &quot;Freeze &amp; Diagnose Specimen&quot; to inspect.
+                      Frame groundnut leaves inside the corner crosshairs and tap &quot;Freeze &amp; Diagnose&quot; to inspect.
                     </p>
                   </div>
                 </div>
               )}
-            </div>
+            </Surface>
           </div>
         </div>
       </div>
@@ -701,6 +747,8 @@ export const ScanPage: React.FC = () => {
           remedies={currentResult.remedies || []}
         />
       )}
-    </div>
+    </motion.div>
   );
 };
+
+export default ScanPage;

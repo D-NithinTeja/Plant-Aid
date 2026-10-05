@@ -93,7 +93,24 @@ def get_current_user(
 
     user_id = payload.get("sub")
     user = db.query(User).filter(User.id == int(user_id)).first()
-    if user is None or user.account_status != "ACTIVE":
+    if user is None:
+        raise credentials_exception
+    if user.account_status == "SUSPENDED":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is suspended. Please contact system administrator.",
+        )
+    if user.account_status != "ACTIVE":
         raise credentials_exception
 
     return user
+
+
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    """FastAPI Dependency verifying current user has admin role."""
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrative privileges required.",
+        )
+    return current_user

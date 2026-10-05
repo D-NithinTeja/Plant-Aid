@@ -2,7 +2,7 @@ import datetime
 import uuid
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field
 
 
 # --- User & Auth Schemas ---
@@ -36,8 +36,12 @@ class TwoFactorChallengeResponse(BaseModel):
 
 
 class TwoFactorVerifyRequest(BaseModel):
-    session_id: str = Field(..., description="Opaque challenge session id issued by /auth/login")
+    session_id: str = Field(..., description="Opaque challenge session id issued by /auth/login or /auth/register")
     otp_code: str = Field(..., min_length=6, max_length=6)
+
+
+class ResendOTPRequest(BaseModel):
+    session_id: str = Field(..., description="Active challenge session id")
 
 
 class TokenResponse(BaseModel):
@@ -47,6 +51,7 @@ class TokenResponse(BaseModel):
     user_id: int
     user_name: str
     email_address: str
+    role: str = "user"
 
 
 class UserResponse(BaseModel):
@@ -54,9 +59,16 @@ class UserResponse(BaseModel):
     user_name: str
     email_address: str
     phone_number: str | None = None
+    role: str = "user"
     is_2fa_enabled: bool
     account_status: str
-    created_at: datetime.datetime
+    created_at: datetime.datetime | None = None
+    session_id: str | None = Field(
+        None, description="Active challenge session id for verification"
+    )
+    otp_code_dev: str | None = Field(
+        None, description="DEBUG ONLY OTP echo for automated testing"
+    )
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -139,7 +151,8 @@ class HistoryLogCreate(BaseModel):
     disease_id: str
     disease_name: str | None = None
     confidence_score: float = Field(..., ge=0.0, le=1.0)
-    s3_storage_uri: str
+    s3_storage_uri: str | None = None
+    image_b64: str | None = None
     bounding_box: BoundingBoxSchema | None = None
 
 
@@ -170,3 +183,70 @@ class PaginatedHistoryResponse(BaseModel):
     page: int
     limit: int
     total_pages: int
+
+    @computed_field
+    @property
+    def total_count(self) -> int:
+        return self.total
+
+    @computed_field
+    @property
+    def pages(self) -> int:
+        return self.total_pages
+
+    @computed_field
+    @property
+    def size(self) -> int:
+        return self.limit
+
+
+# --- Admin & Governance Schemas ---
+class UserRoleUpdate(BaseModel):
+    role: str = Field(..., pattern="^(user|admin)$")
+
+
+class UserStatusUpdate(BaseModel):
+    account_status: str = Field(..., pattern="^(ACTIVE|SUSPENDED|PENDING_VERIFICATION)$")
+
+
+class AdminUserItem(UserResponse):
+    history_count: int = 0
+
+
+class AdminPaginatedUsersResponse(BaseModel):
+    items: list[AdminUserItem]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+
+
+class AdminHistoryItem(HistoryLogResponse):
+    user_name: str
+    email_address: str
+
+
+class AdminPaginatedHistoryResponse(BaseModel):
+    items: list[AdminHistoryItem]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+
+
+class RemedyCreate(BaseModel):
+    disease_id: str = Field(..., min_length=1, max_length=50)
+    remedy_type: str = Field(..., min_length=2, max_length=50)
+    title: str = Field(..., min_length=2, max_length=200)
+    description: str = Field(..., min_length=5)
+    application_instructions: str | None = None
+    category: str = Field(..., min_length=2, max_length=100)
+
+
+class RemedyUpdate(BaseModel):
+    remedy_type: str | None = None
+    title: str | None = None
+    description: str | None = None
+    application_instructions: str | None = None
+    category: str | None = None
+

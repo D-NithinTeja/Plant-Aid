@@ -111,6 +111,21 @@ def test_layer1_leaf_roi_non_leaf_fallback():
     assert roi["y_min"] == 0.1
 
 
+def test_non_plant_image_returns_no_groundnut_plant_seen():
+    """Verify non-plant / non-foliage image returns 'No groundnut plant seen' with 0.0 confidence."""
+    arr = np.zeros((200, 200, 3), dtype=np.uint8)
+    arr[:] = [240, 240, 240]  # Blank white canvas / desk
+    pil_img = Image.fromarray(arr)
+    buf = io.BytesIO()
+    pil_img.save(buf, format="JPEG")
+    image_bytes = buf.getvalue()
+
+    pred = ml_engine.predict(image_bytes)
+    assert pred["disease_name"] == "No groundnut plant seen"
+    assert pred["confidence"] == 0.0
+    assert pred["disease_id"] == 0
+
+
 def test_layer2_gradcam_heatmap_and_leaf_roi_intersection():
     """Task 5.3: Layer 2 Grad-CAM attention heatmap is bounded and intersected with Leaf ROI mask."""
     # Synthetic frame with green leaf canvas and centered spot

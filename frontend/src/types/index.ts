@@ -3,10 +3,15 @@ export interface User {
   user_name: string;
   email_address: string;
   phone_number?: string | null;
+  role?: 'user' | 'admin' | string;
   is_2fa_enabled?: boolean;
   account_status?: string;
-  created_at?: string;
+  created_at?: string | null;
+  session_id?: string | null;
+  otp_code_dev?: string | null;
 }
+
+export type RegisterResponse = User;
 
 export interface TwoFactorChallengeResponse {
   session_id: string;
@@ -22,6 +27,7 @@ export interface TokenResponse {
   user_id: number;
   user_name: string;
   email_address: string;
+  role?: string;
 }
 
 export interface BoundingBox {
@@ -35,13 +41,16 @@ export interface Remedy {
   id: number;
   disease_id: string;
   category: 'Organic' | 'Chemical' | 'Preventive' | string;
-  treatment_name: string;
-  application_instructions: string;
+  title: string;
+  description: string;
+  application_instructions?: string | null;
+  remedy_type?: string;
+  treatment_name?: string;
   dosage?: string | null;
 }
 
 export interface InferenceResponse {
-  disease_id: number;
+  disease_id: number | string;
   disease_name: string;
   plant_species: string;
   scientific_name?: string | null;
@@ -71,10 +80,22 @@ export interface HistoryLog {
 
 export interface PaginatedHistoryResponse {
   items: HistoryLog[];
+  total: number;
   total_count: number;
   page: number;
+  limit: number;
   size: number;
+  total_pages: number;
   pages: number;
+}
+
+export interface CreateHistoryPayload {
+  disease_id: string;
+  disease_name?: string;
+  confidence_score: number;
+  s3_storage_uri?: string | null;
+  image_b64?: string | null;
+  bounding_box?: BoundingBox | null;
 }
 
 export interface DiseaseInfo {
@@ -87,3 +108,38 @@ export interface DiseaseInfo {
   symptoms?: string[];
   remedies?: Remedy[];
 }
+
+export interface AdminUserItem extends User {
+  history_count: number;
+}
+
+export interface AdminPaginatedUsersResponse {
+  items: AdminUserItem[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export interface AdminHistoryItem extends HistoryLog {
+  user_name: string;
+  email_address: string;
+}
+
+export interface AdminPaginatedHistoryResponse {
+  items: AdminHistoryItem[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export interface RemedyMutationPayload {
+  disease_id: string;
+  remedy_type: string;
+  title: string;
+  description: string;
+  application_instructions?: string;
+  category: string;
+}
+
