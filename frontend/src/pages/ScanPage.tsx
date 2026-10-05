@@ -353,7 +353,7 @@ export const ScanPage: React.FC = () => {
                     isConfirmedInfection={Boolean(isConfirmedInfection)}
                     isHealthy={Boolean(isHealthy)}
                     camHeatmapB64={currentResult?.cam_heatmap_b64}
-                    showHeatmap={showHeatmap}
+                    showHeatmap={showHeatmap && isFrozen}
                   />
 
                   {/* Continuous Radar Line (Only active when auto-sampling) */}
@@ -486,7 +486,7 @@ export const ScanPage: React.FC = () => {
                         ? 'bg-amber-100 text-amber-900 border-amber-300'
                         : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
                     }`}
-                    title="Toggle Layer 2 attention saliency map"
+                    title="Toggle Layer 2 attention saliency map (renders on freeze-frame or upload)"
                   >
                     <span>Heatmap: {showHeatmap ? 'ON' : 'OFF'}</span>
                   </button>

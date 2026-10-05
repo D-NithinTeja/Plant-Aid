@@ -29,14 +29,14 @@ export const BoundingBoxOverlay: React.FC<BoundingBoxOverlayProps> = ({
         <img
           src={heatmapDataUri}
           alt="Lesion Attention Saliency Map"
-          className="absolute inset-0 w-full h-full object-contain pointer-events-none opacity-80 mix-blend-screen transition-opacity duration-300 z-10"
+          className="absolute inset-0 w-full h-full object-contain pointer-events-none opacity-80 mix-blend-screen transition-opacity duration-200 z-10"
         />
       )}
 
       {/* Layer 1: Two-Layer Lesion ROI Bounding Box */}
       {boundingBox && (
         <div
-          className={`absolute pointer-events-none transition-all duration-300 rounded-lg border-2 z-20 ${
+          className={`absolute pointer-events-none transition-all duration-150 rounded-lg border-2 z-20 ${
             isConfirmedInfection
               ? 'border-red-500 bg-red-500/15 shadow-[0_0_15px_rgba(239,68,68,0.5)]'
               : isHealthy
