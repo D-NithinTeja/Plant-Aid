@@ -251,6 +251,7 @@ def verify_2fa(req: TwoFactorVerifyRequest, db: Session = Depends(get_db)):
     # Verification successful: clear challenge state and activate user
     if user.account_status == "PENDING_VERIFICATION":
         user.account_status = "ACTIVE"
+    user.last_login_at = get_now_utc()
     user.active_session_id = None
     user.active_2fa_otp = None
     user.otp_expiry_time = None

@@ -62,6 +62,7 @@ class UserResponse(BaseModel):
     role: str = "user"
     is_2fa_enabled: bool
     account_status: str
+    last_login_at: datetime.datetime | None = None
     created_at: datetime.datetime | None = None
     session_id: str | None = Field(
         None, description="Active challenge session id for verification"

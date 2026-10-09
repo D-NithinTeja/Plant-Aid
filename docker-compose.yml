@@ -1,0 +1,63 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: plant-aid-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      - APP_NAME=Plant-Aid API
+      - APP_DEBUG=${APP_DEBUG:-True}
+      - PLANT_AID_APP_DEBUG=${APP_DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:-super-secret-plant-aid-jwt-key-change-in-production}
+      - PLANT_AID_SECRET_KEY=${SECRET_KEY:-super-secret-plant-aid-jwt-key-change-in-production}
+      - DATABASE_URL=sqlite:////app/data/plant_aid.db
+      - PLANT_AID_DATABASE_URL=sqlite:////app/data/plant_aid.db
+      - UPLOAD_DIR=/app/uploads
+      - PLANT_AID_UPLOAD_DIR=/app/uploads
+      - OTP_PROVIDER=${OTP_PROVIDER:-smtp}
+      - PLANT_AID_OTP_PROVIDER=${OTP_PROVIDER:-smtp}
+      - OTP_ALLOW_CONSOLE_FALLBACK=${OTP_ALLOW_CONSOLE_FALLBACK:-True}
+      - PLANT_AID_OTP_ALLOW_CONSOLE_FALLBACK=${OTP_ALLOW_CONSOLE_FALLBACK:-True}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_USE_STARTTLS=${SMTP_USE_STARTTLS:-True}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-noreply@plant-aid.org}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Plant-Aid Security}
+      - ML_DEVICE=cpu
+      - PLANT_AID_ML_DEVICE=cpu
+    volumes:
+      - backend_data:/app/data
+      - backend_uploads:/app/uploads
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import urllib.request, sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').getcode() == 200 else 1)"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: plant-aid-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  backend_data:
+    name: plant_aid_backend_data
+  backend_uploads:
+    name: plant_aid_backend_uploads
