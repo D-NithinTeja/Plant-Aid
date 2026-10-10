@@ -112,7 +112,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div>
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight group-hover:text-emerald-950 transition-colors">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight group-hover:text-emerald-950 transition-colors">
                   Instant Camera Scanner
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
@@ -136,7 +136,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div>
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight group-hover:text-amber-950 transition-colors">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight group-hover:text-amber-950 transition-colors">
                   Targeted Remedies
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
@@ -160,7 +160,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div>
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight group-hover:text-teal-950 transition-colors">
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight group-hover:text-teal-950 transition-colors">
                   Diagnosis History
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
@@ -204,16 +204,11 @@ export const LandingPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {/* Member 1: Donthula Nithin Teja */}
                   <div className="p-4 rounded-2xl bg-white/75 border border-emerald-950/10 shadow-xs hover:border-emerald-500/30 transition-all backdrop-blur-md flex flex-col justify-between space-y-3">
-                    <div className="flex items-center space-x-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-600 to-agri-800 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 select-none">
-                        NT
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 truncate" title="Donthula Nithin Teja">
+                        Donthula Nithin Teja
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-slate-900 truncate" title="Donthula Nithin Teja">
-                          Donthula Nithin Teja
-                        </div>
-                        <div className="text-[10px] text-slate-500">Student Developer</div>
-                      </div>
+                      <div className="text-[10px] text-slate-500">Student Developer</div>
                     </div>
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                       <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Roll No</span>
@@ -225,16 +220,11 @@ export const LandingPage: React.FC = () => {
 
                   {/* Member 2: Ghanta Bhavana Sri Sai */}
                   <div className="p-4 rounded-2xl bg-white/75 border border-emerald-950/10 shadow-xs hover:border-emerald-500/30 transition-all backdrop-blur-md flex flex-col justify-between space-y-3">
-                    <div className="flex items-center space-x-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-teal-600 to-emerald-800 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 select-none">
-                        BS
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 truncate" title="Ghanta Bhavana Sri Sai">
+                        Ghanta Bhavana Sri Sai
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-slate-900 truncate" title="Ghanta Bhavana Sri Sai">
-                          Ghanta Bhavana Sri Sai
-                        </div>
-                        <div className="text-[10px] text-slate-500">Student Developer</div>
-                      </div>
+                      <div className="text-[10px] text-slate-500">Student Developer</div>
                     </div>
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                       <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Roll No</span>
@@ -246,16 +236,11 @@ export const LandingPage: React.FC = () => {
 
                   {/* Member 3: Yash Roshan */}
                   <div className="p-4 rounded-2xl bg-white/75 border border-emerald-950/10 shadow-xs hover:border-emerald-500/30 transition-all backdrop-blur-md flex flex-col justify-between space-y-3">
-                    <div className="flex items-center space-x-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-600 to-teal-800 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0 select-none">
-                        YR
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 truncate" title="Yash Roshan">
+                        Yash Roshan
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-slate-900 truncate" title="Yash Roshan">
-                          Yash Roshan
-                        </div>
-                        <div className="text-[10px] text-slate-500">Student Developer</div>
-                      </div>
+                      <div className="text-[10px] text-slate-500">Student Developer</div>
                     </div>
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                       <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Roll No</span>
@@ -279,7 +264,7 @@ export const LandingPage: React.FC = () => {
                       <GraduationCap className="w-5 h-5 text-white" />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-xs font-extrabold text-slate-900 truncate">
+                      <div className="text-xs font-bold text-slate-900 truncate">
                         Prof. Jaidhar C. D.
                       </div>
                       <div className="text-[11px] font-medium text-emerald-800">
@@ -313,14 +298,6 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       </motion.div>
-
-      {/* Persistent Bottom-Left Corner Copyright Claim Tag */}
-      <div className="fixed bottom-4 left-4 sm:left-6 z-40 pointer-events-none">
-        <div className="glass-frost px-3.5 py-1.5 rounded-full border border-white/80 shadow-md text-[11px] text-slate-700 backdrop-blur-xl font-medium select-none pointer-events-auto flex items-center space-x-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-          <span>&copy; {new Date().getFullYear()} Plant-Aid. All rights reserved.</span>
-        </div>
-      </div>
     </div>
   );
 };
