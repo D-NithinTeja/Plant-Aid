@@ -10,20 +10,24 @@ import {
   AlertCircle,
   KeyRound,
   CheckCircle2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { PlantAidIcon } from '../components/layout/PlantAidLogo';
 import { TwoFactorChallengeResponse } from '../types';
 
 export const AuthPage: React.FC = () => {
-  const { login, verify2FA, resendOTP, register, isAuthenticated } = useAuth();
+  const { login, verify2FA, resendOTP, register, forgotPassword, resetPassword, isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   const queryParams = new URLSearchParams(location.search);
-  const initialMode = queryParams.get('mode') === 'register' ? 'register' : 'login';
+  const queryMode = queryParams.get('mode');
+  const initialMode =
+    queryMode === 'register' || queryMode === 'forgot' ? queryMode : 'login';
 
-  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>(initialMode);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState<number>(60);
@@ -36,6 +40,12 @@ export const AuthPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Forgot Password Flow State
+  const [forgotStep, setForgotStep] = useState<'email' | 'reset'>('email');
+  const [resetOtp, setResetOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
 
   // 2FA Challenge State
   const [challenge, setChallenge] = useState<TwoFactorChallengeResponse | null>(null);
@@ -197,6 +207,73 @@ export const AuthPage: React.FC = () => {
     }
   };
 
+  // Enter Forgot Password mode
+  const enterForgotMode = () => {
+    setMode('forgot');
+    setForgotStep('email');
+    setResetOtp('');
+    setNewPassword('');
+    setErrorMsg(null);
+    setSuccessMsg(null);
+  };
+
+  // Submit Forgot Password (Step 1: request reset code)
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    if (!email.trim()) {
+      setErrorMsg('Please enter your registered email address.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await forgotPassword(email.trim());
+      setSuccessMsg(res.message);
+      setForgotStep('reset');
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      setErrorMsg(typeof detail === 'string' ? detail : 'Failed to request a reset code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Submit Password Reset (Step 2: verify code + set new password)
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    if (!resetOtp.trim() || resetOtp.trim().length !== 6) {
+      setErrorMsg('Please enter the valid 6-digit reset code.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setErrorMsg('New password must be at least 8 characters long.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await resetPassword(email.trim(), resetOtp, newPassword);
+      setSuccessMsg('Password reset successful! You can now sign in with your new password.');
+      setMode('login');
+      setIdentifier(email.trim());
+      setPassword('');
+      setForgotStep('email');
+      setResetOtp('');
+      setNewPassword('');
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      setErrorMsg(typeof detail === 'string' ? detail : 'Failed to reset password. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-transparent">
       <div className="max-w-md w-full space-y-8 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200 shadow-elevated">
@@ -205,12 +282,20 @@ export const AuthPage: React.FC = () => {
           <Link to="/" className="inline-flex items-center justify-center group mb-2" title="Return to Home">
             <PlantAidIcon size={48} className="transition-transform group-hover:scale-105 shadow-sm rounded-xl" />
           </Link>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            {challenge ? 'Two-Factor Authentication' : mode === 'login' ? 'Sign In to Plant-Aid' : 'Create Farm Account'}
+          <h2 className="text-2xl font-normal text-slate-900 tracking-tight">
+            {challenge
+              ? 'Two-Factor Authentication'
+              : mode === 'forgot'
+              ? 'Reset Your Password'
+              : mode === 'login'
+              ? 'Sign In to Plant-Aid'
+              : 'Create Farm Account'}
           </h2>
           <p className="text-xs text-slate-500 max-w-xs mx-auto">
             {challenge
               ? 'Enter the 6-digit security code dispatched to your registered contact.'
+              : mode === 'forgot'
+              ? 'Verify your email with a 6-digit code, then set a new password.'
               : mode === 'login'
               ? 'Access real-time crop disease diagnosis, remedies, and field records.'
               : 'Join agricultural professionals diagnosing groundnut foliage with AI.'}
@@ -313,6 +398,143 @@ export const AuthPage: React.FC = () => {
               ← Cancel and return to sign in
             </button>
           </form>
+        ) : mode === 'forgot' ? (
+          /* Forgot Password Flow */
+          forgotStep === 'email' ? (
+            <form onSubmit={handleForgotSubmit} className="space-y-4">
+              <p className="text-xs text-slate-500 leading-snug">
+                Enter the email address linked to your account and we will dispatch a 6-digit
+                reset code.
+              </p>
+              <div>
+                <label htmlFor="forgot-email" className="block text-xs font-semibold text-slate-700 mb-1">
+                  Registered Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                  <input
+                    id="forgot-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="agronomist@farm.org"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-agri-500 focus:border-agri-500"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 px-4 rounded-xl bg-agri-700 hover:bg-agri-800 text-white font-bold text-sm shadow-md transition-colors disabled:opacity-50 touch-target flex items-center justify-center space-x-2"
+              >
+                {loading ? (
+                  <span>Requesting Reset Code...</span>
+                ) : (
+                  <>
+                    <span>Send Reset Code</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('login');
+                  setErrorMsg(null);
+                  setSuccessMsg(null);
+                }}
+                className="w-full text-center text-xs text-slate-500 hover:text-slate-800 font-medium"
+              >
+                ← Back to sign in
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleResetPasswordSubmit} className="space-y-5" autoComplete="off">
+              <div className="p-4 rounded-2xl bg-agri-50/60 border border-agri-200/80 text-center space-y-2">
+                <KeyRound className="w-8 h-8 text-agri-700 mx-auto" />
+                <div className="text-xs font-semibold text-agri-900">Reset Code Dispatched</div>
+                <p className="text-[11px] text-agri-700">
+                  Enter the 6-digit code sent to{' '}
+                  <span className="font-semibold">{email.trim()}</span>
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="reset-otp" className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                  6-Digit Reset Code
+                </label>
+                <input
+                  id="reset-otp"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={resetOtp}
+                  onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, ''))}
+                  placeholder="123456"
+                  className="w-full px-4 py-3 text-center font-mono text-2xl font-bold tracking-[0.3em] rounded-xl border border-slate-300 focus:ring-2 focus:ring-agri-500 focus:border-agri-500 bg-white"
+                  autoFocus
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  disabled={loading}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="new-password" className="block text-xs font-semibold text-slate-700 mb-1">
+                  New Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                  <input
+                    id="new-password"
+                    type="password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Min 8 characters"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-agri-500 focus:border-agri-500"
+                    autoComplete="new-password"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || resetOtp.length !== 6}
+                className="w-full py-3.5 px-4 rounded-xl bg-agri-700 hover:bg-agri-800 text-white font-bold text-sm shadow-md transition-colors disabled:opacity-50 touch-target flex items-center justify-center space-x-2"
+              >
+                {loading ? (
+                  <span>Resetting Password...</span>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Reset Password</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotStep('email');
+                  setResetOtp('');
+                  setNewPassword('');
+                  setErrorMsg(null);
+                }}
+                className="w-full text-center text-xs text-slate-500 hover:text-slate-800 font-medium"
+              >
+                ← Use a different email address
+              </button>
+            </form>
+          )
         ) : (
           /* Normal Login / Register Tabs */
           <div className="space-y-6">
@@ -368,14 +590,33 @@ export const AuthPage: React.FC = () => {
                   <div className="relative">
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-agri-500 focus:border-agri-500"
+                      className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-agri-500 focus:border-agri-500"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
+                </div>
+
+                <div className="flex justify-end -mt-1">
+                  <button
+                    type="button"
+                    onClick={enterForgotMode}
+                    className="text-xs font-semibold text-agri-700 hover:text-agri-900 transition-colors"
+                  >
+                    Forgot password?
+                  </button>
                 </div>
 
                 <button
@@ -447,13 +688,22 @@ export const AuthPage: React.FC = () => {
                   <div className="relative">
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Min 8 characters"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-agri-500 focus:border-agri-500"
+                      className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-agri-500 focus:border-agri-500"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 

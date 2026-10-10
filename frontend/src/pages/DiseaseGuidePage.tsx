@@ -1,27 +1,20 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import {
   BookOpen,
   Sprout,
   FlaskConical,
   ShieldCheck,
-  AlertCircle,
   CheckCircle2,
   Search,
   Eye,
-  Info,
   X,
-  Droplets,
   ChevronRight,
   Sparkles,
-  LayoutGrid,
-  SplitSquareVertical,
 } from 'lucide-react';
 import { Surface } from '../components/ui/Surface';
 import { Badge } from '../components/ui/Badge';
-import { Button } from '../components/ui/Button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
 import ExpandableProfileCard from '../components/watermelon/original';
 
 interface DiseaseGuideEntry {
@@ -369,8 +362,6 @@ const CATALOGUE: DiseaseGuideEntry[] = [
 export const DiseaseGuidePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [activeSlug, setActiveSlug] = useState<string>('early_leaf_spot');
-  const [viewMode, setViewMode] = useState<'cards' | 'console'>('cards');
 
   const categories = [
     'All',
@@ -408,11 +399,6 @@ export const DiseaseGuidePage: React.FC = () => {
     );
   });
 
-  const activeDisease =
-    CATALOGUE.find((d) => d.slug === activeSlug) ||
-    filteredCatalogue[0] ||
-    CATALOGUE[0];
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -429,7 +415,7 @@ export const DiseaseGuidePage: React.FC = () => {
                 <BookOpen className="w-4 h-4 text-agri-600" />
                 <span>Field Diagnostics Reference</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-normal text-slate-900 tracking-tight">
                 Groundnut Pathology & Treatment Guide
               </h1>
               <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
@@ -475,36 +461,6 @@ export const DiseaseGuidePage: React.FC = () => {
                   </button>
                 ))}
               </div>
-
-              {/* View Switcher: Interactive Cards vs Split Console */}
-              <div className="flex items-center p-1 rounded-xl bg-slate-950/5 border border-emerald-950/10 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setViewMode('cards')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    viewMode === 'cards'
-                      ? 'bg-white text-agri-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  title="Expandable card gallery"
-                >
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                  <span>Cards</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode('console')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    viewMode === 'console'
-                      ? 'bg-white text-agri-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  title="Master-detail split console"
-                >
-                  <SplitSquareVertical className="w-3.5 h-3.5" />
-                  <span>Split View</span>
-                </button>
-              </div>
             </div>
           </div>
         </Surface>
@@ -517,7 +473,7 @@ export const DiseaseGuidePage: React.FC = () => {
               Try searching for a different symptom, remedy, or switch category filters.
             </p>
           </Surface>
-        ) : viewMode === 'cards' ? (
+        ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCatalogue.map((disease) => (
               <ExpandableProfileCard
@@ -535,7 +491,7 @@ export const DiseaseGuidePage: React.FC = () => {
                   <div className="space-y-5">
                     {/* Quick Identification */}
                     <div className="p-4 rounded-2xl bg-emerald-950/5 border border-emerald-950/10 space-y-2">
-                      <div className="text-xs font-extrabold uppercase tracking-wider text-agri-800">
+                      <div className="text-xs font-bold uppercase tracking-wider text-agri-800">
                         Quick Identification
                       </div>
                       <p className="text-xs text-slate-700 leading-relaxed font-medium">
@@ -621,235 +577,6 @@ export const DiseaseGuidePage: React.FC = () => {
               />
             ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left: Disease Navigation Rail */}
-            <div className="lg:col-span-4 space-y-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-agri-950/70 px-2 pb-1">
-              Pathology Classes ({filteredCatalogue.length})
-            </div>
-
-            <div className="space-y-2">
-              {filteredCatalogue.map((disease) => {
-                const isSelected = activeDisease.slug === disease.slug;
-
-                return (
-                  <motion.button
-                    key={disease.slug}
-                    onClick={() => setActiveSlug(disease.slug)}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
-                    className={`w-full text-left p-3.5 rounded-2xl transition-all duration-200 flex items-center justify-between gap-3 ${
-                      isSelected
-                        ? 'bg-white/90 shadow-[0_4px_20px_rgba(20,83,45,0.08)] border-2 border-agri-600/40'
-                        : 'bg-white/50 hover:bg-white/70 border border-white/60 shadow-xs'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3 min-w-0">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 border border-emerald-950/10">
-                        <img
-                          src={disease.image}
-                          alt={disease.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-bold text-slate-900 text-sm truncate">
-                          {disease.name}
-                        </div>
-                        <div className="text-[11px] text-slate-500 truncate">
-                          {disease.localName}
-                        </div>
-                      </div>
-                    </div>
-
-                    <Badge variant={disease.badgeVariant} className="flex-shrink-0 text-[10px]">
-                      {disease.severity}
-                    </Badge>
-                  </motion.button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right: Active Disease Console Surface */}
-          <div className="lg:col-span-8">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeDisease.slug}
-                initial={{ opacity: 0, x: 8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -8 }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <Surface className="overflow-hidden">
-                  {/* Specimen Hero Banner */}
-                  <div className="relative aspect-[16/9] sm:aspect-[21/9] max-h-72 w-full overflow-hidden bg-slate-900">
-                    <img
-                      src={activeDisease.image}
-                      alt={activeDisease.name}
-                      className="w-full h-full object-cover opacity-95 hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/30" />
-
-                    <div className="absolute top-4 left-4 flex gap-2">
-                      <Badge variant={activeDisease.badgeVariant} className="backdrop-blur-md">
-                        {activeDisease.severity}
-                      </Badge>
-                      <Badge variant="outline" className="bg-slate-900/60 text-white border-white/30 backdrop-blur-md">
-                        {activeDisease.category}
-                      </Badge>
-                    </div>
-
-                    <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <div className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                        {activeDisease.name}
-                      </div>
-                      <div className="text-xs text-emerald-200/90 font-mono italic mt-0.5">
-                        {activeDisease.scientificName} &bull; {activeDisease.localName}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Disease Content & Interactive Remediation Tabs */}
-                  <div className="p-6 sm:p-8 space-y-6">
-                    {/* Quick Identification Banner */}
-                    <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/70 flex items-start space-x-3">
-                      <Eye className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
-                      <div className="space-y-1 text-xs text-amber-950">
-                        <div className="font-bold">Quick Field Identification:</div>
-                        <p className="leading-relaxed">{activeDisease.quickCheck}</p>
-                      </div>
-                    </div>
-
-                    {/* Plain Language Summary */}
-                    <div className="space-y-1.5">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-agri-950/70">
-                        Overview & Timing
-                      </h3>
-                      <p className="text-slate-700 text-sm leading-relaxed">
-                        {activeDisease.simpleSummary}
-                      </p>
-                      <div className="flex items-center space-x-2 text-xs text-slate-500 pt-1">
-                        <Info className="w-3.5 h-3.5 text-agri-600" />
-                        <span><strong>When to Act:</strong> {activeDisease.whenToAct}</span>
-                      </div>
-                    </div>
-
-                    {/* Integrated Radix Tabs for Actionable Protocols */}
-                    <Tabs defaultValue="symptoms" className="w-full pt-2">
-                      <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1.5 bg-emerald-950/5 rounded-xl">
-                        <TabsTrigger value="symptoms" className="flex-1 min-w-[120px]">
-                          <AlertCircle className="w-3.5 h-3.5 mr-1.5 text-amber-600" />
-                          <span>Symptoms ({activeDisease.symptoms.length})</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="organic" className="flex-1 min-w-[120px]">
-                          <Sprout className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
-                          <span>Organic Care</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="chemical" className="flex-1 min-w-[120px]">
-                          <FlaskConical className="w-3.5 h-3.5 mr-1.5 text-agri-600" />
-                          <span>Chemical Spray</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="cultural" className="flex-1 min-w-[120px]">
-                          <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-soil-700" />
-                          <span>Prevention</span>
-                        </TabsTrigger>
-                      </TabsList>
-
-                      {/* Tab 1: Symptoms Checklist */}
-                      <TabsContent value="symptoms" className="space-y-3 pt-2">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {activeDisease.symptoms.map((symptom, idx) => (
-                            <div
-                              key={idx}
-                              className="p-3.5 rounded-xl bg-white/60 border border-emerald-950/5 flex items-start space-x-3 text-xs text-slate-800"
-                            >
-                              <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center font-bold flex-shrink-0 text-[10px]">
-                                {idx + 1}
-                              </span>
-                              <span className="leading-relaxed">{symptom}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </TabsContent>
-
-                      {/* Tab 2: Organic Remedies */}
-                      <TabsContent value="organic" className="space-y-3 pt-2">
-                        {activeDisease.organicRemedies.map((remedy, idx) => (
-                          <div
-                            key={idx}
-                            className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200/60 space-y-2 text-xs"
-                          >
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                              <h4 className="font-bold text-emerald-950 text-sm">
-                                {remedy.name}
-                              </h4>
-                              <span className="inline-flex items-center space-x-1 font-mono font-bold text-emerald-800 bg-white/80 px-2.5 py-0.5 rounded-lg border border-emerald-200 text-[11px] self-start sm:self-auto">
-                                <Droplets className="w-3 h-3 text-emerald-600" />
-                                <span>Dosage: {remedy.dosage}</span>
-                              </span>
-                            </div>
-                            <p className="text-emerald-900 leading-relaxed pt-1">
-                              {remedy.instruction}
-                            </p>
-                          </div>
-                        ))}
-                      </TabsContent>
-
-                      {/* Tab 3: Chemical Remedies */}
-                      <TabsContent value="chemical" className="space-y-3 pt-2">
-                        {activeDisease.chemicalRemedies.length > 0 ? (
-                          activeDisease.chemicalRemedies.map((remedy, idx) => (
-                            <div
-                              key={idx}
-                              className="p-4 rounded-xl bg-agri-50/50 border border-agri-200/60 space-y-2 text-xs"
-                            >
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                                <h4 className="font-bold text-agri-950 text-sm">
-                                  {remedy.name}
-                                </h4>
-                                <span className="inline-flex items-center space-x-1 font-mono font-bold text-agri-800 bg-white/80 px-2.5 py-0.5 rounded-lg border border-agri-200 text-[11px] self-start sm:self-auto">
-                                  <Droplets className="w-3 h-3 text-agri-600" />
-                                  <span>Dosage: {remedy.dosage}</span>
-                                </span>
-                              </div>
-                              <p className="text-agri-900 leading-relaxed pt-1">
-                                {remedy.instruction}
-                              </p>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="p-4 rounded-xl bg-white/50 border border-emerald-950/5 text-xs text-slate-600 italic">
-                            No synthetic chemicals required for healthy foliage baseline.
-                          </div>
-                        )}
-                      </TabsContent>
-
-                      {/* Tab 4: Cultural & Prevention */}
-                      <TabsContent value="cultural" className="space-y-3 pt-2">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {activeDisease.culturalRemedies.map((remedy, idx) => (
-                            <div
-                              key={idx}
-                              className="p-4 rounded-xl bg-white/60 border border-emerald-950/5 space-y-1.5 text-xs"
-                            >
-                              <div className="font-bold text-slate-900 text-sm flex items-center space-x-2">
-                                <span className="w-2 h-2 rounded-full bg-agri-600" />
-                                <span>{remedy.name}</span>
-                              </div>
-                              <p className="text-slate-600 leading-relaxed">{remedy.instruction}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </div>
-                </Surface>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
         )}
       </div>
     </motion.div>

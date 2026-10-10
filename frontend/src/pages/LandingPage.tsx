@@ -6,7 +6,6 @@ import {
   BookOpen,
   ArrowRight,
   ArrowUpRight,
-  ShieldCheck,
   History,
   GraduationCap,
   Users,
@@ -288,11 +287,6 @@ export const LandingPage: React.FC = () => {
 
         {/* Bottom Left Corner Copyright Claim */}
         <div className="pt-2 pb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-slate-500 gap-2">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-white/70 backdrop-blur-md border border-emerald-950/10 shadow-xs text-slate-600 font-medium select-none">
-            <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-            <span>&copy; {new Date().getFullYear()} Plant-Aid. All rights reserved.</span>
-          </div>
-
           <div className="text-[11px] text-slate-400 font-medium pl-1 sm:pl-0">
             Groundnut Foliar Diagnostic &amp; Treatment Advisory System
           </div>

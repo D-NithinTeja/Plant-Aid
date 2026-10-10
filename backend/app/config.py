@@ -72,6 +72,7 @@ class Settings(BaseSettings):
     # Rate Limiting Settings
     RATE_LIMIT_INFERENCE: str = "60/minute"
     RATE_LIMIT_LOGIN: str = "10/minute"
+    RATE_LIMIT_PASSWORD_RESET: str = "5/minute"
 
     model_config = SettingsConfigDict(
         env_file=(

@@ -94,7 +94,7 @@ export default function ExpandableProfileCard({
           </motion.p>
           <motion.h3
             layoutId={`title-${layoutId}`}
-            className="text-lg sm:text-xl font-extrabold tracking-tight text-white drop-shadow-sm"
+            className="text-lg sm:text-xl font-bold tracking-tight text-white drop-shadow-sm"
           >
             {title}
           </motion.h3>
@@ -157,7 +157,7 @@ export default function ExpandableProfileCard({
 
                   <motion.h3
                     layoutId={`title-${layoutId}`}
-                    className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 pb-3 border-b border-emerald-950/10"
+                    className="text-2xl sm:text-3xl font-normal tracking-tight text-slate-900 pb-3 border-b border-emerald-950/10"
                   >
                     {title}
                   </motion.h3>

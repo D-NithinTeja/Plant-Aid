@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import api from '../services/api';
-import { User, TokenResponse, TwoFactorChallengeResponse } from '../types';
+import {
+  User,
+  TokenResponse,
+  TwoFactorChallengeResponse,
+  MessageResponse,
+  UpdateProfilePayload,
+  ChangePasswordPayload,
+} from '../types';
 
 interface AuthContextType {
   user: User | null;
@@ -12,6 +19,10 @@ interface AuthContextType {
   verify2FA: (sessionId: string, otpCode: string) => Promise<TokenResponse>;
   resendOTP: (sessionId: string) => Promise<TwoFactorChallengeResponse>;
   register: (name: string, email: string, password: string, phone?: string | null) => Promise<User>;
+  forgotPassword: (email: string) => Promise<MessageResponse>;
+  resetPassword: (email: string, otpCode: string, newPassword: string) => Promise<MessageResponse>;
+  updateProfile: (payload: UpdateProfilePayload) => Promise<User>;
+  changePassword: (payload: ChangePasswordPayload) => Promise<MessageResponse>;
   logout: () => void;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
@@ -100,6 +111,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return res.data;
   };
 
+  // Request a password reset OTP
+  const forgotPassword = async (email: string): Promise<MessageResponse> => {
+    const res = await api.post<MessageResponse>('/api/auth/forgot-password', {
+      email_address: email,
+    });
+    return res.data;
+  };
+
+  // Complete the password reset with OTP + new password
+  const resetPassword = async (email: string, otpCode: string, newPassword: string): Promise<MessageResponse> => {
+    const res = await api.post<MessageResponse>('/api/auth/reset-password', {
+      email_address: email,
+      otp_code: otpCode.trim(),
+      new_password: newPassword,
+    });
+    return res.data;
+  };
+
+  // Update authenticated user profile details
+  const updateProfile = async (payload: UpdateProfilePayload): Promise<User> => {
+    const res = await api.patch<User>('/api/auth/me', payload);
+    setUser(res.data);
+    localStorage.setItem('plant_aid_user', JSON.stringify(res.data));
+    return res.data;
+  };
+
+  // Update authenticated user password
+  const changePassword = async (payload: ChangePasswordPayload): Promise<MessageResponse> => {
+    const res = await api.post<MessageResponse>('/api/auth/change-password', payload);
+    return res.data;
+  };
+
   // Logout
   const logout = () => {
     setToken(null);
@@ -122,6 +165,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         verify2FA,
         resendOTP,
         register,
+        forgotPassword,
+        resetPassword,
+        updateProfile,
+        changePassword,
         logout,
         setUser,
       }}

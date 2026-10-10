@@ -135,6 +135,48 @@ class BackendTestSuite(unittest.TestCase):
         self.assertIn("s3_storage_uri", log_item)
         self.assertIn("confidence_score", log_item)
 
+    def test_06_profile_and_password_update(self):
+        headers = getattr(BackendTestSuite, "headers", {})
+        # 1. Update name and phone number via PATCH /api/auth/me
+        patch_res = self.client.patch(
+            "/api/auth/me",
+            json={"user_name": "Updated Agronomist", "phone_number": "+1987654321"},
+            headers=headers,
+        )
+        self.assertEqual(patch_res.status_code, 200)
+        self.assertEqual(patch_res.json()["user_name"], "Updated Agronomist")
+        self.assertEqual(patch_res.json()["phone_number"], "+1987654321")
+
+        # Restore original phone number so re-runs stay idempotent
+        self.client.patch(
+            "/api/auth/me",
+            json={"user_name": "Test Farmer", "phone_number": "+1234567890"},
+            headers=headers,
+        )
+
+        # 2. Reject invalid current password on POST /api/auth/change-password
+        bad_pw_res = self.client.post(
+            "/api/auth/change-password",
+            json={"current_password": "WrongPassword!", "new_password": "NewSecurePassword123!"},
+            headers=headers,
+        )
+        self.assertEqual(bad_pw_res.status_code, 400)
+
+        # 3. Accept valid current password and restore original password
+        ok_pw_res = self.client.post(
+            "/api/auth/change-password",
+            json={"current_password": "SecurePassword123!", "new_password": "NewSecurePassword123!"},
+            headers=headers,
+        )
+        self.assertEqual(ok_pw_res.status_code, 200)
+
+        restore_pw_res = self.client.post(
+            "/api/auth/change-password",
+            json={"current_password": "NewSecurePassword123!", "new_password": "SecurePassword123!"},
+            headers=headers,
+        )
+        self.assertEqual(restore_pw_res.status_code, 200)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,6 +11,12 @@ logger = logging.getLogger("plant_aid.otp_service")
 logging.basicConfig(level=logging.INFO)
 
 OTP_SUBJECT = "Your Plant-Aid Verification Code"
+PASSWORD_RESET_SUBJECT = "Your Plant-Aid Password Reset Code"
+
+PURPOSE_SUBJECTS = {
+    "verification": OTP_SUBJECT,
+    "password_reset": PASSWORD_RESET_SUBJECT,
+}
 
 
 class OTPService:
@@ -18,21 +24,33 @@ class OTPService:
     def provider(self) -> str:
         return settings.OTP_PROVIDER.lower()
 
-    def _build_email_content(self, otp_code: str) -> tuple[str, str]:
+    def _build_email_content(self, otp_code: str, purpose: str = "verification") -> tuple[str, str]:
         """Constructs plain-text and responsive branded HTML email bodies."""
-        text_body = (
-            f"Plant-Aid Security Verification\n\n"
-            f"Your verification code is: {otp_code}\n\n"
-            f"This code expires in {settings.OTP_EXPIRE_MINUTES} minutes.\n"
-            f"If you did not request this verification code, please ignore this email.\n"
+        is_reset = purpose == "password_reset"
+        headline = "Password Reset" if is_reset else "Account Verification"
+        action_line = (
+            "Use the one-time passcode below to reset your account password. For security "
+            "purposes, this code is valid for"
+            if is_reset
+            else "Use the one-time passcode below to complete your authentication. For security purposes, this code is valid for"
         )
 
+        text_body = (
+            f"Plant-Aid Security Verification\n\n"
+            f"Your {'password reset' if is_reset else 'verification'} code is: {otp_code}\n\n"
+            f"This code expires in {settings.OTP_EXPIRE_MINUTES} minutes.\n"
+            f"If you did not request this code, please ignore this email"
+            + (" and your password will remain unchanged." if is_reset else ".")
+            + "\n"
+        )
+
+        subject = PURPOSE_SUBJECTS.get(purpose, OTP_SUBJECT)
         html_body = f"""<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{OTP_SUBJECT}</title>
+  <title>{subject}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f4f6f4; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
   <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -49,9 +67,9 @@ class OTPService:
           <!-- Main Content -->
           <tr>
             <td style="padding: 36px 32px;">
-              <h2 style="margin: 0 0 12px; font-size: 20px; font-weight: 700; color: #0f172a;">Account Verification</h2>
+              <h2 style="margin: 0 0 12px; font-size: 20px; font-weight: 700; color: #0f172a;">{headline}</h2>
               <p style="margin: 0 0 24px; font-size: 14px; line-height: 1.6; color: #475569;">
-                Use the one-time passcode below to complete your authentication. For security purposes, this code is valid for <strong>{settings.OTP_EXPIRE_MINUTES} minutes</strong>.
+                {action_line} <strong>{settings.OTP_EXPIRE_MINUTES} minutes</strong>.
               </p>
               <!-- Code Box -->
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -85,12 +103,13 @@ class OTPService:
 </html>"""
         return text_body, html_body
 
-    def send_otp(self, destination: str, otp_code: str) -> bool:
+    def send_otp(self, destination: str, otp_code: str, purpose: str = "verification") -> bool:
         """
-        Dispatches the 2FA OTP to the user.
+        Dispatches the 2FA/reset OTP to the user.
 
         `destination` is a phone number or an email address; the channel is derived from it
         (an '@' means email), and the configured provider decides the transport.
+        `purpose` selects the email copy ("verification" or "password_reset").
         """
         channel = "email" if "@" in destination else "sms"
         provider = self.provider
@@ -99,12 +118,12 @@ class OTPService:
             return self._send_console(destination, otp_code, channel)
         if provider == "smtp":
             if channel == "email":
-                return self._send_smtp_email(destination, otp_code)
+                return self._send_smtp_email(destination, otp_code, purpose)
             logger.error("OTP provider 'smtp' does not support SMS transport.")
             return self._fallback_to_console(destination, otp_code, channel)
         if provider == "resend":
             if channel == "email":
-                return self._send_resend_email(destination, otp_code)
+                return self._send_resend_email(destination, otp_code, purpose)
             logger.error("OTP provider 'resend' does not support SMS transport.")
             return self._fallback_to_console(destination, otp_code, channel)
         if provider == "twilio":
@@ -114,7 +133,7 @@ class OTPService:
             return self._fallback_to_console(destination, otp_code, channel)
         if provider == "sendgrid":
             if channel == "email":
-                return self._send_sendgrid_email(destination, otp_code)
+                return self._send_sendgrid_email(destination, otp_code, purpose)
             logger.error("OTP provider 'sendgrid' does not support SMS transport.")
             return self._fallback_to_console(destination, otp_code, channel)
 
@@ -145,16 +164,17 @@ class OTPService:
         logger.error("OTP not delivered; provider dispatch failed.")
         return False
 
-    def _send_smtp_email(self, email: str, otp_code: str) -> bool:
+    def _send_smtp_email(self, email: str, otp_code: str, purpose: str = "verification") -> bool:
         if not (settings.SMTP_HOST and settings.SMTP_USERNAME and settings.SMTP_PASSWORD):
             logger.warning(
                 "SMTP credentials not fully configured; cannot send real email."
             )
             return self._fallback_to_console(email, otp_code, "email")
 
-        text_body, html_body = self._build_email_content(otp_code)
+        text_body, html_body = self._build_email_content(otp_code, purpose)
+        subject = PURPOSE_SUBJECTS.get(purpose, OTP_SUBJECT)
         message = EmailMessage()
-        message["Subject"] = f"{OTP_SUBJECT}: {otp_code}"
+        message["Subject"] = f"{subject}: {otp_code}"
         message["From"] = formataddr(
             (settings.SMTP_FROM_NAME, settings.SMTP_FROM_EMAIL)
         )
@@ -187,14 +207,15 @@ class OTPService:
             logger.error("Failed to send OTP email via SMTP: %s", exc)
             return self._fallback_to_console(email, otp_code, "email")
 
-    def _send_resend_email(self, email: str, otp_code: str) -> bool:
+    def _send_resend_email(self, email: str, otp_code: str, purpose: str = "verification") -> bool:
         if not settings.RESEND_API_KEY:
             logger.warning(
                 "Resend API key missing; cannot dispatch via Resend."
             )
             return self._fallback_to_console(email, otp_code, "email")
 
-        text_body, html_body = self._build_email_content(otp_code)
+        text_body, html_body = self._build_email_content(otp_code, purpose)
+        subject = PURPOSE_SUBJECTS.get(purpose, OTP_SUBJECT)
         url = "https://api.resend.com/emails"
         headers = {
             "Authorization": f"Bearer {settings.RESEND_API_KEY}",
@@ -203,7 +224,7 @@ class OTPService:
         payload = {
             "from": f"{settings.SMTP_FROM_NAME} <{settings.RESEND_FROM_EMAIL}>",
             "to": [email],
-            "subject": f"{OTP_SUBJECT}: {otp_code}",
+            "subject": f"{subject}: {otp_code}",
             "html": html_body,
             "text": text_body,
         }
@@ -247,14 +268,15 @@ class OTPService:
             logger.error(f"Failed to send Twilio SMS: {e}")
             return self._fallback_to_console(phone, otp_code, "sms")
 
-    def _send_sendgrid_email(self, email: str, otp_code: str) -> bool:
+    def _send_sendgrid_email(self, email: str, otp_code: str, purpose: str = "verification") -> bool:
         if not settings.SENDGRID_API_KEY:
             logger.warning(
                 "SendGrid API key missing, falling back to console dispatch."
             )
             return self._fallback_to_console(email, otp_code, "email")
 
-        text_body, html_body = self._build_email_content(otp_code)
+        text_body, html_body = self._build_email_content(otp_code, purpose)
+        subject = PURPOSE_SUBJECTS.get(purpose, OTP_SUBJECT)
         url = "https://api.sendgrid.com/v3/mail/send"
         headers = {
             "Authorization": f"Bearer {settings.SENDGRID_API_KEY}",
@@ -266,7 +288,7 @@ class OTPService:
                 "email": settings.SENDGRID_FROM_EMAIL,
                 "name": settings.SMTP_FROM_NAME,
             },
-            "subject": f"{OTP_SUBJECT}: {otp_code}",
+            "subject": f"{subject}: {otp_code}",
             "content": [
                 {
                     "type": "text/html",

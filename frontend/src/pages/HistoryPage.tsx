@@ -126,7 +126,7 @@ export const HistoryPage: React.FC = () => {
                 <History className="w-4 h-4 text-agri-600" />
                 <span>Field Audit Telemetry</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-normal text-slate-900 tracking-tight">
                 Specimen Diagnosis History
               </h1>
               <p className="text-xs sm:text-sm text-slate-600">
@@ -236,7 +236,7 @@ export const HistoryPage: React.FC = () => {
                       <div className="p-4 rounded-2xl bg-emerald-950/5 border border-emerald-950/10 space-y-3">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-slate-600 font-medium">Confidence Score</span>
-                          <span className="font-mono font-extrabold text-agri-800 text-sm">
+                          <span className="font-mono font-bold text-agri-800 text-sm">
                             {(item.confidence_score * 100).toFixed(1)}%
                           </span>
                         </div>

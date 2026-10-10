@@ -44,6 +44,27 @@ class ResendOTPRequest(BaseModel):
     session_id: str = Field(..., description="Active challenge session id")
 
 
+class ForgotPasswordRequest(BaseModel):
+    email_address: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    email_address: EmailStr = Field(..., description="Registered email the reset code was sent to")
+    otp_code: str = Field(..., min_length=6, max_length=6)
+    new_password: str = Field(..., min_length=6, max_length=72)
+
+
+class MessageResponse(BaseModel):
+    message: str
+    otp_code_dev: str | None = Field(
+        None,
+        description=(
+            "DEBUG ONLY. Populated only when APP_DEBUG=True so local and automated flows can "
+            "complete without a real SMS/email provider. It is always omitted in production."
+        ),
+    )
+
+
 class TokenResponse(BaseModel):
     token_type: str = "bearer"
     access_token: str
@@ -72,6 +93,16 @@ class UserResponse(BaseModel):
     )
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserProfileUpdate(BaseModel):
+    user_name: str | None = Field(None, min_length=2, max_length=100)
+    phone_number: str | None = Field(None, max_length=25)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=6, max_length=72)
 
 
 # --- Remedy & Disease Schemas ---

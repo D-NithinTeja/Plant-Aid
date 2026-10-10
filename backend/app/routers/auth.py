@@ -10,11 +10,16 @@ from app.database import get_db
 from app.limiter import limiter
 from app.models import User
 from app.schemas import (
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
+    MessageResponse,
     ResendOTPRequest,
+    ResetPasswordRequest,
     TokenResponse,
     TwoFactorChallengeResponse,
     TwoFactorVerifyRequest,
     UserLogin,
+    UserProfileUpdate,
     UserRegister,
     UserResponse,
 )
@@ -280,3 +285,168 @@ def verify_2fa(req: TwoFactorVerifyRequest, db: Session = Depends(get_db)):
 def get_me(current_user: User = Depends(get_current_user)):
     """Retrieves current logged-in user profile from validated JWT."""
     return current_user
+
+
+@router.patch("/me", response_model=UserResponse)
+def update_me(
+    payload: UserProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Updates the authenticated user's profile details (full name and phone number)."""
+    if payload.user_name is not None:
+        cleaned_name = payload.user_name.strip()
+        if len(cleaned_name) < 2:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Name must be at least 2 characters long.",
+            )
+        current_user.user_name = cleaned_name
+
+    if "phone_number" in payload.model_fields_set:
+        cleaned_phone = payload.phone_number.strip() if payload.phone_number else None
+        if cleaned_phone:
+            conflict = (
+                db.query(User)
+                .filter(User.phone_number == cleaned_phone, User.id != current_user.id)
+                .first()
+            )
+            if conflict:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="This phone number is already registered to another account.",
+                )
+        current_user.phone_number = cleaned_phone
+
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.post("/change-password", response_model=MessageResponse)
+def change_password(
+    req: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Verifies the current password and updates the authenticated user's password hash."""
+    if not verify_password(req.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect.",
+        )
+
+    current_user.password_hash = hash_password(req.new_password)
+    db.commit()
+    return MessageResponse(message="Password updated successfully.")
+
+
+@router.post("/forgot-password", response_model=MessageResponse)
+@limiter.limit(settings.RATE_LIMIT_PASSWORD_RESET)
+def forgot_password(request: Request, req: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Initiates a password reset by dispatching a 6-digit OTP to the registered email.
+
+    Always returns a generic response so account enumeration through this endpoint stays closed.
+    """
+    generic_message = (
+        "If an account exists for this email address, a password reset code has been sent. "
+        "Please check your inbox."
+    )
+
+    user = db.query(User).filter(User.email_address == req.email_address).first()
+    if not user:
+        return MessageResponse(message=generic_message)
+
+    # A reset supersedes any in-flight login/registration challenge (shared OTP columns).
+    otp_code = generate_otp_code(6)
+    session_id = str(uuid.uuid4())
+    expiry = get_now_utc() + datetime.timedelta(minutes=settings.OTP_EXPIRE_MINUTES)
+
+    user.active_session_id = session_id
+    user.active_2fa_otp = otp_code
+    user.otp_expiry_time = expiry
+    user.failed_otp_attempts = 0
+    user.otp_resend_count = 0
+    db.commit()
+
+    delivered = otp_service.send_otp(
+        destination=user.email_address, otp_code=otp_code, purpose="password_reset"
+    )
+    if not delivered and not (settings.APP_DEBUG or settings.OTP_ALLOW_CONSOLE_FALLBACK):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to send password reset email. Please try again later.",
+        )
+
+    return MessageResponse(
+        message=generic_message,
+        otp_code_dev=otp_code if (settings.APP_DEBUG and user) else None,
+    )
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+@limiter.limit(settings.RATE_LIMIT_PASSWORD_RESET)
+def reset_password(request: Request, req: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """Verifies the password-reset OTP and updates the account password.
+
+    The lookup is by email and the OTP itself is the proof of ownership; an unknown
+    email and a wrong code produce the same 401 shape so this endpoint stays
+    enumeration-safe (mirroring /forgot-password).
+    """
+    user = db.query(User).filter(User.email_address == req.email_address).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired reset session. Please request a new password reset.",
+        )
+
+    # Brute-force protection: same attempts cap as the 2FA challenge
+    if user.failed_otp_attempts >= settings.MAX_OTP_ATTEMPTS:
+        user.active_session_id = None
+        user.active_2fa_otp = None
+        user.otp_expiry_time = None
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Too many failed attempts. Reset session invalidated, please request a new password reset.",
+        )
+
+    if not user.active_2fa_otp or not user.otp_expiry_time:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No active password reset challenge found for this session.",
+        )
+
+    if get_now_utc() > user.otp_expiry_time:
+        user.active_session_id = None
+        user.active_2fa_otp = None
+        user.otp_expiry_time = None
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Password reset code has expired. Please request a new password reset.",
+        )
+
+    if not constant_time_compare(user.active_2fa_otp, req.otp_code.strip()):
+        user.failed_otp_attempts += 1
+        remaining_attempts = max(
+            0, settings.MAX_OTP_ATTEMPTS - user.failed_otp_attempts
+        )
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid reset code. {remaining_attempts} attempt(s) remaining before session lockout.",
+        )
+
+    # Reset approved: update password and clear the challenge so the session cannot be replayed
+    user.password_hash = hash_password(req.new_password)
+    user.active_session_id = None
+    user.active_2fa_otp = None
+    user.otp_expiry_time = None
+    user.failed_otp_attempts = 0
+    user.otp_resend_count = 0
+    db.commit()
+
+    return MessageResponse(
+        message="Password reset successful. You can now sign in with your new password."
+    )

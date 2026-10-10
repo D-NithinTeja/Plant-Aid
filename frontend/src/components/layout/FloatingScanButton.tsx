@@ -6,8 +6,8 @@ import { motion, AnimatePresence } from 'motion/react';
 export const FloatingScanButton: React.FC = () => {
   const location = useLocation();
 
-  // Hide the floating button when on the landing page or scanner screen
-  if (location.pathname === '/' || location.pathname === '/scan') {
+  // Hide the floating button when on the landing page, scanner screen, or auth page
+  if (location.pathname === '/' || location.pathname === '/scan' || location.pathname === '/auth') {
     return null;
   }
 

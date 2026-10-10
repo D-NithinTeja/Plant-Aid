@@ -67,7 +67,7 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-agri-400">
               Agronomic Treatment Advisory
             </span>
-            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">{diseaseName}</h3>
+            <h3 className="text-xl sm:text-2xl font-normal tracking-tight">{diseaseName}</h3>
             {scientificName && (
               <p className="text-xs italic text-slate-300 font-mono">{scientificName}</p>
             )}

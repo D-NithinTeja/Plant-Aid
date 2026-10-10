@@ -310,7 +310,7 @@ export const ScanPage: React.FC = () => {
                 <ShieldCheck className="w-4 h-4 text-agri-600" />
                 <span>Groundnut Health Scanner</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-normal text-slate-900 tracking-tight">
                 Live Foliage Scanner
               </h1>
             </div>
@@ -587,7 +587,7 @@ export const ScanPage: React.FC = () => {
                         <div className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">
                           Detection Status
                         </div>
-                        <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                        <div className="text-2xl font-bold text-slate-900 tracking-tight">
                           No groundnut plant seen
                         </div>
                         <p className="text-xs text-slate-600 leading-relaxed pt-1">
@@ -612,7 +612,7 @@ export const ScanPage: React.FC = () => {
                         <div className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">
                           Identified Condition
                         </div>
-                        <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                        <div className="text-2xl font-bold text-slate-900 tracking-tight">
                           {currentResult.disease_name}
                         </div>
                         {currentResult.scientific_name && (

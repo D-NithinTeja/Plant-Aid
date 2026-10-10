@@ -269,7 +269,7 @@ export const AdminPage: React.FC = () => {
                   <ShieldCheck className="w-6 h-6" />
                 </div>
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  <h1 className="text-2xl sm:text-3xl font-normal text-slate-900 tracking-tight">
                     Platform Administration
                   </h1>
                   <p className="text-sm text-slate-600">
@@ -295,7 +295,7 @@ export const AdminPage: React.FC = () => {
                 <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   Total Operators
                 </div>
-                <div className="text-lg font-extrabold text-slate-900">{usersTotal}</div>
+                <div className="text-lg font-bold text-slate-900">{usersTotal}</div>
               </div>
             </div>
 
@@ -305,7 +305,7 @@ export const AdminPage: React.FC = () => {
                 <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   Global Diagnoses
                 </div>
-                <div className="text-lg font-extrabold text-slate-900">{historyTotal}</div>
+                <div className="text-lg font-bold text-slate-900">{historyTotal}</div>
               </div>
             </div>
 
@@ -315,7 +315,7 @@ export const AdminPage: React.FC = () => {
                 <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   Groundnut Classes
                 </div>
-                <div className="text-lg font-extrabold text-slate-900">{GROUNDNUT_DISEASES.length}</div>
+                <div className="text-lg font-bold text-slate-900">{GROUNDNUT_DISEASES.length}</div>
               </div>
             </div>
           </div>

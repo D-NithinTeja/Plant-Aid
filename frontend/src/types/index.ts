@@ -31,6 +31,20 @@ export interface TokenResponse {
   role?: string;
 }
 
+export interface MessageResponse {
+  message: string;
+}
+
+export interface UpdateProfilePayload {
+  user_name?: string;
+  phone_number?: string | null;
+}
+
+export interface ChangePasswordPayload {
+  current_password: string;
+  new_password: string;
+}
+
 export interface BoundingBox {
   x_min: number;
   y_min: number;

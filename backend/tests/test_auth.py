@@ -396,3 +396,139 @@ def test_failed_attempts_do_not_update_last_login_at():
         user_db = db.query(User).filter(User.email_address == email).first()
         assert user_db.last_login_at is None
 
+
+def test_forgot_password_unknown_email_no_enumeration():
+    """Unknown email gets the same generic 200 message and no debug OTP echo."""
+    res = client.post(
+        "/auth/forgot-password", json={"email_address": "ghost@testauth.com"}
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert "If an account exists" in data["message"]
+    assert data["otp_code_dev"] is None
+
+
+def test_forgot_and_reset_password_happy_path():
+    """Full flow: request reset -> verify OTP -> old password rejected, new password works."""
+    import time
+
+    email = f"reset_flow_{time.time()}@testauth.com"
+    old_password = "OldPassword123!"
+    new_password = "NewPassword456!"
+
+    # Register + activate via 2FA
+    reg = client.post(
+        "/auth/register",
+        json={"user_name": "Reset Tester", "email_address": email, "password": old_password},
+    )
+    assert reg.status_code == 201
+    verify = client.post(
+        "/auth/verify-2fa",
+        json={
+            "session_id": reg.json()["session_id"],
+            "otp_code": reg.json()["otp_code_dev"],
+        },
+    )
+    assert verify.status_code == 200
+
+    # Request reset code
+    forgot = client.post("/auth/forgot-password", json={"email_address": email})
+    assert forgot.status_code == 200
+    reset_otp = forgot.json()["otp_code_dev"]
+    assert reset_otp
+
+    # Wrong code rejected with attempts-remaining detail
+    wrong = client.post(
+        "/auth/reset-password",
+        json={"email_address": email, "otp_code": "000000", "new_password": new_password},
+    )
+    assert wrong.status_code == 401
+    assert "Invalid reset code" in wrong.json()["detail"]
+
+    # Correct code resets the password
+    ok = client.post(
+        "/auth/reset-password",
+        json={"email_address": email, "otp_code": reset_otp, "new_password": new_password},
+    )
+    assert ok.status_code == 200
+
+    # Old password no longer accepted; new password signs in via 2FA challenge
+    assert (
+        client.post("/auth/login", json={"login_id": email, "password": old_password}).status_code
+        == 401
+    )
+    assert (
+        client.post("/auth/login", json={"login_id": email, "password": new_password}).status_code
+        == 200
+    )
+
+    # Reset session cleared: the same OTP cannot be replayed
+    replay = client.post(
+        "/auth/reset-password",
+        json={"email_address": email, "otp_code": reset_otp, "new_password": "AnotherPass789!"},
+    )
+    assert replay.status_code == 401
+
+
+def test_reset_password_brute_force_lockout():
+    """MAX_OTP_ATTEMPTS wrong reset codes invalidate the reset challenge."""
+    import time
+
+    email = f"reset_lockout_{time.time()}@testauth.com"
+    reg = client.post(
+        "/auth/register",
+        json={
+            "user_name": "Reset Lockout",
+            "email_address": email,
+            "password": "LockoutPass123!",
+        },
+    )
+    assert reg.status_code == 201
+
+    forgot = client.post("/auth/forgot-password", json={"email_address": email})
+    assert forgot.status_code == 200
+
+    # Burn MAX_OTP_ATTEMPTS with wrong codes
+    for _ in range(settings.MAX_OTP_ATTEMPTS):
+        res = client.post(
+            "/auth/reset-password",
+            json={
+                "email_address": email,
+                "otp_code": "999999",
+                "new_password": "Whatever123!",
+            },
+        )
+        assert res.status_code == 401
+
+    # Next attempt is rejected as lockout, not a generic wrong-code failure
+    locked = client.post(
+        "/auth/reset-password",
+        json={
+            "email_address": email,
+            "otp_code": "999999",
+            "new_password": "Whatever123!",
+        },
+    )
+    assert locked.status_code == 401
+    assert "Too many failed attempts" in locked.json()["detail"]
+
+    # Challenge state cleared, so even the genuine OTP no longer works
+    with SessionLocal() as db:
+        user_db = db.query(User).filter(User.email_address == email).first()
+        assert user_db.active_session_id is None
+        assert user_db.active_2fa_otp is None
+
+
+def test_reset_password_unknown_email_generic_401():
+    """Unknown email on reset mirrors the invalid-session 401 (no existence probe)."""
+    res = client.post(
+        "/auth/reset-password",
+        json={
+            "email_address": "nobody@testauth.com",
+            "otp_code": "123456",
+            "new_password": "Whatever123!",
+        },
+    )
+    assert res.status_code == 401
+    assert "Invalid or expired reset session" in res.json()["detail"]
+
