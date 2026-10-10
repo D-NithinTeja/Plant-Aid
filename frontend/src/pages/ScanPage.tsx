@@ -254,8 +254,8 @@ export const ScanPage: React.FC = () => {
           ? 'healthy_leaf'
           : String(currentResult.disease_id),
         disease_name: currentResult.disease_name,
-        confidence_score: currentResult.confidence_score,
-        s3_storage_uri: currentResult.cam_heatmap_b64 || undefined,
+        confidence_score: currentResult.confidence_score ?? currentResult.confidence ?? 0,
+        s3_storage_uri: currentResult.s3_storage_uri || undefined,
         image_b64: frozenFrameDataUrl || undefined,
         bounding_box: currentResult.bounding_box || undefined,
       };

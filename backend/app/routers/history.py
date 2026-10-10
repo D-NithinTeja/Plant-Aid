@@ -56,9 +56,24 @@ def create_history_log_item(
     # Import base64 decoding helper
     from app.routers.inference import _decode_base64_image
 
-    s3_storage_uri = payload.s3_storage_uri
-    if not s3_storage_uri and payload.image_b64:
-        image_bytes, mime_type = _decode_base64_image(payload.image_b64)
+    raw_uri = (payload.s3_storage_uri or "").strip()
+    is_valid_uri = (
+        bool(raw_uri)
+        and len(raw_uri) <= 500
+        and (
+            raw_uri.startswith("s3://")
+            or raw_uri.startswith("/media/")
+            or raw_uri.startswith("http://")
+            or raw_uri.startswith("https://")
+        )
+    )
+    s3_storage_uri = raw_uri if is_valid_uri else None
+    image_b64_source = payload.image_b64 or (
+        raw_uri if (raw_uri and not is_valid_uri) else None
+    )
+
+    if not s3_storage_uri and image_b64_source:
+        image_bytes, mime_type = _decode_base64_image(image_b64_source)
         if image_bytes:
             frame_id = str(uuid.uuid4())
             s3_storage_uri = storage_service.upload_image(
