@@ -281,3 +281,118 @@ def test_resend_otp_invalid_session():
     assert res.status_code == 401
     assert "Invalid or expired challenge session" in res.json()["detail"]
 
+
+def test_last_login_at_tracks_successful_login_and_subsequent_update():
+    """Verifies last_login_at is initially null, sets on 2FA verify, and updates on next login."""
+    import time
+
+    email = f"track_login_{time.time()}@testauth.com"
+    password = "SecurePassword123!"
+
+    # 1. Register user
+    reg_res = client.post(
+        "/auth/register",
+        json={"user_name": "Login Tracker", "email_address": email, "password": password},
+    )
+    assert reg_res.status_code == 201
+    user_data = reg_res.json()
+    assert user_data.get("last_login_at") is None
+
+    # 2. Login step 1: /auth/login initiates challenge but does not set last_login_at
+    login_res = client.post(
+        "/auth/login",
+        json={"login_id": email, "password": password},
+    )
+    assert login_res.status_code == 200
+    session_id_1 = login_res.json()["session_id"]
+    otp_1 = login_res.json()["otp_code_dev"]
+
+    # Check via direct DB query that last_login_at is still None
+    with SessionLocal() as db:
+        user_db = db.query(User).filter(User.email_address == email).first()
+        assert user_db is not None
+        assert user_db.last_login_at is None
+
+    # 3. Successful 2FA verification: sets last_login_at
+    verify_res_1 = client.post(
+        "/auth/verify-2fa",
+        json={"session_id": session_id_1, "otp_code": otp_1},
+    )
+    assert verify_res_1.status_code == 200
+    token_1 = verify_res_1.json()["access_token"]
+
+    # Check /auth/me returns non-null last_login_at
+    me_res_1 = client.get("/auth/me", headers={"Authorization": f"Bearer {token_1}"})
+    assert me_res_1.status_code == 200
+    first_login_time = me_res_1.json()["last_login_at"]
+    assert first_login_time is not None
+
+    time.sleep(0.05)
+
+    # 4. Subsequent login
+    login_res_2 = client.post(
+        "/auth/login",
+        json={"login_id": email, "password": password},
+    )
+    assert login_res_2.status_code == 200
+    session_id_2 = login_res_2.json()["session_id"]
+    otp_2 = login_res_2.json()["otp_code_dev"]
+
+    verify_res_2 = client.post(
+        "/auth/verify-2fa",
+        json={"session_id": session_id_2, "otp_code": otp_2},
+    )
+    assert verify_res_2.status_code == 200
+    token_2 = verify_res_2.json()["access_token"]
+
+    me_res_2 = client.get("/auth/me", headers={"Authorization": f"Bearer {token_2}"})
+    assert me_res_2.status_code == 200
+    second_login_time = me_res_2.json()["last_login_at"]
+    assert second_login_time is not None
+    assert second_login_time > first_login_time
+
+
+def test_failed_attempts_do_not_update_last_login_at():
+    """Failed passwords and failed OTP challenges do not alter last_login_at."""
+    import time
+
+    email = f"failed_attempts_{time.time()}@testauth.com"
+    password = "CorrectPassword123!"
+
+    # Register
+    reg_res = client.post(
+        "/auth/register",
+        json={"user_name": "Failure Tester", "email_address": email, "password": password},
+    )
+    assert reg_res.status_code == 201
+
+    # Failed password attempt
+    bad_pass_res = client.post(
+        "/auth/login",
+        json={"login_id": email, "password": "WrongPassword999!"},
+    )
+    assert bad_pass_res.status_code == 401
+
+    with SessionLocal() as db:
+        user_db = db.query(User).filter(User.email_address == email).first()
+        assert user_db.last_login_at is None
+
+    # Valid login step 1
+    good_login = client.post(
+        "/auth/login",
+        json={"login_id": email, "password": password},
+    )
+    assert good_login.status_code == 200
+    session_id = good_login.json()["session_id"]
+
+    # Invalid OTP attempt
+    bad_otp_res = client.post(
+        "/auth/verify-2fa",
+        json={"session_id": session_id, "otp_code": "000000"},
+    )
+    assert bad_otp_res.status_code == 401
+
+    with SessionLocal() as db:
+        user_db = db.query(User).filter(User.email_address == email).first()
+        assert user_db.last_login_at is None
+

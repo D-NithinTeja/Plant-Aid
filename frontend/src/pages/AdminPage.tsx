@@ -416,25 +416,26 @@ export const AdminPage: React.FC = () => {
                 <table className="w-full text-left text-sm text-slate-700">
                   <thead className="text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
                     <tr>
-                      <th className="pb-3 font-bold">Operator</th>
-                      <th className="pb-3 font-bold">Role</th>
-                      <th className="pb-3 font-bold">Status</th>
-                      <th className="pb-3 font-bold">Scans Logged</th>
-                      <th className="pb-3 font-bold">Registered</th>
-                      <th className="pb-3 font-bold text-right">Actions</th>
+                      <th scope="col" className="pb-3 font-bold">Operator</th>
+                      <th scope="col" className="pb-3 font-bold">Role</th>
+                      <th scope="col" className="pb-3 font-bold">Status</th>
+                      <th scope="col" className="pb-3 font-bold">Scans Logged</th>
+                      <th scope="col" className="pb-3 font-bold">Registered</th>
+                      <th scope="col" className="pb-3 font-bold">Last Login</th>
+                      <th scope="col" className="pb-3 font-bold text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {usersLoading ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center text-slate-500">
+                        <td colSpan={7} className="py-12 text-center text-slate-500">
                           <div className="w-6 h-6 border-2 border-agri-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                          Loading registered operators...
+                          Loading registered operators…
                         </td>
                       </tr>
                     ) : users.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center text-slate-500">
+                        <td colSpan={7} className="py-12 text-center text-slate-500">
                           No operators found matching criteria.
                         </td>
                       </tr>
@@ -490,13 +491,23 @@ export const AdminPage: React.FC = () => {
                             </td>
 
                             <td className="py-3.5 pr-4">
-                              <span className="font-mono text-xs font-bold text-slate-700">
+                              <span className="font-mono text-xs font-bold text-slate-700 tabular-nums">
                                 {u.history_count}
                               </span>
                             </td>
 
-                            <td className="py-3.5 pr-4 text-xs text-slate-500">
+                            <td className="py-3.5 pr-4 text-xs text-slate-500 tabular-nums">
                               {u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}
+                            </td>
+
+                            <td className="py-3.5 pr-4 text-xs tabular-nums">
+                              {u.last_login_at ? (
+                                <span className="text-slate-700" title={new Date(u.last_login_at).toISOString()}>
+                                  {new Date(u.last_login_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 italic">Never</span>
+                              )}
                             </td>
 
                             <td className="py-3.5 text-right space-x-2 whitespace-nowrap">
@@ -505,7 +516,7 @@ export const AdminPage: React.FC = () => {
                                 onClick={() => handleToggleRole(u)}
                                 disabled={isSelf}
                                 title={isSelf ? 'Safety Lock: Cannot alter own admin role' : `Change role to ${u.role === 'admin' ? 'user' : 'admin'}`}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-agri-500 ${
                                   isSelf
                                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                                     : u.role === 'admin'
@@ -521,7 +532,7 @@ export const AdminPage: React.FC = () => {
                                 onClick={() => handleToggleStatus(u)}
                                 disabled={isSelf}
                                 title={isSelf ? 'Safety Lock: Cannot suspend own account' : `${u.account_status === 'ACTIVE' ? 'Suspend' : 'Activate'} user`}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-agri-500 ${
                                   isSelf
                                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                                     : u.account_status === 'ACTIVE'

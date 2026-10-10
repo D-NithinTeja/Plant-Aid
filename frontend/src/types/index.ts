@@ -6,6 +6,7 @@ export interface User {
   role?: 'user' | 'admin' | string;
   is_2fa_enabled?: boolean;
   account_status?: string;
+  last_login_at?: string | null;
   created_at?: string | null;
   session_id?: string | null;
   otp_code_dev?: string | null;

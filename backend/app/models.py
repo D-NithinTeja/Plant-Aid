@@ -39,6 +39,7 @@ class User(Base):
     otp_resend_count = Column(Integer, default=0, nullable=False)
     account_status = Column(String(20), default="PENDING_VERIFICATION")
     role = Column(String(20), default="user", nullable=False)
+    last_login_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=utcnow)
 
     history_logs = relationship(

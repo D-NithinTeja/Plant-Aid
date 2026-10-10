@@ -110,6 +110,32 @@ Plant-Aid/
 
 ---
 
+## 🐳 Quick Start with Docker Compose
+
+To run Plant-Aid with zero manual configuration using Docker Compose:
+
+```bash
+# 1. Copy the environment configuration
+cp .env.example .env
+
+# 2. Build and launch services
+docker compose up --build
+```
+
+* **Frontend UI**: [http://localhost](http://localhost) (Port 80)
+* **Backend API**: [http://localhost:8000](http://localhost:8000)
+* **Swagger Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
+* **Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
+
+To run **backend only**:
+```bash
+docker compose up --build backend
+```
+
+For full details on inspecting logs, restarting, and data persistence, see [`Docs/DOCKER_QUICKSTART.md`](Docs/DOCKER_QUICKSTART.md).
+
+---
+
 ## 🚀 How to Run the Backend Locally
 
 ### Prerequisites

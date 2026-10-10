@@ -326,6 +326,8 @@ def seed_database():
             }
         ]
 
+        force_reset = "--force" in sys.argv or "--reset" in sys.argv
+
         # Insert or update records
         for d_data in diseases_data:
             remedies = d_data.pop("remedies")
@@ -341,11 +343,20 @@ def seed_database():
                     setattr(disease, k, v)
                 db.flush()
 
-            # Clean and re-add remedies for this disease
-            db.query(Remedy).filter(Remedy.disease_id == disease_id).delete()
-            for r_data in remedies:
-                remedy = Remedy(disease_id=disease.id, **r_data)
-                db.add(remedy)
+            # Clean and re-add if explicit reset, otherwise idempotently insert missing remedies
+            if force_reset:
+                db.query(Remedy).filter(Remedy.disease_id == disease_id).delete()
+                for r_data in remedies:
+                    remedy = Remedy(disease_id=disease.id, **r_data)
+                    db.add(remedy)
+            else:
+                existing_titles = {
+                    r[0] for r in db.query(Remedy.title).filter(Remedy.disease_id == disease_id).all()
+                }
+                for r_data in remedies:
+                    if r_data["title"] not in existing_titles:
+                        remedy = Remedy(disease_id=disease.id, **r_data)
+                        db.add(remedy)
 
         db.commit()
         print(f"Database successfully seeded with {len(diseases_data)} plant diseases and treatment remedies!")

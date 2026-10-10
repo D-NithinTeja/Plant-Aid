@@ -1,0 +1,11 @@
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+uploads/*
+!uploads/.gitkeep
+plant_aid.db
+.git
+.gitignore

@@ -86,6 +86,10 @@ def test_admin_list_users_success():
     assert data["total"] >= 2
     assert any(u["email_address"] == "admin_unit_test@plantaid.org" for u in data["items"])
     assert any(u["email_address"] == "farmer_unit_test@plantaid.org" for u in data["items"])
+    # Verify last_login_at is exposed in the AdminUserItem schema
+    for u in data["items"]:
+        assert "last_login_at" in u
+        assert u["last_login_at"] is None or isinstance(u["last_login_at"], str)
 
 
 def test_admin_promote_and_demote_user():
