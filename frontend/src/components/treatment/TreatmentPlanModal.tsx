@@ -7,6 +7,8 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Remedy } from '../../types';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 
 interface TreatmentPlanModalProps {
   isOpen: boolean;
@@ -53,125 +55,134 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-[110] overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200 text-slate-900">
-        {/* Header */}
-        <div className="p-6 bg-slate-900 text-white relative">
+    <div
+      className="fixed inset-0 z-[110] overflow-y-auto bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white/95 backdrop-blur-2xl rounded-3xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden border border-white/80 text-slate-900 ring-1 ring-emerald-950/10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header — Botanical Sage & Frosted Glass matching rest of Plant-Aid */}
+        <div className="p-6 sm:p-7 bg-gradient-to-br from-[#edf4ed] via-[#f3f8f3] to-emerald-50/60 border-b border-emerald-950/10 relative">
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors touch-target"
+            className="absolute top-5 right-5 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 hover:bg-white border border-emerald-950/10 text-slate-600 hover:text-slate-900 transition-colors shadow-xs touch-target cursor-pointer"
             aria-label="Close modal"
+            title="Close"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
 
-          <div className="space-y-1">
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-agri-400">
-              Agronomic Treatment Advisory
-            </span>
-            <h3 className="text-xl sm:text-2xl font-normal tracking-tight">{diseaseName}</h3>
+          <div className="space-y-1.5 pr-10">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={isHealthy ? 'optimal' : 'default'}>
+                <span>Agronomic Treatment Plan</span>
+              </Badge>
+              <span className="text-xs font-mono font-semibold text-agri-800 bg-white/80 px-2.5 py-0.5 rounded-full border border-emerald-950/10">
+                {(confidenceScore * 100).toFixed(1)}% Match
+              </span>
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-normal text-slate-900 tracking-tight pt-1">
+              {diseaseName}
+            </h3>
             {scientificName && (
-              <p className="text-xs italic text-slate-300 font-mono">{scientificName}</p>
+              <p className="text-xs italic text-slate-600 font-mono">{scientificName}</p>
             )}
           </div>
 
-          <div className="flex items-center space-x-3 mt-4 pt-3 border-t border-slate-800 text-xs">
-            <span className="text-slate-300">Confidence:</span>
-            <span className="font-mono font-bold text-agri-400">
-              {(confidenceScore * 100).toFixed(1)}%
-            </span>
-            <span className="text-slate-600">•</span>
-            <span className="text-slate-300">Catalogue Key:</span>
-            <span className="font-mono text-slate-400">{diseaseId}</span>
-          </div>
-        </div>
+          {/* Pill Tab Selector matching ScanPage & Tabs component */}
+          {!isHealthy && (
+            <div className="grid grid-cols-3 gap-1.5 mt-5 p-1 rounded-2xl bg-emerald-950/5 border border-emerald-950/5 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setActiveTab('organic')}
+                className={`py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'organic'
+                    ? 'bg-white text-agri-950 shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Sprout className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="truncate">Organic &amp; Bio</span>
+              </button>
 
-        {/* Tab Selector */}
-        <div className="grid grid-cols-3 border-b border-slate-200 bg-slate-50 text-xs font-bold">
-          <button
-            onClick={() => setActiveTab('organic')}
-            className={`py-3.5 px-3 flex items-center justify-center space-x-1.5 transition-colors border-b-2 ${
-              activeTab === 'organic'
-                ? 'border-emerald-600 text-emerald-800 bg-white'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Sprout className="w-4 h-4 text-emerald-600" />
-            <span className="truncate">Organic & Biological</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('chemical')}
+                className={`py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'chemical'
+                    ? 'bg-white text-agri-950 shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <FlaskConical className="w-4 h-4 text-agri-700 shrink-0" />
+                <span className="truncate">Chemical Shield</span>
+              </button>
 
-          <button
-            onClick={() => setActiveTab('chemical')}
-            className={`py-3.5 px-3 flex items-center justify-center space-x-1.5 transition-colors border-b-2 ${
-              activeTab === 'chemical'
-                ? 'border-agri-600 text-agri-800 bg-white'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <FlaskConical className="w-4 h-4 text-agri-700" />
-            <span className="truncate">Chemical Fungicide</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('preventive')}
-            className={`py-3.5 px-3 flex items-center justify-center space-x-1.5 transition-colors border-b-2 ${
-              activeTab === 'preventive'
-                ? 'border-soil-700 text-soil-900 bg-white'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Shield className="w-4 h-4 text-soil-700" />
-            <span className="truncate">Cultural Practice</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('preventive')}
+                className={`py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'preventive'
+                    ? 'bg-white text-agri-950 shadow-xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Shield className="w-4 h-4 text-agri-700 shrink-0" />
+                <span className="truncate">Cultural Care</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Modal Body / Tab Content */}
-        <div className="p-6 overflow-y-auto space-y-4 flex-1">
+        <div className="p-6 sm:p-7 overflow-y-auto space-y-4 flex-1 bg-white/80 custom-scrollbar">
           {isHealthy ? (
-            <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-3">
+            <div className="p-6 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 text-center space-y-3">
               <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
-              <h4 className="text-base font-bold text-emerald-900">Crop Canopy is Healthy</h4>
-              <p className="text-xs text-emerald-800 max-w-md mx-auto leading-relaxed">
+              <h4 className="text-base font-bold text-emerald-950">Crop Canopy is Healthy</h4>
+              <p className="text-xs text-emerald-900/80 max-w-md mx-auto leading-relaxed">
                 No active fungal pustules, necrotic spots, or chlorotic halos detected. Continue standard agronomic irrigation, maintain weed-free crop borders, and schedule regular weekly monitoring.
               </p>
             </div>
           ) : (
             <>
               {activeTab === 'organic' && (
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   {organicRemedies.length > 0 ? (
                     organicRemedies.map((remedy, idx) => (
                       <div
                         key={remedy.id || idx}
-                        className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 space-y-2"
+                        className="p-4 sm:p-5 rounded-2xl border border-emerald-950/10 bg-[#f7faf7] space-y-2.5"
                       >
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-bold text-emerald-950">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h4 className="text-sm font-bold text-slate-900">
                             {remedy.title || remedy.treatment_name || 'Organic Bio-Control'}
                           </h4>
                           {remedy.dosage && (
-                            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">
+                            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-lg bg-emerald-100/80 text-agri-800 font-semibold border border-emerald-200/60">
                               {remedy.dosage}
                             </span>
                           )}
                         </div>
                         {remedy.description && (
-                          <p className="text-xs text-emerald-950/80 leading-relaxed">
+                          <p className="text-xs text-slate-700 leading-relaxed">
                             {remedy.description}
                           </p>
                         )}
                         {remedy.application_instructions && (
-                          <p className="text-xs text-emerald-900 leading-relaxed bg-white/60 p-2.5 rounded-xl border border-emerald-100">
-                            <span className="font-semibold text-emerald-950">Application: </span>
+                          <div className="text-xs text-agri-950 leading-relaxed bg-white p-3 rounded-xl border border-emerald-950/10">
+                            <span className="font-bold text-agri-800">Application: </span>
                             {remedy.application_instructions}
-                          </p>
+                          </div>
                         )}
                       </div>
                     ))
                   ) : (
-                    <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
+                    <div className="p-4 sm:p-5 rounded-2xl border border-emerald-950/10 bg-[#f7faf7] space-y-2">
                       <h4 className="text-sm font-bold text-slate-900">Bio-Control Recommendation</h4>
-                      <p className="text-xs text-slate-600 leading-relaxed">
+                      <p className="text-xs text-slate-700 leading-relaxed">
                         Foliar spray with Trichoderma viride or Pseudomonas fluorescens at 5g/L water during early morning or overcast weather to suppress foliar mycelium expansion.
                       </p>
                     </div>
@@ -180,40 +191,40 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
               )}
 
               {activeTab === 'chemical' && (
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   {chemicalRemedies.length > 0 ? (
                     chemicalRemedies.map((remedy, idx) => (
                       <div
                         key={remedy.id || idx}
-                        className="p-4 rounded-2xl border border-agri-200 bg-agri-50/50 space-y-2"
+                        className="p-4 sm:p-5 rounded-2xl border border-emerald-950/10 bg-[#f7faf7] space-y-2.5"
                       >
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-bold text-agri-950">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h4 className="text-sm font-bold text-slate-900">
                             {remedy.title || remedy.treatment_name || 'Chemical Fungicide Treatment'}
                           </h4>
                           {remedy.dosage && (
-                            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-agri-100 text-agri-800 font-semibold">
+                            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-lg bg-emerald-100/80 text-agri-800 font-semibold border border-emerald-200/60">
                               {remedy.dosage}
                             </span>
                           )}
                         </div>
                         {remedy.description && (
-                          <p className="text-xs text-agri-950/80 leading-relaxed">
+                          <p className="text-xs text-slate-700 leading-relaxed">
                             {remedy.description}
                           </p>
                         )}
                         {remedy.application_instructions && (
-                          <p className="text-xs text-agri-900 leading-relaxed bg-white/60 p-2.5 rounded-xl border border-agri-100">
-                            <span className="font-semibold text-agri-950">Application: </span>
+                          <div className="text-xs text-agri-950 leading-relaxed bg-white p-3 rounded-xl border border-emerald-950/10">
+                            <span className="font-bold text-agri-800">Application: </span>
                             {remedy.application_instructions}
-                          </p>
+                          </div>
                         )}
                       </div>
                     ))
                   ) : (
-                    <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
+                    <div className="p-4 sm:p-5 rounded-2xl border border-emerald-950/10 bg-[#f7faf7] space-y-2">
                       <h4 className="text-sm font-bold text-slate-900">Targeted Fungicide Spray</h4>
-                      <p className="text-xs text-slate-600 leading-relaxed">
+                      <p className="text-xs text-slate-700 leading-relaxed">
                         Apply protective contact fungicide such as Mancozeb 75% WP (2 g/L) or Chlorothalonil 75% WP (2 g/L) at the onset of initial symptoms. Repeat at 14-day intervals if wet humid conditions persist.
                       </p>
                     </div>
@@ -222,40 +233,40 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
               )}
 
               {activeTab === 'preventive' && (
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   {preventiveRemedies.length > 0 ? (
                     preventiveRemedies.map((remedy, idx) => (
                       <div
                         key={remedy.id || idx}
-                        className="p-4 rounded-2xl border border-soil-200 bg-soil-50/50 space-y-2"
+                        className="p-4 sm:p-5 rounded-2xl border border-emerald-950/10 bg-[#f7faf7] space-y-2.5"
                       >
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-bold text-soil-950">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h4 className="text-sm font-bold text-slate-900">
                             {remedy.title || remedy.treatment_name || 'Cultural & Preventive Practice'}
                           </h4>
                           {remedy.dosage && (
-                            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-soil-100 text-soil-800 font-semibold">
+                            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-lg bg-emerald-100/80 text-agri-800 font-semibold border border-emerald-200/60">
                               {remedy.dosage}
                             </span>
                           )}
                         </div>
                         {remedy.description && (
-                          <p className="text-xs text-soil-950/80 leading-relaxed">
+                          <p className="text-xs text-slate-700 leading-relaxed">
                             {remedy.description}
                           </p>
                         )}
                         {remedy.application_instructions && (
-                          <p className="text-xs text-soil-900 leading-relaxed bg-white/60 p-2.5 rounded-xl border border-soil-100">
-                            <span className="font-semibold text-soil-950">Application: </span>
+                          <div className="text-xs text-agri-950 leading-relaxed bg-white p-3 rounded-xl border border-emerald-950/10">
+                            <span className="font-bold text-agri-800">Application: </span>
                             {remedy.application_instructions}
-                          </p>
+                          </div>
                         )}
                       </div>
                     ))
                   ) : (
-                    <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
-                      <h4 className="text-sm font-bold text-slate-900">Crop Sanitation & Spacing</h4>
-                      <p className="text-xs text-slate-600 leading-relaxed">
+                    <div className="p-4 sm:p-5 rounded-2xl border border-emerald-950/10 bg-[#f7faf7] space-y-2">
+                      <h4 className="text-sm font-bold text-slate-900">Crop Sanitation &amp; Spacing</h4>
+                      <p className="text-xs text-slate-700 leading-relaxed">
                         Maintain 30×10 cm optimum planting distance for aeration, destroy post-harvest crop stubbles, rotate with non-leguminous crops like sorghum or pearl millet for 2 seasons.
                       </p>
                     </div>
@@ -267,14 +278,13 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 bg-slate-100 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
-          <span className="font-mono text-[11px]">Always wear protective gear during spraying</span>
-          <button
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-colors touch-target"
-          >
-            Dismiss
-          </button>
+        <div className="px-6 py-4 bg-[#edf4ed]/70 border-t border-emerald-950/10 flex items-center justify-between gap-4 text-xs text-slate-600">
+          <span className="text-xs text-slate-600 font-medium">
+            Always wear protective gear during field spraying
+          </span>
+          <Button size="sm" onClick={onClose}>
+            Done
+          </Button>
         </div>
       </div>
     </div>
