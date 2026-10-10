@@ -100,6 +100,19 @@ Restart a specific service:
 docker compose restart backend
 ```
 
+### Rebuilding Services
+Rebuild container images after updating dependencies or application code:
+```bash
+# Rebuild all services
+docker compose build
+
+# Rebuild and restart services in detached mode
+docker compose up -d --build
+
+# Rebuild backend service only
+docker compose build backend
+```
+
 ### Stopping Services
 Stop running containers without removing stored database data:
 ```bash

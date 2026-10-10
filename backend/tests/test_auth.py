@@ -327,7 +327,7 @@ def test_last_login_at_tracks_successful_login_and_subsequent_update():
     first_login_time = me_res_1.json()["last_login_at"]
     assert first_login_time is not None
 
-    time.sleep(0.01)
+    time.sleep(0.05)
 
     # 4. Subsequent login
     login_res_2 = client.post(
@@ -349,7 +349,7 @@ def test_last_login_at_tracks_successful_login_and_subsequent_update():
     assert me_res_2.status_code == 200
     second_login_time = me_res_2.json()["last_login_at"]
     assert second_login_time is not None
-    assert second_login_time >= first_login_time
+    assert second_login_time > first_login_time
 
 
 def test_failed_attempts_do_not_update_last_login_at():

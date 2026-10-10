@@ -10,17 +10,11 @@ services:
     environment:
       - APP_NAME=Plant-Aid API
       - APP_DEBUG=${APP_DEBUG:-True}
-      - PLANT_AID_APP_DEBUG=${APP_DEBUG:-True}
-      - SECRET_KEY=${SECRET_KEY:-super-secret-plant-aid-jwt-key-change-in-production}
-      - PLANT_AID_SECRET_KEY=${SECRET_KEY:-super-secret-plant-aid-jwt-key-change-in-production}
-      - DATABASE_URL=sqlite:////app/data/plant_aid.db
-      - PLANT_AID_DATABASE_URL=sqlite:////app/data/plant_aid.db
-      - UPLOAD_DIR=/app/uploads
-      - PLANT_AID_UPLOAD_DIR=/app/uploads
+      - SECRET_KEY=${SECRET_KEY:-dev-insecure-plant-aid-jwt-key-replace-in-env}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:////app/data/plant_aid.db}
+      - UPLOAD_DIR=${UPLOAD_DIR:-/app/uploads}
       - OTP_PROVIDER=${OTP_PROVIDER:-smtp}
-      - PLANT_AID_OTP_PROVIDER=${OTP_PROVIDER:-smtp}
       - OTP_ALLOW_CONSOLE_FALLBACK=${OTP_ALLOW_CONSOLE_FALLBACK:-True}
-      - PLANT_AID_OTP_ALLOW_CONSOLE_FALLBACK=${OTP_ALLOW_CONSOLE_FALLBACK:-True}
       - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USERNAME=${SMTP_USERNAME:-}
@@ -28,8 +22,7 @@ services:
       - SMTP_USE_STARTTLS=${SMTP_USE_STARTTLS:-True}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-noreply@plant-aid.org}
       - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Plant-Aid Security}
-      - ML_DEVICE=cpu
-      - PLANT_AID_ML_DEVICE=cpu
+      - ML_DEVICE=${ML_DEVICE:-cpu}
     volumes:
       - backend_data:/app/data
       - backend_uploads:/app/uploads

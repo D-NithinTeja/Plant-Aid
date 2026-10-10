@@ -22,7 +22,7 @@ def upgrade() -> None:
     """Upgrade schema."""
     with op.batch_alter_table("users", schema=None) as batch_op:
         batch_op.add_column(
-            sa.Column("role", sa.String(length=20), nullable=False, server_default="user")
+            sa.Column("role", sa.String(length=20), nullable=False, server_default=sa.text("'user'"))
         )
 
 

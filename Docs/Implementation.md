@@ -345,7 +345,7 @@ Persist every confirmed diagnosis: upload the raw frame to AWS S3, extract its o
 Implemented in PostgreSQL via SQLAlchemy ORM + Alembic migrations (logical definitions from Design Document §3.2):
 
 **D1 — User DB (`users` table)**
-`user_id (PK, integer) | user_name | email_address (unique) | phone_number (unique, nullable) | password_hash (bcrypt) | is_2fa_enabled (bool) | active_2fa_otp (nullable) | active_session_id (nullable, uuid) | otp_expiry_time (nullable) | failed_otp_attempts (int, default 0) | account_status | created_at`
+`user_id (PK, integer) | user_name | email_address (unique) | phone_number (unique, nullable) | password_hash (bcrypt) | is_2fa_enabled (bool) | active_2fa_otp (nullable) | active_session_id (nullable, uuid) | otp_expiry_time (nullable) | failed_otp_attempts (int, default 0) | otp_resend_count (int, default 0) | account_status | role (varchar, default 'user') | last_login_at (nullable, datetime) | created_at`
 
 **D2 — Disease & Remedy DB (`diseases` + `remedies` tables)**
 - `diseases`: `id (PK, slug e.g. 'early_leaf_spot') | numeric_id (unique 1–6) | plant_species | disease_name | scientific_name | severity_level`
