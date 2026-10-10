@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   History,
   Search,
@@ -52,6 +52,8 @@ export const HistoryPage: React.FC = () => {
   // Selected item for remedy inspection
   const [selectedLog, setSelectedLog] = useState<HistoryLog | null>(null);
   const [remediesForModal, setRemediesForModal] = useState<Remedy[]>([]);
+  const [remediesLoading, setRemediesLoading] = useState<boolean>(false);
+  const remediesCacheRef = useRef<Record<string, Remedy[]>>({});
 
   // Fetch paginated history from FastAPI backend
   const fetchHistory = useCallback(async () => {
@@ -94,6 +96,15 @@ export const HistoryPage: React.FC = () => {
 
   // Handle inspect remedies modal
   const handleInspectRemedies = async (item: HistoryLog) => {
+    const cacheKey = String(item.disease_id);
+    if (remediesCacheRef.current[cacheKey]) {
+      setRemediesForModal(remediesCacheRef.current[cacheKey]);
+      setRemediesLoading(false);
+      setSelectedLog(item);
+      return;
+    }
+
+    setRemediesLoading(true);
     setSelectedLog(item);
     try {
       const res = await api.get<any>(`/api/remedies/${item.disease_id}`);
@@ -102,10 +113,13 @@ export const HistoryPage: React.FC = () => {
         : Array.isArray(res.data?.remedies)
         ? res.data.remedies
         : [];
+      remediesCacheRef.current[cacheKey] = list;
       setRemediesForModal(list);
     } catch (err) {
       console.error('Failed to fetch remedies for history record', err);
       setRemediesForModal([]);
+    } finally {
+      setRemediesLoading(false);
     }
   };
 
@@ -354,37 +368,58 @@ export const HistoryPage: React.FC = () => {
         )}
 
         {/* Delete Confirmation Modal */}
-        {deleteId && (
-          <div className="fixed inset-0 z-[110] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <Surface className="max-w-sm w-full p-6 space-y-4 shadow-2xl text-center bg-white">
-              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
-                <Trash2 className="w-6 h-6" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-base font-bold text-slate-900">Confirm Record Soft Deletion</h3>
-                <p className="text-xs text-slate-500">
-                  This diagnosis log will be archived and hidden from your active history dashboard.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setDeleteId(null)}
-                  disabled={isDeleting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteConfirm}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? 'Archiving...' : 'Delete'}
-                </Button>
-              </div>
-            </Surface>
-          </div>
-        )}
+        <AnimatePresence>
+          {deleteId && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"
+                onClick={() => !isDeleting && setDeleteId(null)}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.94, y: 16 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 10 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                className="relative z-10 max-w-sm w-full"
+              >
+                <Surface className="w-full p-6 space-y-4 shadow-2xl text-center bg-white">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+                    <Trash2 className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-bold text-slate-900">
+                      Confirm Record Soft Deletion
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      This diagnosis log will be archived and hidden from your active history
+                      dashboard.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setDeleteId(null)}
+                      disabled={isDeleting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDeleteConfirm}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? 'Archiving...' : 'Delete'}
+                    </Button>
+                  </div>
+                </Surface>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* Full Treatment Plan Modal */}
         <TreatmentPlanModal
@@ -394,6 +429,7 @@ export const HistoryPage: React.FC = () => {
           diseaseId={selectedLog?.disease_id || ''}
           confidenceScore={selectedLog?.confidence_score || 0}
           remedies={remediesForModal}
+          isLoading={remediesLoading}
         />
       </div>
     </motion.div>
