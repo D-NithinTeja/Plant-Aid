@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = ""
     RESEND_FROM_EMAIL: str = "onboarding@resend.dev"
 
+    # Google Apps Script HTTPS Relay Configuration (for cloud containers blocking SMTP port 587)
+    GAS_WEBHOOK_URL: str = ""
+
     # Legacy / Alternative Providers
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""

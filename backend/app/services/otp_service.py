@@ -116,8 +116,15 @@ class OTPService:
 
         if provider == "console":
             return self._send_console(destination, otp_code, channel)
+        if provider == "gas":
+            if channel == "email":
+                return self._send_gas_email(destination, otp_code, purpose)
+            logger.error("OTP provider 'gas' does not support SMS transport.")
+            return self._fallback_to_console(destination, otp_code, channel)
         if provider == "smtp":
             if channel == "email":
+                if getattr(settings, "GAS_WEBHOOK_URL", "").strip():
+                    return self._send_gas_email(destination, otp_code, purpose)
                 return self._send_smtp_email(destination, otp_code, purpose)
             logger.error("OTP provider 'smtp' does not support SMS transport.")
             return self._fallback_to_console(destination, otp_code, channel)
@@ -164,6 +171,31 @@ class OTPService:
         logger.error("OTP not delivered; provider dispatch failed.")
         return False
 
+    def _send_gas_email(self, email: str, otp_code: str, purpose: str = "verification") -> bool:
+        webhook_url = getattr(settings, "GAS_WEBHOOK_URL", "").strip()
+        if not webhook_url:
+            logger.warning("GAS_WEBHOOK_URL not configured; cannot dispatch via Google Apps Script.")
+            return self._fallback_to_console(email, otp_code, "email")
+
+        text_body, html_body = self._build_email_content(otp_code, purpose)
+        subject = PURPOSE_SUBJECTS.get(purpose, OTP_SUBJECT)
+        payload = {
+            "to": email,
+            "subject": f"{subject}: {otp_code}",
+            "text": text_body,
+            "html": html_body,
+            "senderName": settings.SMTP_FROM_NAME,
+        }
+        try:
+            with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+                res = client.post(webhook_url, json=payload)
+                res.raise_for_status()
+                logger.info("Successfully dispatched OTP email via GAS HTTPS relay to %s", email)
+                return True
+        except Exception as exc:
+            logger.error("Failed to send OTP email via GAS HTTPS relay: %s", exc)
+            return self._fallback_to_console(email, otp_code, "email")
+
     def _send_smtp_email(self, email: str, otp_code: str, purpose: str = "verification") -> bool:
         if not (settings.SMTP_HOST and settings.SMTP_USERNAME and settings.SMTP_PASSWORD):
             logger.warning(
@@ -205,6 +237,8 @@ class OTPService:
             return True
         except (smtplib.SMTPException, OSError) as exc:
             logger.error("Failed to send OTP email via SMTP: %s", exc)
+            if getattr(settings, "GAS_WEBHOOK_URL", "").strip():
+                return self._send_gas_email(email, otp_code, purpose)
             return self._fallback_to_console(email, otp_code, "email")
 
     def _send_resend_email(self, email: str, otp_code: str, purpose: str = "verification") -> bool:
