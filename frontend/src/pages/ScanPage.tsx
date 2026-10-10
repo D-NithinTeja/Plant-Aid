@@ -44,6 +44,7 @@ export const ScanPage: React.FC = () => {
   // Results
   const [currentResult, setCurrentResult] = useState<InferenceResponse | null>(null);
   const [frozenFrameDataUrl, setFrozenFrameDataUrl] = useState<string | null>(null);
+  const [uploadedImageDataUrl, setUploadedImageDataUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -51,11 +52,17 @@ export const ScanPage: React.FC = () => {
   // Modal
   const [modalOpen, setModalOpen] = useState<boolean>(false);
 
-  // Video / Canvas References
+  // Video / Canvas / File Input References
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<any>(null);
+  const modeRef = useRef<'camera' | 'upload'>(initialMode);
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
 
   // Start Camera Stream
   const startCameraStream = useCallback(async () => {
@@ -73,6 +80,11 @@ export const ScanPage: React.FC = () => {
         },
         audio: false,
       });
+
+      if (modeRef.current !== 'camera') {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
 
       streamRef.current = stream;
       if (videoRef.current) {
@@ -125,7 +137,7 @@ export const ScanPage: React.FC = () => {
   // Frame Capture & API Inference Cycle
   const captureAndInferFrame = useCallback(
     async (freezeOnCapture: boolean = false) => {
-      if (!videoRef.current || !canvasRef.current || isInFlight) {
+      if (modeRef.current !== 'camera' || !videoRef.current || !canvasRef.current || isInFlight) {
         return;
       }
 
@@ -162,6 +174,11 @@ export const ScanPage: React.FC = () => {
           capture_timestamp: new Date().toISOString(),
         });
 
+        // Ignore response if user switched to Upload Photo mode while frame was in flight
+        if (modeRef.current !== 'camera') {
+          return;
+        }
+
         setCurrentResult(res.data);
         setIsSaved(false);
         setSaveMessage(null);
@@ -187,6 +204,37 @@ export const ScanPage: React.FC = () => {
     }
   };
 
+  // Switch to Upload Photo mode cleanly without capturing or showing camera frame
+  const handleSwitchToUpload = () => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+    }
+    stopCameraStream();
+    modeRef.current = 'upload';
+    setMode('upload');
+    setIsFrozen(false);
+    setFrozenFrameDataUrl(null);
+    setUploadedImageDataUrl(null);
+    setCurrentResult(null);
+    setIsSaved(false);
+    setSaveMessage(null);
+    setCameraError(null);
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, 50);
+  };
+
+  // Switch to Live Camera mode cleanly
+  const handleSwitchToCamera = () => {
+    modeRef.current = 'camera';
+    setMode('camera');
+    setIsFrozen(false);
+    setUploadedImageDataUrl(null);
+    setCurrentResult(null);
+    setIsSaved(false);
+    setSaveMessage(null);
+  };
+
   // Auto-sampling loop when autoSample toggle is active
   useEffect(() => {
     if (mode === 'camera' && cameraActive && autoSample && !isFrozen) {
@@ -209,6 +257,7 @@ export const ScanPage: React.FC = () => {
   // Handle Manual File Upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
 
     if (!file.type.match(/image\/(jpeg|png)/)) {
@@ -219,10 +268,11 @@ export const ScanPage: React.FC = () => {
     setIsInFlight(true);
     setIsSaved(false);
     setSaveMessage(null);
+    setCurrentResult(null);
 
     const reader = new FileReader();
     reader.onload = () => {
-      setFrozenFrameDataUrl(reader.result as string);
+      setUploadedImageDataUrl(reader.result as string);
     };
     reader.readAsDataURL(file);
 
@@ -247,6 +297,8 @@ export const ScanPage: React.FC = () => {
   const handleSaveDiagnosis = async () => {
     if (!currentResult) return;
 
+    const activeImageB64 = mode === 'upload' ? uploadedImageDataUrl : frozenFrameDataUrl;
+
     setIsSaving(true);
     try {
       const payload: CreateHistoryPayload = {
@@ -256,7 +308,7 @@ export const ScanPage: React.FC = () => {
         disease_name: currentResult.disease_name,
         confidence_score: currentResult.confidence_score ?? currentResult.confidence ?? 0,
         s3_storage_uri: currentResult.s3_storage_uri || undefined,
-        image_b64: frozenFrameDataUrl || undefined,
+        image_b64: activeImageB64 || undefined,
         bounding_box: currentResult.bounding_box || undefined,
       };
 
@@ -298,8 +350,15 @@ export const ScanPage: React.FC = () => {
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       className="min-h-screen bg-transparent text-slate-900 py-6 px-4 sm:px-6 lg:px-8 font-sans"
     >
-      {/* Hidden Offscreen Canvas for preprocessing */}
+      {/* Hidden Offscreen Canvas & File Input */}
       <canvas ref={canvasRef} className="hidden" />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
 
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Top Header & Tactical Instrument Switcher */}
@@ -318,11 +377,9 @@ export const ScanPage: React.FC = () => {
             {/* Seamless Mode Switcher Pill */}
             <div className="inline-flex items-center bg-emerald-950/5 p-1 rounded-xl backdrop-blur-xs select-none">
               <button
-                onClick={() => {
-                  setMode('camera');
-                  setIsFrozen(false);
-                }}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all touch-target ${
+                type="button"
+                onClick={handleSwitchToCamera}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all touch-target cursor-pointer ${
                   mode === 'camera'
                     ? 'bg-white text-agri-950 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -332,8 +389,9 @@ export const ScanPage: React.FC = () => {
                 <span>Live Camera</span>
               </button>
               <button
-                onClick={() => setMode('upload')}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all touch-target ${
+                type="button"
+                onClick={handleSwitchToUpload}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all touch-target cursor-pointer ${
                   mode === 'upload'
                     ? 'bg-white text-agri-950 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -496,39 +554,72 @@ export const ScanPage: React.FC = () => {
                 </>
               ) : (
                 /* Upload Mode Viewport */
-                <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
-                  {frozenFrameDataUrl ? (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <img
-                        src={frozenFrameDataUrl}
-                        alt="Uploaded leaf"
-                        className="max-h-full max-w-full object-contain rounded-2xl"
-                      />
-                      <BoundingBoxOverlay
-                        boundingBox={isNoPlant ? null : currentResult?.bounding_box}
-                        confidence={currentResult?.confidence || currentResult?.confidence_score || 0}
-                        isConfirmedInfection={Boolean(isConfirmedInfection)}
-                        isHealthy={Boolean(isHealthy)}
-                        camHeatmapB64={isNoPlant ? null : currentResult?.cam_heatmap_b64}
-                        showHeatmap={showHeatmap && !isNoPlant}
-                      />
-                    </div>
+                <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-[#edf4ed] via-[#f4f9f4] to-white relative">
+                  {uploadedImageDataUrl ? (
+                    <>
+                      <div className="relative w-full h-full flex items-center justify-center pb-14">
+                        <img
+                          src={uploadedImageDataUrl}
+                          alt="Uploaded leaf"
+                          className="max-h-full max-w-full object-contain rounded-2xl shadow-md"
+                        />
+                        <BoundingBoxOverlay
+                          boundingBox={isNoPlant ? null : currentResult?.bounding_box}
+                          confidence={currentResult?.confidence || currentResult?.confidence_score || 0}
+                          isConfirmedInfection={Boolean(isConfirmedInfection)}
+                          isHealthy={Boolean(isHealthy)}
+                          camHeatmapB64={isNoPlant ? null : currentResult?.cam_heatmap_b64}
+                          showHeatmap={showHeatmap && !isNoPlant}
+                        />
+                      </div>
+
+                      {/* Bottom Upload Control Dock */}
+                      <div className="absolute bottom-3 inset-x-3 bg-slate-950/85 backdrop-blur-md border border-white/10 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-lg z-30">
+                        <Button
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isInFlight}
+                          className="bg-agri-600 hover:bg-agri-700 text-white font-bold"
+                        >
+                          <Upload className="w-4 h-4" />
+                          <span>{isInFlight ? 'Analyzing...' : 'Upload Another Photo'}</span>
+                        </Button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowHeatmap(!showHeatmap)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                            showHeatmap
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                              : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                          }`}
+                        >
+                          Heatmap: {showHeatmap ? 'ON' : 'OFF'}
+                        </button>
+                      </div>
+                    </>
                   ) : (
-                    <label className="cursor-pointer flex flex-col items-center space-y-3 p-8 border-2 border-dashed border-emerald-950/20 rounded-3xl hover:border-agri-600 hover:bg-white/40 transition-all">
-                      <div className="w-16 h-16 rounded-2xl bg-agri-100/70 text-agri-800 flex items-center justify-center border border-agri-300">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="cursor-pointer flex flex-col items-center space-y-4 p-8 sm:p-10 border-2 border-dashed border-emerald-950/20 bg-white/80 rounded-3xl hover:border-agri-600 hover:bg-white transition-all shadow-sm max-w-sm w-full"
+                    >
+                      <div className="w-16 h-16 rounded-2xl bg-[#edf4ed] text-agri-800 flex items-center justify-center border border-emerald-950/10">
                         <Upload className="w-8 h-8" />
                       </div>
                       <div className="space-y-1">
-                        <div className="text-base font-bold text-slate-900">Upload Groundnut Foliage Photo</div>
-                        <p className="text-xs text-slate-600">JPEG or PNG magic-byte verified</p>
+                        <div className="text-base font-bold text-slate-900">
+                          Upload Groundnut Foliage Photo
+                        </div>
+                        <p className="text-xs text-slate-600">
+                          Click to browse device photos (JPEG or PNG)
+                        </p>
                       </div>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                    </label>
+                      <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-agri-700 text-white text-xs font-bold shadow-xs">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Choose Photo</span>
+                      </span>
+                    </button>
                   )}
                 </div>
               )}
