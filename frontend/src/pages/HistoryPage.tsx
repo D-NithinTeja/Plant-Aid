@@ -96,8 +96,13 @@ export const HistoryPage: React.FC = () => {
   const handleInspectRemedies = async (item: HistoryLog) => {
     setSelectedLog(item);
     try {
-      const res = await api.get<Remedy[]>(`/api/remedies/${item.disease_id}`);
-      setRemediesForModal(res.data || []);
+      const res = await api.get<any>(`/api/remedies/${item.disease_id}`);
+      const list: Remedy[] = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.remedies)
+        ? res.data.remedies
+        : [];
+      setRemediesForModal(list);
     } catch (err) {
       console.error('Failed to fetch remedies for history record', err);
       setRemediesForModal([]);
@@ -350,7 +355,7 @@ export const HistoryPage: React.FC = () => {
 
         {/* Delete Confirmation Modal */}
         {deleteId && (
-          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[110] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
             <Surface className="max-w-sm w-full p-6 space-y-4 shadow-2xl text-center bg-white">
               <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
                 <Trash2 className="w-6 h-6" />

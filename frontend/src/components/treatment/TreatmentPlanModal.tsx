@@ -33,25 +33,27 @@ export const TreatmentPlanModal: React.FC<TreatmentPlanModalProps> = ({
 
   const isHealthy = diseaseName.toLowerCase().includes('healthy');
 
+  const safeRemedies = Array.isArray(remedies) ? remedies : [];
+
   // Group remedies
-  const organicRemedies = remedies.filter(
+  const organicRemedies = safeRemedies.filter(
     (r) =>
       r.category.toLowerCase().includes('organic') ||
       r.category.toLowerCase().includes('biological')
   );
-  const chemicalRemedies = remedies.filter(
+  const chemicalRemedies = safeRemedies.filter(
     (r) =>
       r.category.toLowerCase().includes('chemical') ||
       r.category.toLowerCase().includes('fungicide')
   );
-  const preventiveRemedies = remedies.filter(
+  const preventiveRemedies = safeRemedies.filter(
     (r) =>
       r.category.toLowerCase().includes('cultural') ||
       r.category.toLowerCase().includes('preventive')
   );
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[110] overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
       <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200 text-slate-900">
         {/* Header */}
         <div className="p-6 bg-slate-900 text-white relative">
